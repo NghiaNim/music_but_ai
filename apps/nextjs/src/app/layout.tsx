@@ -9,6 +9,7 @@ import { Toaster } from "@acme/ui/toast";
 import { env } from "~/env";
 import { TRPCReactProvider } from "~/trpc/react";
 import { BottomNav } from "./_components/bottom-nav";
+import { HeaderExtraButton } from "./_components/header-extra-button";
 
 import "~/app/styles.css";
 
@@ -64,7 +65,10 @@ export default function RootLayout(props: { children: React.ReactNode }) {
                 >
                   Classical Music Connect
                 </Link>
-                <ThemeToggle />
+                <div className="flex items-center gap-1">
+                  <HeaderExtraButton />
+                  <ThemeToggle />
+                </div>
               </div>
             </header>
             <div className="pb-16">{props.children}</div>
