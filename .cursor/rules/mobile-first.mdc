@@ -1,0 +1,35 @@
+---
+description: Mobile-first development pattern — Next.js mirrors Expo UX
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# Mobile-First Development
+
+The Next.js web app should feel like a native mobile app, mirroring the Expo experience.
+
+## Layout
+
+- Design for 375px viewport first, then scale up with responsive breakpoints.
+- Use a persistent bottom navigation bar (like iOS/Android tab bar) as the primary nav.
+- Avoid wide desktop-only layouts. Content should be single-column by default.
+- Use `max-w-md mx-auto` or similar to constrain content width on larger screens.
+
+## Navigation
+
+- Bottom tab bar is the primary navigation (Home, Learn, Events, AI Mentor, Profile).
+- Top nav bar is minimal — app title/logo only, no duplicate nav links.
+- Use full-screen page transitions, not nested sidebars.
+
+## Components
+
+- Touch-friendly tap targets (min 44px height for interactive elements).
+- Use cards, bottom sheets, and full-screen modals — not dropdowns or popovers.
+- Prefer vertical scrolling lists over grids on small screens.
+- Skeleton loading states for all async content.
+
+## Shared Patterns with Expo
+
+- Components should be structured so logic can be shared with React Native.
+- Keep platform-specific styling in the component layer, business logic in packages/.
+- Use the same tRPC queries and mutations across both platforms.

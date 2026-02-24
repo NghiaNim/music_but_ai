@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { cn } from "@acme/ui";
@@ -7,6 +8,7 @@ import { Toaster } from "@acme/ui/toast";
 
 import { env } from "~/env";
 import { TRPCReactProvider } from "~/trpc/react";
+import { BottomNav } from "./_components/bottom-nav";
 
 import "~/app/styles.css";
 
@@ -16,18 +18,13 @@ export const metadata: Metadata = {
       ? "https://turbo.t3.gg"
       : "http://localhost:3000",
   ),
-  title: "Create T3 Turbo",
-  description: "Simple monorepo with shared backend for web & mobile apps",
+  title: "Classical Music Connect",
+  description:
+    "Discover, learn, and experience classical music with an AI-powered concierge",
   openGraph: {
-    title: "Create T3 Turbo",
-    description: "Simple monorepo with shared backend for web & mobile apps",
-    url: "https://create-t3-turbo.vercel.app",
-    siteName: "Create T3 Turbo",
-  },
-  twitter: {
-    card: "summary_large_image",
-    site: "@jullerino",
-    creator: "@jullerino",
+    title: "Classical Music Connect",
+    description:
+      "Discover, learn, and experience classical music with an AI-powered concierge",
   },
 };
 
@@ -58,10 +55,21 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         )}
       >
         <ThemeProvider>
-          <TRPCReactProvider>{props.children}</TRPCReactProvider>
-          <div className="absolute right-4 bottom-4">
-            <ThemeToggle />
-          </div>
+          <TRPCReactProvider>
+            <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-4">
+                <Link
+                  href="/"
+                  className="text-base font-bold tracking-tight"
+                >
+                  Classical Music Connect
+                </Link>
+                <ThemeToggle />
+              </div>
+            </header>
+            <div className="pb-16">{props.children}</div>
+            <BottomNav />
+          </TRPCReactProvider>
           <Toaster />
         </ThemeProvider>
       </body>

@@ -30,16 +30,17 @@ tooling/
 - The `ai/` package is shared — the concierge works identically on web and mobile.
 - Expo + React Native Web means components can be reused across platforms.
 
-**Key dependencies:**
+**Key dependencies (actual):**
 
 | Layer       | Tech                              |
 | ----------- | --------------------------------- |
-| Framework   | Next.js (web) + Expo (mobile)     |
+| Framework   | Next.js 16 (web) + Expo (mobile)  |
 | API         | tRPC v11                          |
-| Database    | Drizzle ORM + Postgres            |
-| AI          | Anthropic Claude API (streaming)  |
-| Auth        | Clerk (works on both web + Expo)  |
-| Styling     | Tailwind CSS + Nativewind         |
+| Database    | Drizzle ORM + Postgres (Vercel)   |
+| AI          | OpenAI API (gpt-4o-mini, streaming) |
+| Auth        | Better Auth (Discord OAuth)       |
+| Styling     | Tailwind CSS v4 + shadcn/ui      |
+| UI          | @acme/ui (shared component lib)   |
 
 ---
 
@@ -56,6 +57,7 @@ The centerpiece. A single chat interface with two distinct modes:
 **Discovery Mode** — "Help me find a concert"
 - User describes what they're looking for (mood, date, experience level)
 - AI recommends events from our catalog with personalized reasoning
+- AI answering logistics questions about the venue like parking
 - Example: *"I've never been to a classical concert, what's good this weekend?"* → AI suggests a beginner-friendly orchestral program, explains why
 
 **Learning Mode** — "Help me understand this"

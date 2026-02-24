@@ -1,0 +1,36 @@
+---
+description: Enforce strict TypeScript and type-safe patterns
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Strict TypeScript
+
+## Always Strongly Typed
+
+- Never use `any`. Use `unknown` and narrow with type guards if needed.
+- All function parameters and return types should be inferable or explicitly typed.
+- Use `satisfies` for type checking object literals without widening.
+- Prefer `as const` over type assertions.
+
+## Use tRPC End-to-End — Never Work Around It
+
+- All data fetching MUST go through tRPC procedures. Never use raw `fetch()` for app data.
+- Use `useSuspenseQuery` with `trpc.*.queryOptions()` on the client.
+- Use `prefetch(trpc.*.queryOptions())` in Server Components for SSR hydration.
+- Use `useMutation` with `trpc.*.mutationOptions()` for mutations.
+- Input validation uses Zod schemas — share them from `@acme/validators` or `@acme/db/schema`.
+- Use `RouterOutputs` and `RouterInputs` types for referencing API shapes in components.
+
+## Drizzle ORM Patterns
+
+- Define tables in `packages/db/src/schema.ts` using the `pgTable` builder.
+- Use `createInsertSchema` / `createSelectSchema` from `drizzle-zod` for Zod integration.
+- Use relational queries (`db.query.Table.findMany()`) over raw SQL when possible.
+- Export schemas with `.omit()` for create/update variants.
+
+## Zod Validators
+
+- Shared validators live in `packages/validators/src/`.
+- Use `z.input<>` and `z.output<>` for type inference from schemas.
+- Compose validators — don't duplicate field definitions.

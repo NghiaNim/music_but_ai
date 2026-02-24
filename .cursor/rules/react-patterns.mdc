@@ -1,0 +1,28 @@
+---
+description: React and Next.js patterns — avoid useEffect, prefer RSC
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# React Patterns
+
+## Avoid Unnecessary useEffect
+
+- Do NOT use `useEffect` for data fetching — use tRPC + TanStack Query.
+- Do NOT use `useEffect` to sync derived state — compute inline or use `useMemo`.
+- Do NOT use `useEffect` for event-driven logic — use event handlers directly.
+- `useEffect` is acceptable ONLY for: DOM measurements, third-party library integration, or cleanup of subscriptions/timers.
+
+## Server Components First
+
+- Default to React Server Components (no "use client" directive).
+- Only add "use client" when you need interactivity (clicks, forms, state).
+- Prefetch tRPC queries in Server Components, consume in Client Components with `useSuspenseQuery`.
+- Use `<Suspense>` boundaries with skeleton fallbacks for async data.
+
+## Component Patterns
+
+- Use `@acme/ui` components (shadcn/ui) for all base UI elements.
+- Type component props using inline types or `RouterOutputs` for data-driven components.
+- Prefer composition over prop drilling.
+- Forms use `@tanstack/react-form` with Zod validators.
