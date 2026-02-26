@@ -31,6 +31,15 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   advanced: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400",
 };
 
+const GENRE_GRADIENTS: Record<string, string> = {
+  orchestral: "from-rose-400 to-amber-300",
+  opera: "from-purple-400 to-pink-300",
+  chamber: "from-teal-400 to-emerald-300",
+  solo_recital: "from-indigo-400 to-sky-300",
+  choral: "from-amber-400 to-orange-300",
+  ballet: "from-pink-400 to-rose-300",
+};
+
 const GENRE_OPTIONS = [
   "orchestral",
   "opera",
@@ -191,18 +200,27 @@ function EventCard({ event }: { event: EventItem }) {
     minute: "2-digit",
   });
 
+  const gradient = GENRE_GRADIENTS[event.genre] ?? "from-gray-400 to-gray-300";
+
   return (
     <Link href={`/event/${event.id}`}>
-      <div className="bg-card active:bg-muted/50 flex gap-3 rounded-xl border p-3 transition-colors">
-        <div className="bg-primary/5 flex w-14 shrink-0 flex-col items-center justify-center rounded-lg py-2">
-          <span className="text-primary text-[10px] font-semibold uppercase">
+      <div className="bg-card flex overflow-hidden rounded-xl border transition-colors active:bg-muted/50">
+        <div
+          className={`flex w-20 shrink-0 flex-col items-center justify-center bg-linear-to-br ${gradient}`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="18" cy="16" r="3" />
+          </svg>
+          <span className="mt-1 text-[10px] font-bold uppercase text-white/90">
             {date.toLocaleDateString("en-US", { month: "short" })}
           </span>
-          <span className="text-primary text-lg leading-none font-bold">
+          <span className="text-xl font-bold leading-none text-white">
             {date.getDate()}
           </span>
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 p-3">
           <div className="mb-1 flex flex-wrap gap-1">
             <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium">
               {GENRE_LABELS[event.genre] ?? event.genre}
@@ -254,9 +272,12 @@ export function EventFeedSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="flex flex-col gap-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-card flex h-20 gap-3 rounded-xl border p-3">
-          <div className="bg-muted h-full w-14 animate-pulse rounded-lg" />
-          <div className="flex-1 space-y-2 py-1">
+        <div
+          key={i}
+          className="bg-card flex h-20 overflow-hidden rounded-xl border"
+        >
+          <div className="bg-muted w-20 shrink-0 animate-pulse" />
+          <div className="flex-1 space-y-2 p-3">
             <div className="flex gap-1">
               <div className="bg-muted h-4 w-16 animate-pulse rounded-full" />
               <div className="bg-muted h-4 w-20 animate-pulse rounded-full" />
