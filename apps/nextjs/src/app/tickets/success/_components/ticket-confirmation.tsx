@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@acme/ui/button";
+import { toast } from "@acme/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -12,20 +14,63 @@ export function TicketConfirmation() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const autoConfirmAttempted = useRef(false);
 
   const confirm = useMutation(
-    trpc.ticket.confirmOrder.mutationOptions(),
+    trpc.ticket.confirmOrder.mutationOptions({
+      onSuccess: (data) => {
+        if (data?.status === "completed") {
+          toast.success("Payment confirmed!");
+          void queryClient.invalidateQueries({
+            queryKey: trpc.ticket.orderById.queryKey({ orderId: orderId ?? "" }),
+          });
+        }
+      },
+      onError: (err) => {
+        toast.error(err.message || "Failed to confirm order");
+      },
+    }),
   );
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order } = useQuery({
     ...trpc.ticket.orderById.queryOptions({ orderId: orderId ?? "" }),
     enabled: !!orderId,
   });
 
-  const isConfirming = confirm.isPending;
+  useEffect(() => {
+    if (!orderId || autoConfirmAttempted.current) return;
+    if (!order || order.status !== "pending") return;
+
+    autoConfirmAttempted.current = true;
+
+    const tryConfirm = (attempt: number) => {
+      if (attempt > 3) return;
+      const delay = attempt === 0 ? 500 : 2000;
+      setTimeout(() => {
+        confirm.mutate(
+          { orderId },
+          {
+            onSuccess: (data) => {
+              if (data?.status !== "completed" && attempt < 3) {
+                tryConfirm(attempt + 1);
+              }
+            },
+            onError: () => {
+              if (attempt < 3) tryConfirm(attempt + 1);
+            },
+          },
+        );
+      }, delay);
+    };
+
+    tryConfirm(0);
+  }, [orderId, order?.status]);
+
   const confirmedOrder = confirm.data;
   const orderData = confirmedOrder ?? order;
   const isCompleted = orderData?.status === "completed";
+  const hasFailed = confirm.isError;
 
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center px-4 pt-12 text-center">
@@ -38,21 +83,27 @@ export function TicketConfirmation() {
       </div>
 
       <h1 className="mb-2 text-2xl font-bold">
-        {isCompleted ? "Tickets Confirmed!" : "Confirming Your Order..."}
+        {isCompleted
+          ? "Tickets Confirmed!"
+          : hasFailed
+            ? "Confirmation Issue"
+            : "Confirming Your Order..."}
       </h1>
       <p className="text-muted-foreground mb-6 text-sm">
         {isCompleted
           ? "You're all set for an amazing experience"
-          : "We're verifying your payment with Stripe"}
+          : hasFailed
+            ? "We couldn't verify the payment — it may still be processing"
+            : "We're verifying your payment with Stripe"}
       </p>
 
-      {!isCompleted && orderId && !confirm.isSuccess && (
+      {!isCompleted && orderId && (
         <Button
           onClick={() => confirm.mutate({ orderId })}
-          disabled={isConfirming}
+          disabled={confirm.isPending}
           className="mb-6 bg-emerald-600 hover:bg-emerald-700"
         >
-          {isConfirming ? "Confirming..." : "Confirm My Order"}
+          {confirm.isPending ? "Confirming..." : "Retry Confirmation"}
         </Button>
       )}
 
