@@ -65,10 +65,11 @@ export const ticketRouter = {
 
       const stripe = getStripe();
 
+      const vercelUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : undefined;
       const origin =
-        process.env.NEXT_PUBLIC_APP_URL ??
-        process.env.VERCEL_URL ??
-        "http://localhost:3000";
+        process.env.NEXT_PUBLIC_APP_URL ?? vercelUrl ?? "http://localhost:3000";
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
