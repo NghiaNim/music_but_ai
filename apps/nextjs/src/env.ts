@@ -17,9 +17,9 @@ export const env = createEnv({
    */
   server: {
     POSTGRES_URL: z.url(),
-    ELEVENLABS_STS_API_KEY: z.string().min(1),
-    OPENAI_API_KEY: z.string().min(1),
-    STRIPE_SECRET_KEY: z.string().min(1),
+    ELEVENLABS_STS_API_KEY: z.string().optional(),
+    OPENAI_API_KEY: z.string().optional(),
+    STRIPE_SECRET_KEY: z.string().optional(),
   },
 
   /**
@@ -27,7 +27,7 @@ export const env = createEnv({
    * For them to be exposed to the client, prefix them with `NEXT_PUBLIC_`.
    */
   client: {
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1),
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   },
   /**
    * Destructure all variables from `process.env` to make sure they aren't tree-shaken away.
