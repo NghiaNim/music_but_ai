@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Home", icon: HomeIcon },
   { href: "/learn", label: "Learn", icon: BookIcon },
   { href: "/events", label: "Events", icon: CalendarIcon },
-  { href: "/chat", label: "AI Mentor", icon: SparklesIcon },
+  { href: "/post-event", label: "Post Event", icon: PlusCircleIcon },
   { href: "/profile", label: "Profile", icon: UserIcon },
 ] as const;
 
@@ -52,14 +52,20 @@ function HomeIcon({ active }: { active: boolean }) {
       width="22"
       height="22"
       viewBox="0 0 24 24"
-      fill={active ? "currentColor" : "none"}
-      stroke="currentColor"
+      fill="none"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
-      <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path
+        d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+        fill={active ? "currentColor" : "none"}
+        stroke="currentColor"
+      />
+      <path
+        d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"
+        stroke={active ? "var(--color-background)" : "currentColor"}
+      />
     </svg>
   );
 }
@@ -71,13 +77,23 @@ function BookIcon({ active }: { active: boolean }) {
       width="22"
       height="22"
       viewBox="0 0 24 24"
-      fill={active ? "currentColor" : "none"}
-      stroke="currentColor"
+      fill="none"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
+      <path
+        d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"
+        fill={active ? "currentColor" : "none"}
+        stroke="currentColor"
+      />
+      {active && (
+        <path
+          d="M6.5 17H20"
+          stroke="var(--color-background)"
+          strokeWidth="2"
+        />
+      )}
     </svg>
   );
 }
@@ -89,34 +105,57 @@ function CalendarIcon({ active }: { active: boolean }) {
       width="22"
       height="22"
       viewBox="0 0 24 24"
-      fill={active ? "currentColor" : "none"}
-      stroke="currentColor"
+      fill="none"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M8 2v4" />
-      <path d="M16 2v4" />
-      <rect width="18" height="18" x="3" y="4" rx="2" />
-      <path d="M3 10h18" />
+      <rect
+        width="18"
+        height="18"
+        x="3"
+        y="4"
+        rx="2"
+        fill={active ? "currentColor" : "none"}
+        stroke="currentColor"
+      />
+      <path d="M8 2v4" stroke="currentColor" />
+      <path d="M16 2v4" stroke="currentColor" />
+      <path
+        d="M3 10h18"
+        stroke={active ? "var(--color-background)" : "currentColor"}
+      />
     </svg>
   );
 }
 
-function SparklesIcon({ active }: { active: boolean }) {
+function PlusCircleIcon({ active }: { active: boolean }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="22"
       height="22"
       viewBox="0 0 24 24"
-      fill={active ? "currentColor" : "none"}
-      stroke="currentColor"
+      fill="none"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        fill={active ? "currentColor" : "none"}
+        stroke="currentColor"
+      />
+      <path
+        d="M8 12h8"
+        stroke={active ? "var(--color-background)" : "currentColor"}
+      />
+      <path
+        d="M12 8v8"
+        stroke={active ? "var(--color-background)" : "currentColor"}
+      />
     </svg>
   );
 }

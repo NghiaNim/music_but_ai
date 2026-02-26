@@ -102,11 +102,11 @@ export function EventFeed() {
 
   const filteredEvents = cityFilter
     ? events.filter(
-        (e) =>
-          e.venue.toLowerCase().includes(cityFilter.toLowerCase()) ||
-          (e.venueAddress?.toLowerCase().includes(cityFilter.toLowerCase()) ??
-            false),
-      )
+      (e) =>
+        e.venue.toLowerCase().includes(cityFilter.toLowerCase()) ||
+        (e.venueAddress?.toLowerCase().includes(cityFilter.toLowerCase()) ??
+          false),
+    )
     : events;
 
   return (
@@ -184,23 +184,58 @@ export function EventFeed() {
   );
 }
 
-function EventCard({ event }: { event: EventItem }) {
-  const date = new Date(event.date);
-  const formattedTime = date.toLocaleTimeString("en-US", {
+function formatFriendlyDate(date: Date): { badge: string; line: string } {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const eventDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round(
+    (eventDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  const time = date.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
   });
+  const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+  const monthDay = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
+  if (diffDays === 0) return { badge: "Today", line: `Today at ${time}` };
+  if (diffDays === 1) return { badge: "Tomorrow", line: `Tomorrow at ${time}` };
+  if (diffDays > 1 && diffDays <= 6)
+    return { badge: `This ${weekday}`, line: `This ${weekday} at ${time}` };
+  return { badge: monthDay, line: `${weekday}, ${monthDay} · ${time}` };
+}
+
+function EventCard({ event }: { event: EventItem }) {
+  const date = new Date(event.date);
+  const { badge, line } = formatFriendlyDate(date);
 
   return (
     <Link href={`/event/${event.id}`}>
       <div className="bg-card active:bg-muted/50 flex gap-3 rounded-xl border p-3 transition-colors">
-        <div className="bg-primary/5 flex w-14 shrink-0 flex-col items-center justify-center rounded-lg py-2">
-          <span className="text-primary text-[10px] font-semibold uppercase">
-            {date.toLocaleDateString("en-US", { month: "short" })}
-          </span>
-          <span className="text-primary text-lg leading-none font-bold">
-            {date.getDate()}
-          </span>
+        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+          {event.imageUrl ? (
+            <img
+              src={event.imageUrl}
+              alt={event.title}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
+              <span className="text-[10px] font-semibold uppercase text-orange-600 dark:text-orange-300">
+                {date.toLocaleDateString("en-US", { month: "short" })}
+              </span>
+              <span className="text-xl font-bold leading-none text-orange-700 dark:text-orange-200">
+                {date.getDate()}
+              </span>
+              <span className="mt-0.5 text-[9px] font-medium text-orange-500 dark:text-orange-400">
+                {date.toLocaleDateString("en-US", { weekday: "short" })}
+              </span>
+            </div>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap gap-1">
@@ -216,12 +251,12 @@ function EventCard({ event }: { event: EventItem }) {
               {event.difficulty === "beginner"
                 ? "Beginner Friendly"
                 : event.difficulty.charAt(0).toUpperCase() +
-                  event.difficulty.slice(1)}
+                event.difficulty.slice(1)}
             </span>
           </div>
           <h3 className="line-clamp-1 text-sm font-semibold">{event.title}</h3>
           <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
-            {formattedTime} &middot; {event.venue}
+            {line} &middot; {event.venue}
           </p>
         </div>
       </div>
@@ -254,8 +289,8 @@ export function EventFeedSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="flex flex-col gap-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-card flex h-20 gap-3 rounded-xl border p-3">
-          <div className="bg-muted h-full w-14 animate-pulse rounded-lg" />
+        <div key={i} className="bg-card flex gap-3 rounded-xl border p-3">
+          <div className="bg-muted h-20 w-20 animate-pulse rounded-lg" />
           <div className="flex-1 space-y-2 py-1">
             <div className="flex gap-1">
               <div className="bg-muted h-4 w-16 animate-pulse rounded-full" />

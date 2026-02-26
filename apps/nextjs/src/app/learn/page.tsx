@@ -72,13 +72,13 @@ export default function LearnPage() {
             key={topic.title}
             href={`${topic.href}&q=${encodeURIComponent(topic.prompt)}`}
           >
-            <div className="bg-card flex flex-col overflow-hidden rounded-2xl border shadow-sm transition-transform active:scale-[0.98]">
+            <div className="bg-card flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm transition-transform active:scale-[0.98]">
               <div
                 className={`flex aspect-4/3 items-center justify-center bg-linear-to-br ${topic.gradient}`}
               >
                 <span className="text-5xl">{topic.icon}</span>
               </div>
-              <div className="p-3">
+              <div className="flex flex-1 flex-col p-3">
                 <h3 className="text-sm leading-tight font-semibold">
                   {topic.title}
                 </h3>

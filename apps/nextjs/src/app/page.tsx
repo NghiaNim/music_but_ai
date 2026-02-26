@@ -88,11 +88,11 @@ export default async function HomePage() {
                 </p>
               </div>
             </Link>
-            <Link href="/journal" className="group">
+            <Link href="/profile" className="group">
               <div className="rounded-xl border bg-sky-50 p-4 transition-colors group-hover:border-sky-300 dark:bg-sky-950/30">
-                <p className="text-sm font-semibold">My Journal</p>
+                <p className="text-sm font-semibold">My Badges</p>
                 <p className="text-muted-foreground mt-0.5 text-xs">
-                  Track your journey
+                  See what you&apos;ve earned
                 </p>
               </div>
             </Link>
@@ -121,7 +121,6 @@ function SparklesIcon() {
     </svg>
   );
 }
-
 function ChevronRightIcon() {
   return (
     <svg
@@ -140,3 +139,4 @@ function ChevronRightIcon() {
     </svg>
   );
 }
+

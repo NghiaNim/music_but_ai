@@ -63,6 +63,20 @@ export function EventDetail({ eventId }: { eventId: string }) {
         </Link>
       </div>
 
+      <div className="mx-4 mb-4 overflow-hidden rounded-xl">
+        {event.imageUrl ? (
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            className="aspect-video w-full object-cover"
+          />
+        ) : (
+          <div className="flex aspect-video w-full items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
+            <EventMusicNoteIcon />
+          </div>
+        )}
+      </div>
+
       <div className="px-4 pb-4">
         <div className="mb-2 flex flex-wrap gap-1.5">
           <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-xs font-medium">
@@ -77,7 +91,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
             {event.difficulty === "beginner"
               ? "Beginner Friendly"
               : event.difficulty.charAt(0).toUpperCase() +
-                event.difficulty.slice(1)}
+              event.difficulty.slice(1)}
           </span>
         </div>
 
@@ -448,6 +462,27 @@ function TicketIcon() {
       <path d="M13 5v2" />
       <path d="M13 17v2" />
       <path d="M13 11v2" />
+    </svg>
+  );
+}
+
+function EventMusicNoteIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="48"
+      height="48"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-orange-400 dark:text-orange-300"
+    >
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
     </svg>
   );
 }
