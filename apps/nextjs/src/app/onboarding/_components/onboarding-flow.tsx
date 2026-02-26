@@ -39,7 +39,7 @@ export function OnboardingFlow() {
   });
 
   const alreadyCompleted =
-    profileLoaded && (profile?.onboardingCompleted === true);
+    profileLoaded && profile?.onboardingCompleted === true;
   const hasRedirected = useRef(false);
 
   useEffect(() => {

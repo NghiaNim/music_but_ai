@@ -17,7 +17,10 @@ export const userProfileRouter = {
         .insert(UserProfile)
         .values({ userId: ctx.session.user.id })
         .returning();
-      return created!;
+      if (!created) {
+        throw new Error("Failed to create user profile");
+      }
+      return created;
     }
 
     return profile;
@@ -40,13 +43,19 @@ export const userProfileRouter = {
           .set(input)
           .where(eq(UserProfile.id, existing.id))
           .returning();
-        return updated!;
+        if (!updated) {
+          throw new Error("Failed to update user profile");
+        }
+        return updated;
       }
 
       const [created] = await ctx.db
         .insert(UserProfile)
         .values({ userId: ctx.session.user.id, ...input })
         .returning();
-      return created!;
+      if (!created) {
+        throw new Error("Failed to create user profile");
+      }
+      return created;
     }),
 } satisfies TRPCRouterRecord;

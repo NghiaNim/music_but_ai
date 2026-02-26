@@ -164,7 +164,7 @@ export default function PostEventPage() {
             onChange={(e) => setProgram(e.target.value)}
             required
             rows={3}
-            className="bg-card text-foreground rounded-md border px-3 py-2 text-sm placeholder:text-muted-foreground"
+            className="bg-card text-foreground placeholder:text-muted-foreground rounded-md border px-3 py-2 text-sm"
           />
         </div>
 
@@ -177,7 +177,7 @@ export default function PostEventPage() {
             onChange={(e) => setDescription(e.target.value)}
             required
             rows={3}
-            className="bg-card text-foreground rounded-md border px-3 py-2 text-sm placeholder:text-muted-foreground"
+            className="bg-card text-foreground placeholder:text-muted-foreground rounded-md border px-3 py-2 text-sm"
           />
         </div>
 

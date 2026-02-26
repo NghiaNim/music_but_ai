@@ -6,14 +6,12 @@ import { Button } from "@acme/ui/button";
 import { Input } from "@acme/ui/input";
 
 export function OnboardingModal() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() =>
+    typeof window !== "undefined"
+      ? !localStorage.getItem("user_name")
+      : false,
+  );
   const [name, setName] = useState("");
-
-  useEffect(() => {
-    if (!localStorage.getItem("user_name")) {
-      setOpen(true);
-    }
-  }, []);
 
   if (!open) return null;
 
@@ -54,11 +52,11 @@ export function OnboardingModal() {
 }
 
 export function Greeting() {
-  const [name, setName] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("user_name") : null,
+  );
 
   useEffect(() => {
-    setName(localStorage.getItem("user_name"));
-
     const handler = () => setName(localStorage.getItem("user_name"));
     window.addEventListener("user_name_changed", handler);
     return () => window.removeEventListener("user_name_changed", handler);

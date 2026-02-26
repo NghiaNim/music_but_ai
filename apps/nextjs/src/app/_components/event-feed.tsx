@@ -204,19 +204,30 @@ function EventCard({ event }: { event: EventItem }) {
 
   return (
     <Link href={`/event/${event.id}`}>
-      <div className="bg-card flex overflow-hidden rounded-xl border transition-colors active:bg-muted/50">
+      <div className="bg-card active:bg-muted/50 flex overflow-hidden rounded-xl border transition-colors">
         <div
           className={`flex w-20 shrink-0 flex-col items-center justify-center bg-linear-to-br ${gradient}`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-white/60"
+          >
             <path d="M9 18V5l12-2v13" />
             <circle cx="6" cy="18" r="3" />
             <circle cx="18" cy="16" r="3" />
           </svg>
-          <span className="mt-1 text-[10px] font-bold uppercase text-white/90">
+          <span className="mt-1 text-[10px] font-bold text-white/90 uppercase">
             {date.toLocaleDateString("en-US", { month: "short" })}
           </span>
-          <span className="text-xl font-bold leading-none text-white">
+          <span className="text-xl leading-none font-bold text-white">
             {date.getDate()}
           </span>
         </div>

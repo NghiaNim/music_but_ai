@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -15,6 +15,14 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import bachBadge from "../../../assets/badges/badge_bach_v2.png";
+import classicalBadge from "../../../assets/badges/badge_classical_v3.png";
+import romanticBadge from "../../../assets/badges/badge_romantic_v3.png";
+import baroqueBadge from "../../../assets/badges/baroque_badge.png";
+import beethovenBadge from "../../../assets/badges/beethoven_badge.png";
+import chopinBadge from "../../../assets/badges/chopin_badge.png";
+import mozartBadge from "../../../assets/badges/mozart_badge.png";
+
 const STATS = [
   { value: "24", label: "Concerts Attended" },
   { value: "142", label: "Days on the App" },
@@ -22,13 +30,13 @@ const STATS = [
 ];
 
 const BADGE_IMAGES = {
-  beethoven: require("../../../assets/badges/beethoven_badge.png") as number,
-  mozart: require("../../../assets/badges/mozart_badge.png") as number,
-  chopin: require("../../../assets/badges/chopin_badge.png") as number,
-  baroque: require("../../../assets/badges/baroque_badge.png") as number,
-  romantic: require("../../../assets/badges/badge_romantic_v3.png") as number,
-  classical: require("../../../assets/badges/badge_classical_v3.png") as number,
-  bach: require("../../../assets/badges/badge_bach_v2.png") as number,
+  beethoven: beethovenBadge,
+  mozart: mozartBadge,
+  chopin: chopinBadge,
+  baroque: baroqueBadge,
+  romantic: romanticBadge,
+  classical: classicalBadge,
+  bach: bachBadge,
 };
 
 interface BadgeData {
@@ -114,10 +122,12 @@ function BadgeCard({
   const rotation = useSharedValue(0);
   const lastFlipped = useRef(false);
 
-  if (isFlipped !== lastFlipped.current) {
-    lastFlipped.current = isFlipped;
-    rotation.value = withTiming(isFlipped ? 180 : 0, { duration: 700 });
-  }
+  useEffect(() => {
+    if (isFlipped !== lastFlipped.current) {
+      lastFlipped.current = isFlipped;
+      rotation.value = withTiming(isFlipped ? 180 : 0, { duration: 700 });
+    }
+  }, [isFlipped, rotation]);
 
   const frontStyle = useAnimatedStyle(() => ({
     transform: [
