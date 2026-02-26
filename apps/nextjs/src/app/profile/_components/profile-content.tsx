@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const STATS = [
   { value: "24", label: "Concerts Attended" },
@@ -330,6 +331,52 @@ export function ProfileContent() {
           </div>
         </div>
       </div>
+
+      {/* My Tickets */}
+      <Link
+        href="/tickets"
+        className="bg-card mt-5 flex items-center gap-3 rounded-2xl border p-4 shadow-sm transition-colors hover:bg-muted/50"
+      >
+        <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-emerald-600 dark:text-emerald-400"
+          >
+            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+            <path d="M13 5v2" />
+            <path d="M13 17v2" />
+            <path d="M13 11v2" />
+          </svg>
+        </div>
+        <div className="flex-1">
+          <p className="font-semibold">My Tickets</p>
+          <p className="text-muted-foreground text-xs">
+            View your purchased tickets
+          </p>
+        </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-muted-foreground"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </Link>
 
       {/* Badges Section */}
       <h2 className="text-foreground mt-8 mb-4 text-xl font-bold">Badges</h2>

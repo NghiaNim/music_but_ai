@@ -23,6 +23,7 @@
     "@acme/db": "workspace:*",
     "@acme/validators": "workspace:*",
     "@trpc/server": "catalog:",
+    "stripe": "^17.7.0",
     "superjson": "2.2.3",
     "zod": "catalog:"
   },

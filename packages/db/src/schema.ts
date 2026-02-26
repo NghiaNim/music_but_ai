@@ -34,6 +34,13 @@ export const experienceLevelEnum = pgEnum("experience_level", [
   "enthusiast",
 ]);
 
+export const orderStatusEnum = pgEnum("order_status", [
+  "pending",
+  "completed",
+  "failed",
+  "refunded",
+]);
+
 // ─── Legacy Post table ──────────────────────────────────
 
 export const Post = pgTable("post", (t) => ({
@@ -91,6 +98,9 @@ export const Event = pgTable("event", (t) => ({
   beginnerNotes: t.text(),
   imageUrl: t.text(),
   ticketUrl: t.text(),
+  originalPriceCents: t.integer().notNull().default(5000),
+  discountedPriceCents: t.integer().notNull().default(3500),
+  ticketsAvailable: t.integer().notNull().default(100),
   createdBy: t.text().references(() => user.id, { onDelete: "set null" }),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t
@@ -147,6 +157,29 @@ export const ChatMessage = pgTable("chat_message", (t) => ({
   createdAt: t.timestamp().defaultNow().notNull(),
 }));
 
+// ─── TicketOrder ─────────────────────────────────────────
+
+export const TicketOrder = pgTable("ticket_order", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  userId: t
+    .text()
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  eventId: t
+    .uuid()
+    .notNull()
+    .references(() => Event.id, { onDelete: "cascade" }),
+  quantity: t.integer().notNull().default(1),
+  totalCents: t.integer().notNull(),
+  status: orderStatusEnum().notNull().default("pending"),
+  stripeSessionId: t.text(),
+  stripePaymentIntentId: t.text(),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t
+    .timestamp({ mode: "date", withTimezone: true })
+    .$onUpdateFn(() => sql`now()`),
+}));
+
 // ─── Relations ──────────────────────────────────────────
 
 export const userRelations = relations(user, ({ one, many }) => ({
@@ -156,6 +189,7 @@ export const userRelations = relations(user, ({ one, many }) => ({
   }),
   userEvents: many(UserEvent),
   chatSessions: many(ChatSession),
+  ticketOrders: many(TicketOrder),
 }));
 
 export const userProfileRelations = relations(UserProfile, ({ one }) => ({
@@ -172,6 +206,7 @@ export const eventRelations = relations(Event, ({ one, many }) => ({
   }),
   userEvents: many(UserEvent),
   chatSessions: many(ChatSession),
+  ticketOrders: many(TicketOrder),
 }));
 
 export const userEventRelations = relations(UserEvent, ({ one }) => ({
@@ -201,6 +236,17 @@ export const chatMessageRelations = relations(ChatMessage, ({ one }) => ({
   session: one(ChatSession, {
     fields: [ChatMessage.sessionId],
     references: [ChatSession.id],
+  }),
+}));
+
+export const ticketOrderRelations = relations(TicketOrder, ({ one }) => ({
+  user: one(user, {
+    fields: [TicketOrder.userId],
+    references: [user.id],
+  }),
+  event: one(Event, {
+    fields: [TicketOrder.eventId],
+    references: [Event.id],
   }),
 }));
 

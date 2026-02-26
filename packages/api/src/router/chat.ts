@@ -20,6 +20,9 @@ function eventToContext(event: typeof Event.$inferSelect): EventContext {
     difficulty: event.difficulty,
     genre: event.genre,
     beginnerNotes: event.beginnerNotes,
+    originalPriceCents: event.originalPriceCents,
+    discountedPriceCents: event.discountedPriceCents,
+    ticketsAvailable: event.ticketsAvailable,
   };
 }
 

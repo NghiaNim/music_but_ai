@@ -1,22 +1,24 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
-import { Input } from "@acme/ui/input";
 import { toast } from "@acme/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
 
-type Step =
-  | { type: "welcome" }
-  | { type: "question"; index: number }
-  | { type: "transition-to-music" }
-  | { type: "music"; index: number }
-  | { type: "done" };
+type Phase =
+  | "idle"
+  | "connecting"
+  | "ai-speaking"
+  | "user-speaking"
+  | "processing"
+  | "music-playing"
+  | "music-rating"
+  | "done";
 
 export function OnboardingFlow() {
   const router = useRouter();
@@ -25,400 +27,355 @@ export function OnboardingFlow() {
     trpc.onboarding.getQuestions.queryOptions(),
   );
 
-  const [step, setStep] = useState<Step>({ type: "welcome" });
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
-  const [inputValue, setInputValue] = useState("");
-  const [aiReply, setAiReply] = useState("");
+  const [musicIndex, setMusicIndex] = useState(0);
   const [ratings, setRatings] = useState<{
     easy: number;
     medium: number;
     hard: number;
   }>({ easy: 5, medium: 5, hard: 5 });
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [statusText, setStatusText] = useState("");
+  const [callDuration, setCallDuration] = useState(0);
+
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const replyMutation = useMutation(trpc.onboarding.reply.mutationOptions());
-
   const speakMutation = useMutation(trpc.onboarding.speak.mutationOptions());
-
   const completeMutation = useMutation(
     trpc.onboarding.complete.mutationOptions({
       onSuccess: (result) => {
-        toast.success(
-          `Welcome! You're set as a ${result.experienceLevel} listener.`,
-        );
+        toast.success(`You're set as a ${result.experienceLevel} listener!`);
         router.push("/");
       },
       onError: (err) => {
-        toast.error(err.message || "Failed to save. Try signing in first.");
+        toast.error(err.message || "Failed to save — try signing in first.");
       },
     }),
   );
 
-  const speakText = useCallback(
-    async (text: string) => {
-      try {
-        const result = await speakMutation.mutateAsync({ text });
-        const audioBlob = new Blob(
-          [Uint8Array.from(atob(result.audio), (c) => c.charCodeAt(0))],
-          { type: "audio/mpeg" },
-        );
-        const url = URL.createObjectURL(audioBlob);
-        if (ttsAudioRef.current) {
-          ttsAudioRef.current.pause();
-          URL.revokeObjectURL(ttsAudioRef.current.src);
-        }
-        const audio = new Audio(url);
-        ttsAudioRef.current = audio;
-        await audio.play();
-      } catch {
-        // TTS is enhancement, not critical — continue without voice
-      }
-    },
-    [speakMutation],
-  );
+  // Call timer
+  useEffect(() => {
+    if (phase !== "idle" && phase !== "done") {
+      timerRef.current = setInterval(
+        () => setCallDuration((d) => d + 1),
+        1000,
+      );
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [phase]);
 
-  const handleStartOnboarding = async () => {
-    setStep({ type: "question", index: 0 });
-    const greeting = `Hi there! Welcome to Classical Music Connect. I'm so excited to help you discover amazing music. Let me ask you a few quick questions. ${data.questions[0]}`;
-    setAiReply(greeting);
-    void speakText(greeting);
+  const formatDuration = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  const handleAnswerSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const answer = inputValue.trim();
-    if (!answer) return;
+  const playTTS = useCallback(
+    async (text: string): Promise<void> => {
+      try {
+        const result = await speakMutation.mutateAsync({ text });
+        const bytes = Uint8Array.from(atob(result.audio), (c) =>
+          c.charCodeAt(0),
+        );
+        const blob = new Blob([bytes], { type: "audio/mpeg" });
+        const url = URL.createObjectURL(blob);
 
-    const currentStep = step as { type: "question"; index: number };
-    const newAnswers = [...answers, answer];
+        return new Promise<void>((resolve) => {
+          if (ttsAudioRef.current) {
+            ttsAudioRef.current.pause();
+            URL.revokeObjectURL(ttsAudioRef.current.src);
+          }
+          const audio = new Audio(url);
+          ttsAudioRef.current = audio;
+          audio.onended = () => resolve();
+          audio.onerror = () => resolve();
+          audio.play().catch(() => resolve());
+        });
+      } catch {
+        // TTS is non-critical, continue silently
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const startListening = useCallback((): Promise<string> => {
+    return new Promise((resolve) => {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        // Fallback: prompt for text
+        const text = window.prompt("Voice not available. Type your answer:");
+        resolve(text ?? "I'm not sure");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+
+      let resolved = false;
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        const transcript = event.results[0]?.[0]?.transcript ?? "";
+        if (!resolved) {
+          resolved = true;
+          resolve(transcript || "I'm not sure");
+        }
+      };
+
+      recognition.onerror = () => {
+        if (!resolved) {
+          resolved = true;
+          resolve("I'm not sure");
+        }
+      };
+
+      recognition.onend = () => {
+        if (!resolved) {
+          resolved = true;
+          resolve("I'm not sure");
+        }
+      };
+
+      recognition.start();
+    });
+  }, []);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+  }, []);
+
+  const handleStartCall = async () => {
+    setPhase("connecting");
+    setStatusText("Connecting...");
+    setCallDuration(0);
+
+    // Small delay to feel like a real connection
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const greeting = `Hi there! Welcome to Classical Music Connect. I'm so excited to help you discover amazing music. Let me ask you a few quick questions. ${data.questions[0]}`;
+
+    setPhase("ai-speaking");
+    setStatusText("AI Mentor is speaking...");
+    await playTTS(greeting);
+
+    // Start listening
+    setPhase("user-speaking");
+    setStatusText("Your turn — speak now");
+    const answer = await startListening();
+
+    await processAnswer(0, answer, []);
+  };
+
+  const processAnswer = async (
+    qIndex: number,
+    answer: string,
+    prevAnswers: string[],
+  ) => {
+    setPhase("processing");
+    setStatusText("Thinking...");
+    const newAnswers = [...prevAnswers, answer];
     setAnswers(newAnswers);
-    setInputValue("");
 
     try {
       const result = await replyMutation.mutateAsync({
-        questionIndex: currentStep.index,
+        questionIndex: qIndex,
         userAnswer: answer,
-        previousAnswers: answers,
+        previousAnswers: prevAnswers,
       });
 
-      setAiReply(result.text);
-      void speakText(result.text);
+      setPhase("ai-speaking");
+      setStatusText("AI Mentor is speaking...");
+      await playTTS(result.text);
 
-      if (currentStep.index < 2) {
-        setStep({ type: "question", index: currentStep.index + 1 });
+      if (qIndex < 2) {
+        const nextQ = qIndex + 1;
+        setQuestionIndex(nextQ);
+        setPhase("user-speaking");
+        setStatusText("Your turn — speak now");
+        const nextAnswer = await startListening();
+        await processAnswer(nextQ, nextAnswer, newAnswers);
       } else {
-        setStep({ type: "transition-to-music" });
+        // Transition to music phase
+        setPhase("ai-speaking");
+        setStatusText("Time to listen to some music!");
+        await new Promise((r) => setTimeout(r, 800));
+        setMusicIndex(0);
+        setPhase("music-playing");
+        setStatusText("Listen and rate this track");
+        playMusicTrack(0);
       }
     } catch {
-      toast.error("Something went wrong. Try again.");
+      toast.error("Something went wrong");
+      setPhase("user-speaking");
+      setStatusText("Let's try again — speak now");
+      const retry = await startListening();
+      await processAnswer(qIndex, retry, prevAnswers);
     }
   };
 
-  const handleStartMusic = () => {
-    setStep({ type: "music", index: 0 });
-    setAiReply("");
-  };
-
-  const handlePlayTrack = (file: string) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
+  const playMusicTrack = (idx: number) => {
+    if (musicAudioRef.current) {
+      musicAudioRef.current.pause();
     }
-    const audio = new Audio(file);
-    audioRef.current = audio;
+    const track = data.tracks[idx];
+    if (!track) return;
+    const audio = new Audio(track.file);
+    musicAudioRef.current = audio;
     audio.play();
-    setIsPlaying(true);
-    audio.onended = () => setIsPlaying(false);
+    // Auto-stop after 30 seconds for snippet
+    setTimeout(() => {
+      if (musicAudioRef.current === audio) {
+        audio.pause();
+        setPhase("music-rating");
+        setStatusText("How did that sound?");
+      }
+    }, 30000);
   };
 
-  const handleRate = (tier: "easy" | "medium" | "hard", value: number) => {
+  const handleMusicRate = (value: number) => {
+    const tier =
+      musicIndex === 0 ? "easy" : musicIndex === 1 ? "medium" : "hard";
     setRatings((prev) => ({ ...prev, [tier]: value }));
   };
 
   const handleNextTrack = () => {
-    if (audioRef.current) audioRef.current.pause();
-    setIsPlaying(false);
-    const currentMusic = step as { type: "music"; index: number };
-    if (currentMusic.index < 2) {
-      setStep({ type: "music", index: currentMusic.index + 1 });
+    if (musicAudioRef.current) musicAudioRef.current.pause();
+    if (musicIndex < 2) {
+      const next = musicIndex + 1;
+      setMusicIndex(next);
+      setPhase("music-playing");
+      setStatusText("Listen and rate this track");
+      playMusicTrack(next);
     } else {
-      setStep({ type: "done" });
+      setPhase("done");
+      setStatusText("All done!");
+      if (timerRef.current) clearInterval(timerRef.current);
     }
+  };
+
+  const handleStopMusic = () => {
+    if (musicAudioRef.current) musicAudioRef.current.pause();
+    setPhase("music-rating");
+    setStatusText("How did that sound?");
+  };
+
+  const handleHangUp = () => {
+    stopListening();
+    if (ttsAudioRef.current) ttsAudioRef.current.pause();
+    if (musicAudioRef.current) musicAudioRef.current.pause();
+    if (timerRef.current) clearInterval(timerRef.current);
+    router.push("/");
   };
 
   const handleComplete = () => {
     completeMutation.mutate({ answers, ratings });
   };
 
-  const handleSkipToHome = () => {
-    router.push("/");
-  };
-
-  const progress =
-    step.type === "welcome"
-      ? 0
-      : step.type === "question"
-        ? ((step.index + 1) / 6) * 100
-        : step.type === "transition-to-music"
-          ? 50
-          : step.type === "music"
-            ? 50 + ((step.index + 1) / 6) * 100
-            : 100;
-
-  return (
-    <div className="flex h-full flex-col">
-      <div className="bg-muted/30 h-1">
-        <div
-          className="bg-primary h-full transition-all duration-500"
-          style={{ width: `${Math.min(progress, 100)}%` }}
-        />
-      </div>
-
-      <div className="flex flex-1 flex-col overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-6">
-          {step.type === "welcome" && (
-            <WelcomeScreen
-              onStart={handleStartOnboarding}
-              onSkip={handleSkipToHome}
-            />
-          )}
-
-          {step.type === "question" && (
-            <QuestionScreen
-              aiReply={aiReply}
-              inputValue={inputValue}
-              onInputChange={setInputValue}
-              onSubmit={handleAnswerSubmit}
-              isPending={replyMutation.isPending || speakMutation.isPending}
-            />
-          )}
-
-          {step.type === "transition-to-music" && (
-            <TransitionScreen aiReply={aiReply} onContinue={handleStartMusic} />
-          )}
-
-          {step.type === "music" && (
-            <MusicScreen
-              track={data.tracks[step.index]!}
-              tier={
-                step.index === 0 ? "easy" : step.index === 1 ? "medium" : "hard"
-              }
-              rating={
-                step.index === 0
-                  ? ratings.easy
-                  : step.index === 1
-                    ? ratings.medium
-                    : ratings.hard
-              }
-              isPlaying={isPlaying}
-              onPlay={() => handlePlayTrack(data.tracks[step.index]!.file)}
-              onRate={(v) =>
-                handleRate(
-                  step.index === 0
-                    ? "easy"
-                    : step.index === 1
-                      ? "medium"
-                      : "hard",
-                  v,
-                )
-              }
-              onNext={handleNextTrack}
-              trackNumber={step.index + 1}
-            />
-          )}
-
-          {step.type === "done" && (
-            <DoneScreen
-              onComplete={handleComplete}
-              onSkip={handleSkipToHome}
-              isPending={completeMutation.isPending}
-            />
-          )}
+  // ─── Idle: not started yet ───
+  if (phase === "idle") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-8 px-4 text-center">
+        <div className="relative">
+          <div className="bg-primary/10 flex size-28 items-center justify-center rounded-full">
+            <AIMentorAvatar size={56} />
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function WelcomeScreen({
-  onStart,
-  onSkip,
-}: {
-  onStart: () => void;
-  onSkip: () => void;
-}) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-      <div className="bg-primary/10 flex size-20 items-center justify-center rounded-full">
-        <MusicNoteIcon size={40} />
-      </div>
-      <div>
-        <h1 className="text-2xl font-bold">Welcome!</h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          Let's learn about your music taste so we can give you the best
-          recommendations. It only takes a minute.
-        </p>
-      </div>
-      <div className="flex w-full flex-col gap-2">
-        <Button size="lg" className="w-full" onClick={onStart}>
-          Let's Go
-        </Button>
+        <div>
+          <h1 className="text-xl font-bold">AI Mentor</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            A quick voice chat to learn your taste
+          </p>
+        </div>
+        <button
+          onClick={handleStartCall}
+          className="flex size-16 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg transition-transform active:scale-95"
+        >
+          <PhoneIcon />
+        </button>
         <Button
           variant="ghost"
           size="sm"
           className="text-muted-foreground"
-          onClick={onSkip}
+          onClick={() => router.push("/")}
         >
           Skip for now
         </Button>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-function QuestionScreen({
-  aiReply,
-  inputValue,
-  onInputChange,
-  onSubmit,
-  isPending,
-}: {
-  aiReply: string;
-  inputValue: string;
-  onInputChange: (v: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  isPending: boolean;
-}) {
-  return (
-    <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col justify-center gap-4">
-        <div className="flex gap-3">
-          <div className="bg-primary/10 flex size-9 shrink-0 items-center justify-center rounded-full">
-            <MusicNoteIcon size={18} />
-          </div>
-          <div className="bg-muted max-w-[85%] rounded-2xl rounded-tl-sm px-4 py-3">
-            <p className="text-sm leading-relaxed">
-              {isPending ? (
-                <span className="flex gap-1">
-                  <span className="bg-foreground/20 size-2 animate-bounce rounded-full" />
-                  <span className="bg-foreground/20 size-2 animate-bounce rounded-full [animation-delay:150ms]" />
-                  <span className="bg-foreground/20 size-2 animate-bounce rounded-full [animation-delay:300ms]" />
-                </span>
-              ) : (
-                aiReply
-              )}
-            </p>
-          </div>
+  // ─── Done: save results ───
+  if (phase === "done") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-6 px-4 text-center">
+        <div className="flex size-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+          <CheckIcon size={40} />
         </div>
-
-        {isPending && (
-          <div className="text-muted-foreground flex items-center gap-2 px-12 text-xs">
-            <SpeakerIcon />
-            <span>Listening...</span>
-          </div>
-        )}
-      </div>
-
-      <form onSubmit={onSubmit} className="flex gap-2 pt-4">
-        <Input
-          value={inputValue}
-          onChange={(e) => onInputChange(e.target.value)}
-          placeholder="Type your answer..."
-          disabled={isPending}
-          className="flex-1"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={!inputValue.trim() || isPending}
-        >
-          <SendIcon />
-        </Button>
-      </form>
-    </div>
-  );
-}
-
-function TransitionScreen({
-  aiReply,
-  onContinue,
-}: {
-  aiReply: string;
-  onContinue: () => void;
-}) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-      <div className="flex gap-3">
-        <div className="bg-primary/10 flex size-9 shrink-0 items-center justify-center rounded-full">
-          <MusicNoteIcon size={18} />
+        <div>
+          <h1 className="text-xl font-bold">All set!</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Call ended &middot; {formatDuration(callDuration)}
+          </p>
         </div>
-        <div className="bg-muted max-w-[85%] rounded-2xl rounded-tl-sm px-4 py-3 text-left">
-          <p className="text-sm leading-relaxed">{aiReply}</p>
-        </div>
-      </div>
-      <Button size="lg" className="mt-4 w-full" onClick={onContinue}>
-        Play Me Some Music
-      </Button>
-    </div>
-  );
-}
-
-function MusicScreen({
-  track,
-  tier,
-  rating,
-  isPlaying,
-  onPlay,
-  onRate,
-  onNext,
-  trackNumber,
-}: {
-  track: { title: string; composer: string; file: string };
-  tier: "easy" | "medium" | "hard";
-  rating: number;
-  isPlaying: boolean;
-  onPlay: () => void;
-  onRate: (value: number) => void;
-  onNext: () => void;
-  trackNumber: number;
-}) {
-  const tierLabel =
-    tier === "easy" ? "Piece" : tier === "medium" ? "Piece" : "Piece";
-
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6">
-      <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-        {tierLabel} {trackNumber} of 3
-      </p>
-
-      <div className="w-full text-center">
-        <div
-          className={cn(
-            "mx-auto mb-4 flex size-24 items-center justify-center rounded-full transition-all",
-            isPlaying ? "bg-primary/20 animate-pulse" : "bg-primary/10",
-          )}
-        >
-          <button onClick={onPlay} className="focus:outline-none">
-            {isPlaying ? <PauseIcon size={36} /> : <PlayIcon size={36} />}
-          </button>
-        </div>
-        <h2 className="text-lg font-semibold">{track.title}</h2>
-        <p className="text-muted-foreground text-sm">{track.composer}</p>
-      </div>
-
-      <div className="w-full">
-        <p className="mb-3 text-center text-sm font-medium">
-          How much do you enjoy this? ({rating}/10)
+        <p className="text-muted-foreground text-sm">
+          Sign in to save your profile and get personalized recommendations.
         </p>
-        <div className="flex justify-center gap-1">
+        <div className="flex w-full max-w-xs flex-col gap-2">
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={handleComplete}
+            disabled={completeMutation.isPending}
+          >
+            {completeMutation.isPending ? "Saving..." : "Save & Continue"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => router.push("/")}
+          >
+            Continue without saving
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Music rating overlay ───
+  if (phase === "music-rating") {
+    const tier =
+      musicIndex === 0 ? "easy" : musicIndex === 1 ? "medium" : "hard";
+    const currentRating = ratings[tier];
+
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
+        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+          Track {musicIndex + 1} of 3
+        </p>
+        <h2 className="text-lg font-semibold">How did you like it?</h2>
+        <div className="flex gap-1.5">
           {Array.from({ length: 10 }, (_, i) => i + 1).map((v) => (
             <button
               key={v}
-              onClick={() => onRate(v)}
+              onClick={() => handleMusicRate(v)}
               className={cn(
-                "flex size-9 items-center justify-center rounded-full text-xs font-medium transition-all",
-                v <= rating
+                "flex size-10 items-center justify-center rounded-full text-sm font-medium transition-all",
+                v <= currentRating
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted hover:bg-muted/80",
               )}
@@ -427,164 +384,155 @@ function MusicScreen({
             </button>
           ))}
         </div>
+        <Button size="lg" className="mt-2 w-full max-w-xs" onClick={handleNextTrack}>
+          {musicIndex < 2 ? "Next Track" : "Finish"}
+        </Button>
       </div>
+    );
+  }
 
-      <Button size="lg" className="mt-2 w-full" onClick={onNext}>
-        {trackNumber < 3 ? "Next Track" : "Finish"}
-      </Button>
-    </div>
-  );
-}
+  // ─── Active call: speaking / listening / music ───
+  const isAISpeaking = phase === "ai-speaking" || phase === "connecting" || phase === "processing";
+  const isUserSpeaking = phase === "user-speaking";
+  const isMusicPlaying = phase === "music-playing";
 
-function DoneScreen({
-  onComplete,
-  onSkip,
-  isPending,
-}: {
-  onComplete: () => void;
-  onSkip: () => void;
-  isPending: boolean;
-}) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-      <div className="flex size-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-        <CheckIcon size={40} />
-      </div>
-      <div>
-        <h1 className="text-2xl font-bold">All set!</h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          We've got a great picture of your taste. Sign in to save your profile
-          and get personalized recommendations.
+    <div className="flex h-full flex-col items-center justify-between px-4 py-8">
+      {/* Top: status */}
+      <div className="text-center">
+        <p className="text-muted-foreground text-xs">
+          {formatDuration(callDuration)}
         </p>
+        <p className="text-muted-foreground mt-1 text-sm">{statusText}</p>
       </div>
-      <div className="flex w-full flex-col gap-2">
-        <Button
-          size="lg"
-          className="w-full"
-          onClick={onComplete}
-          disabled={isPending}
+
+      {/* Center: avatar with animation */}
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative">
+          {/* Pulsing rings for active states */}
+          {(isAISpeaking || isUserSpeaking) && (
+            <>
+              <div className="absolute -inset-4 animate-ping rounded-full bg-primary/10" />
+              <div className="absolute -inset-8 animate-pulse rounded-full bg-primary/5" />
+            </>
+          )}
+          {isMusicPlaying && (
+            <>
+              <div className="absolute -inset-4 animate-pulse rounded-full bg-violet-500/10" />
+              <div className="absolute -inset-8 animate-pulse rounded-full bg-violet-500/5 [animation-delay:300ms]" />
+            </>
+          )}
+          <div
+            className={cn(
+              "relative flex size-32 items-center justify-center rounded-full transition-colors",
+              isAISpeaking && "bg-primary/15",
+              isUserSpeaking && "bg-emerald-500/15",
+              isMusicPlaying && "bg-violet-500/15",
+              phase === "connecting" && "bg-muted animate-pulse",
+            )}
+          >
+            {isMusicPlaying ? (
+              <WaveformIcon size={56} />
+            ) : isUserSpeaking ? (
+              <MicIcon size={56} />
+            ) : (
+              <AIMentorAvatar size={56} />
+            )}
+          </div>
+        </div>
+
+        <div className="text-center">
+          <h2 className="text-lg font-semibold">
+            {isMusicPlaying
+              ? `Track ${musicIndex + 1} of 3`
+              : isUserSpeaking
+                ? "Listening..."
+                : "AI Mentor"}
+          </h2>
+          {isMusicPlaying && (
+            <p className="text-muted-foreground mt-1 text-xs">
+              Tap stop when you&apos;ve heard enough
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom: action buttons */}
+      <div className="flex items-center gap-6">
+        {isMusicPlaying && (
+          <button
+            onClick={handleStopMusic}
+            className="flex size-14 items-center justify-center rounded-full bg-violet-500 text-white shadow-lg transition-transform active:scale-95"
+          >
+            <StopIcon />
+          </button>
+        )}
+        <button
+          onClick={handleHangUp}
+          className="flex size-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-transform active:scale-95"
         >
-          {isPending ? "Saving..." : "Save & Continue"}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground"
-          onClick={onSkip}
-        >
-          Continue without saving
-        </Button>
+          <HangUpIcon />
+        </button>
       </div>
     </div>
   );
 }
 
-function MusicNoteIcon({ size = 16 }: { size?: number }) {
+function AIMentorAvatar({ size = 24 }: { size?: number }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-primary"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
       <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" />
-      <circle cx="18" cy="16" r="3" />
+      <circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
     </svg>
   );
 }
 
-function PlayIcon({ size = 16 }: { size?: number }) {
+function PhoneIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      stroke="none"
-      className="text-primary"
-    >
-      <polygon points="6 3 20 12 6 21 6 3" />
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
   );
 }
 
-function PauseIcon({ size = 16 }: { size?: number }) {
+function HangUpIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      stroke="none"
-      className="text-primary"
-    >
-      <rect x="6" y="4" width="4" height="16" />
-      <rect x="14" y="4" width="4" height="16" />
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
+      <line x1="22" y1="2" x2="2" y2="22" />
     </svg>
   );
 }
 
-function SendIcon() {
+function MicIcon({ size = 24 }: { size?: number }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
-      <path d="m21.854 2.147-10.94 10.939" />
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" x2="12" y1="19" y2="22" />
     </svg>
   );
 }
 
-function SpeakerIcon() {
+function WaveformIcon({ size = 24 }: { size?: number }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" />
-      <path d="M16 9a5 5 0 0 1 0 6" />
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-violet-500">
+      <path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" />
+    </svg>
+  );
+}
+
+function StopIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <rect x="6" y="6" width="12" height="12" rx="2" />
     </svg>
   );
 }
 
 function CheckIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-emerald-600 dark:text-emerald-400"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600 dark:text-emerald-400">
       <path d="M20 6 9 17l-5-5" />
     </svg>
   );

@@ -11,6 +11,8 @@ import { toast } from "@acme/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
 
+const BUY_TICKET_REGEX = /\[BUY_TICKET:([a-f0-9-]+)\]/g;
+
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -172,6 +174,29 @@ function TypingIndicator() {
 
 function ChatBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
+  const trpc = useTRPC();
+
+  const checkout = useMutation(
+    trpc.ticket.createCheckoutSession.mutationOptions({
+      onSuccess: (data) => {
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        }
+      },
+      onError: (err) => {
+        if (err.data?.code === "UNAUTHORIZED") {
+          toast.error("Please sign in to purchase tickets");
+          return;
+        }
+        toast.error(err.message || "Failed to start checkout");
+      },
+    }),
+  );
+
+  const textContent = message.content.replace(BUY_TICKET_REGEX, "").trim();
+  const buyMatch = BUY_TICKET_REGEX.exec(message.content);
+  BUY_TICKET_REGEX.lastIndex = 0;
+  const eventId = buyMatch?.[1];
 
   return (
     <div className={cn("flex gap-3", isUser && "flex-row-reverse")}>
@@ -180,17 +205,41 @@ function ChatBubble({ message }: { message: Message }) {
           <MusicIcon />
         </div>
       )}
-      <div
-        className={cn(
-          "max-w-[80%] rounded-2xl px-4 py-3",
-          isUser
-            ? "bg-primary text-primary-foreground rounded-tr-sm"
-            : "bg-muted rounded-tl-sm",
+      <div className="max-w-[80%] space-y-2">
+        <div
+          className={cn(
+            "rounded-2xl px-4 py-3",
+            isUser
+              ? "bg-primary text-primary-foreground rounded-tr-sm"
+              : "bg-muted rounded-tl-sm",
+          )}
+        >
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">
+            {textContent}
+          </p>
+        </div>
+        {eventId && !isUser && (
+          <button
+            onClick={() => checkout.mutate({ eventId, quantity: 1 })}
+            disabled={checkout.isPending}
+            className="flex w-full items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-left transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40"
+          >
+            <span className="flex size-8 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+              <TicketIcon />
+            </span>
+            <div className="flex-1">
+              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                {checkout.isPending
+                  ? "Opening checkout..."
+                  : "Buy Tickets Now"}
+              </span>
+              <span className="block text-xs text-emerald-600/70 dark:text-emerald-400/70">
+                Exclusive discounted price through us
+              </span>
+            </div>
+            <ArrowRightIcon />
+          </button>
         )}
-      >
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-          {message.content}
-        </p>
       </div>
     </div>
   );
@@ -269,6 +318,48 @@ function MusicIcon({ size = 16 }: { size?: number }) {
       <path d="M9 18V5l12-2v13" />
       <circle cx="6" cy="18" r="3" />
       <circle cx="18" cy="16" r="3" />
+    </svg>
+  );
+}
+
+function TicketIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-emerald-600 dark:text-emerald-400"
+    >
+      <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+      <path d="M13 5v2" />
+      <path d="M13 17v2" />
+      <path d="M13 11v2" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-emerald-600 dark:text-emerald-400"
+    >
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
     </svg>
   );
 }

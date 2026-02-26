@@ -22,8 +22,6 @@ export const onboardingRouter = {
         id: t.id,
         file: t.file,
         tier: t.tier,
-        title: t.title,
-        composer: t.composer,
       })),
     };
   }),

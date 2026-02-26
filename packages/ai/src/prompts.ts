@@ -8,6 +8,9 @@ export interface EventContext {
   difficulty: string;
   genre: string;
   beginnerNotes: string | null;
+  originalPriceCents?: number;
+  discountedPriceCents?: number;
+  ticketsAvailable?: number;
 }
 
 export function buildDiscoverySystemPrompt(
@@ -15,10 +18,15 @@ export function buildDiscoverySystemPrompt(
   userExperience: string,
 ): string {
   const catalog = events
-    .map(
-      (e) =>
-        `- "${e.title}" | ${e.date} | ${e.venue} | Genre: ${e.genre} | Level: ${e.difficulty}\n  Program: ${e.program}\n  Description: ${e.description}`,
-    )
+    .map((e) => {
+      const price =
+        e.discountedPriceCents != null
+          ? `$${(e.discountedPriceCents / 100).toFixed(2)} (original: $${((e.originalPriceCents ?? 0) / 100).toFixed(2)})`
+          : "Price TBD";
+      const avail =
+        e.ticketsAvailable != null ? `${e.ticketsAvailable} tickets left` : "";
+      return `- "${e.title}" [ID:${e.id}] | ${e.date} | ${e.venue} | Genre: ${e.genre} | Level: ${e.difficulty} | ${price} | ${avail}\n  Program: ${e.program}\n  Description: ${e.description}`;
+    })
     .join("\n\n");
 
   return `You are the Classical Music Connect concierge — a warm, knowledgeable guide who helps people discover classical music events.
@@ -40,7 +48,10 @@ RULES:
 - When recommending, explain WHY this event fits what they're looking for.
 - If asked about logistics (parking, dress code, etiquette), give practical advice.
 - Keep responses concise — 2-4 short paragraphs max.
-- If no events match, say so honestly and suggest what to look for.`;
+- If no events match, say so honestly and suggest what to look for.
+- Users can buy tickets directly through us at a discounted price. When recommending an event, mention the discounted price.
+- When the user wants to buy tickets or says "yes" to a recommendation, include exactly this tag at the END of your message: [BUY_TICKET:<event_id>] — replace <event_id> with the actual event ID from the catalog. Only include ONE tag per message.
+- IMPORTANT: Only include the [BUY_TICKET:...] tag when the user has explicitly expressed intent to purchase, attend, or said something affirmative like "yes", "I'll go", "get me tickets", "buy", "book it", etc.`;
 }
 
 export function buildLearningSystemPrompt(
@@ -53,12 +64,14 @@ The user's experience level: ${userExperience}.
 
 EVENT CONTEXT:
 - Title: ${event.title}
+- Event ID: ${event.id}
 - Date: ${event.date}
 - Venue: ${event.venue}
 - Program: ${event.program}
 - Description: ${event.description}
 - Level: ${event.difficulty}
 - Genre: ${event.genre}
+- Price: $${((event.discountedPriceCents ?? 3500) / 100).toFixed(2)} (discounted from $${((event.originalPriceCents ?? 5000) / 100).toFixed(2)})
 ${event.beginnerNotes ? `- Beginner Notes: ${event.beginnerNotes}` : ""}
 
 Your personality:
@@ -73,5 +86,7 @@ RULES:
 - "Who is [composer]?" → Brief bio focused on what makes them interesting.
 - "Tips for attending?" → Practical advice (when to clap, dress code, arriving early).
 - Keep responses concise — 2-3 short paragraphs max.
-- Be encouraging — your goal is to make them excited to attend.`;
+- Be encouraging — your goal is to make them excited to attend.
+- Users can buy tickets through us at a discounted price. If the user asks about buying tickets or expresses intent to go, include exactly this tag at the END of your message: [BUY_TICKET:${event.id}]
+- Only include the [BUY_TICKET:...] tag when the user explicitly wants to purchase or attend.`;
 }

@@ -97,6 +97,26 @@ export function EventDetail({ eventId }: { eventId: string }) {
         </div>
       </div>
 
+      <div className="mx-4 mb-4 rounded-xl border bg-gradient-to-r from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30">
+        <div className="mb-3 flex items-baseline justify-between">
+          <div>
+            <span className="text-muted-foreground text-sm line-through">
+              ${(event.originalPriceCents / 100).toFixed(2)}
+            </span>
+            <span className="ml-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+              ${(event.discountedPriceCents / 100).toFixed(2)}
+            </span>
+          </div>
+          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+            {Math.round((1 - event.discountedPriceCents / event.originalPriceCents) * 100)}% off
+          </span>
+        </div>
+        <p className="text-muted-foreground mb-3 text-xs">
+          {event.ticketsAvailable} tickets remaining · Exclusive member price
+        </p>
+        <BuyTicketButton eventId={eventId} eventTitle={event.title} />
+      </div>
+
       <div className="flex gap-2 px-4 pb-4">
         <EventActionButtons eventId={eventId} />
       </div>
@@ -215,6 +235,54 @@ function EventActionButtons({ eventId }: { eventId: string }) {
         <CheckCircleIcon />I Went
       </Button>
     </>
+  );
+}
+
+function BuyTicketButton({
+  eventId,
+  eventTitle,
+}: {
+  eventId: string;
+  eventTitle: string;
+}) {
+  const trpc = useTRPC();
+
+  const checkout = useMutation(
+    trpc.ticket.createCheckoutSession.mutationOptions({
+      onSuccess: (data) => {
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        }
+      },
+      onError: (err) => {
+        if (err.data?.code === "UNAUTHORIZED") {
+          toast.error("Please sign in to purchase tickets");
+          return;
+        }
+        toast.error(err.message || "Failed to start checkout");
+      },
+    }),
+  );
+
+  return (
+    <Button
+      className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
+      size="lg"
+      onClick={() => checkout.mutate({ eventId, quantity: 1 })}
+      disabled={checkout.isPending}
+    >
+      {checkout.isPending ? (
+        <span className="flex items-center gap-2">
+          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          Processing...
+        </span>
+      ) : (
+        <span className="flex items-center gap-2">
+          <TicketIcon />
+          Buy Tickets
+        </span>
+      )}
+    </Button>
   );
 }
 
@@ -349,6 +417,27 @@ function LightbulbIcon() {
       <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
       <path d="M9 18h6" />
       <path d="M10 22h4" />
+    </svg>
+  );
+}
+
+function TicketIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+      <path d="M13 5v2" />
+      <path d="M13 17v2" />
+      <path d="M13 11v2" />
     </svg>
   );
 }
