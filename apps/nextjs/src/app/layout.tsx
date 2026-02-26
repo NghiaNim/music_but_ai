@@ -6,6 +6,7 @@ import { cn } from "@acme/ui";
 import { ThemeProvider, ThemeToggle } from "@acme/ui/theme";
 import { Toaster } from "@acme/ui/toast";
 
+import { env } from "~/env";
 import { TRPCReactProvider } from "~/trpc/react";
 import { AuthHeader } from "./_components/auth-header";
 import { BottomNav } from "./_components/bottom-nav";
@@ -14,9 +15,7 @@ import "~/app/styles.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000",
+    env.VERCEL_URL ? `https://${env.VERCEL_URL}` : "http://localhost:3000",
   ),
   title: "Classical Music Connect",
   description:

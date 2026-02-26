@@ -20,7 +20,7 @@ export function TicketConfirmation() {
   const confirm = useMutation(
     trpc.ticket.confirmOrder.mutationOptions({
       onSuccess: (data) => {
-        if (data?.status === "completed") {
+        if (data.status === "completed") {
           toast.success("Payment confirmed!");
           void queryClient.invalidateQueries({
             queryKey: trpc.ticket.orderById.queryKey({
@@ -42,7 +42,7 @@ export function TicketConfirmation() {
 
   useEffect(() => {
     if (!orderId || autoConfirmAttempted.current) return;
-    if (!order || order.status !== "pending") return;
+    if (order?.status !== "pending") return;
 
     autoConfirmAttempted.current = true;
 
@@ -54,7 +54,7 @@ export function TicketConfirmation() {
           { orderId },
           {
             onSuccess: (data) => {
-              if (data?.status !== "completed" && attempt < 3) {
+              if (data.status !== "completed" && attempt < 3) {
                 tryConfirm(attempt + 1);
               }
             },
@@ -67,7 +67,7 @@ export function TicketConfirmation() {
     };
 
     tryConfirm(0);
-  }, [orderId, order?.status]);
+  }, [orderId, order?.status, confirm]);
 
   const confirmedOrder = confirm.data;
   const orderData = confirmedOrder ?? order;

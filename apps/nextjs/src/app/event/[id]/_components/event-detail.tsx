@@ -6,8 +6,8 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
-import type { RouterOutputs } from "@acme/api";
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
@@ -243,18 +243,25 @@ function EventActionButtons({ eventId }: { eventId: string }) {
 
 function BuyTicketButton({
   eventId,
-  eventTitle,
+  eventTitle: _eventTitle,
 }: {
   eventId: string;
   eventTitle: string;
 }) {
   const trpc = useTRPC();
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pendingRedirect) {
+      window.location.href = pendingRedirect;
+    }
+  }, [pendingRedirect]);
 
   const checkout = useMutation(
     trpc.ticket.createCheckoutSession.mutationOptions({
       onSuccess: (data) => {
         if (data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
+          setPendingRedirect(data.checkoutUrl);
         }
       },
       onError: (err) => {

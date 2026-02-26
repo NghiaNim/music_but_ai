@@ -39,10 +39,10 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">
-            {LEVEL_LABELS[profile.experienceLevel ?? "new"] ?? "Music Lover"}
+            {LEVEL_LABELS[profile.experienceLevel] ?? "Music Lover"}
           </p>
           <p className="text-muted-foreground text-xs">
-            {LEVEL_DESCRIPTIONS[profile.experienceLevel ?? "new"] ??
+            {LEVEL_DESCRIPTIONS[profile.experienceLevel] ??
               "Personalized picks ready for you"}
           </p>
         </div>

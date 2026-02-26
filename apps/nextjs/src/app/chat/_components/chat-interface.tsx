@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 
@@ -42,7 +42,6 @@ export function ChatInterface() {
           ...prev,
           { role: "assistant", content: data.response },
         ]);
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       },
       onError: (err) => {
         console.error("[chat.send] Error:", err.data?.code, err.message);
@@ -51,6 +50,10 @@ export function ChatInterface() {
       },
     }),
   );
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,12 +178,19 @@ function TypingIndicator() {
 function ChatBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
   const trpc = useTRPC();
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pendingRedirect) {
+      window.location.href = pendingRedirect;
+    }
+  }, [pendingRedirect]);
 
   const checkout = useMutation(
     trpc.ticket.createCheckoutSession.mutationOptions({
       onSuccess: (data) => {
         if (data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
+          setPendingRedirect(data.checkoutUrl);
         }
       },
       onError: (err) => {
@@ -193,10 +203,9 @@ function ChatBubble({ message }: { message: Message }) {
     }),
   );
 
-  const textContent = message.content.replace(BUY_TICKET_REGEX, "").trim();
-  const buyMatch = BUY_TICKET_REGEX.exec(message.content);
-  BUY_TICKET_REGEX.lastIndex = 0;
+  const buyMatch = /\[BUY_TICKET:([a-f0-9-]+)\]/.exec(message.content);
   const eventId = buyMatch?.[1];
+  const textContent = message.content.replace(BUY_TICKET_REGEX, "").trim();
 
   return (
     <div className={cn("flex gap-3", isUser && "flex-row-reverse")}>

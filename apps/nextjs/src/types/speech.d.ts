@@ -30,7 +30,7 @@ interface SpeechRecognitionAlternative {
   readonly confidence: number;
 }
 
-declare var SpeechRecognition: {
+declare const SpeechRecognition: {
   new (): SpeechRecognition;
   prototype: SpeechRecognition;
 };

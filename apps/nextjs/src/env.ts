@@ -15,6 +15,10 @@ export const env = createEnv({
     ELEVENLABS_STS_API_KEY: z.string().optional(),
     OPENAI_API_KEY: z.string().optional(),
     STRIPE_SECRET_KEY: z.string().optional(),
+    PORT: z.string().optional(),
+    VERCEL_ENV: z.string().optional(),
+    VERCEL_URL: z.string().optional(),
+    VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),

@@ -38,7 +38,8 @@ export function OnboardingFlow() {
     staleTime: Infinity,
   });
 
-  const alreadyCompleted = profileLoaded && !!profile?.onboardingCompleted;
+  const alreadyCompleted =
+    profileLoaded && (profile?.onboardingCompleted === true);
   const hasRedirected = useRef(false);
 
   useEffect(() => {
@@ -131,10 +132,10 @@ export function OnboardingFlow() {
 
   const startListening = useCallback((): Promise<string> => {
     return new Promise((resolve) => {
+      // SpeechRecognition undefined in Firefox - runtime check required
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        // Fallback: prompt for text
         const text = window.prompt("Voice not available. Type your answer:");
         resolve(text ?? "I'm not sure");
         return;
@@ -246,7 +247,7 @@ export function OnboardingFlow() {
     if (!track) return;
     const audio = new Audio(track.file);
     musicAudioRef.current = audio;
-    audio.play();
+    void audio.play();
     // Auto-stop after 30 seconds for snippet
     setTimeout(() => {
       if (musicAudioRef.current === audio) {

@@ -12,4 +12,10 @@ export default defineConfig(
   reactConfig,
   nextjsConfig,
   restrictEnvAccess,
+  {
+    files: ["src/app/onboarding/_components/onboarding-flow.tsx"],
+    rules: {
+      "@typescript-eslint/no-unnecessary-condition": "off",
+    },
+  },
 );
