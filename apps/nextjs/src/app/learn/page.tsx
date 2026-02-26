@@ -7,7 +7,8 @@ const TOPICS = [
     href: "/chat?mode=learning",
     prompt:
       "What exactly is classical music? Give me a beginner-friendly overview.",
-    gradient: "from-violet-100 to-violet-50 dark:from-violet-950/40 dark:to-violet-900/20",
+    gradient:
+      "from-violet-100 to-violet-50 dark:from-violet-950/40 dark:to-violet-900/20",
     icon: "🎹",
   },
   {
@@ -15,7 +16,8 @@ const TOPICS = [
     description: "What to wear, when to clap, and more",
     href: "/chat?mode=learning",
     prompt: "What's the etiquette for attending a classical music concert?",
-    gradient: "from-rose-100 to-rose-50 dark:from-rose-950/40 dark:to-rose-900/20",
+    gradient:
+      "from-rose-100 to-rose-50 dark:from-rose-950/40 dark:to-rose-900/20",
     icon: "🎩",
   },
   {
@@ -24,16 +26,17 @@ const TOPICS = [
     href: "/chat?mode=learning",
     prompt:
       "Tell me about the different sections and instruments in an orchestra.",
-    gradient: "from-amber-100 to-amber-50 dark:from-amber-950/40 dark:to-amber-900/20",
+    gradient:
+      "from-amber-100 to-amber-50 dark:from-amber-950/40 dark:to-amber-900/20",
     icon: "🎻",
   },
   {
     title: "Famous Composers",
     description: "Bach, Mozart, Beethoven, and beyond",
     href: "/chat?mode=learning",
-    prompt:
-      "Who are the most famous classical composers I should know about?",
-    gradient: "from-emerald-100 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-900/20",
+    prompt: "Who are the most famous classical composers I should know about?",
+    gradient:
+      "from-emerald-100 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-900/20",
     icon: "🎼",
   },
   {
@@ -48,9 +51,9 @@ const TOPICS = [
     title: "How to Listen",
     description: "Tips for getting more out of a performance",
     href: "/chat?mode=learning",
-    prompt:
-      "How should I listen to classical music to get the most out of it?",
-    gradient: "from-orange-100 to-orange-50 dark:from-orange-950/40 dark:to-orange-900/20",
+    prompt: "How should I listen to classical music to get the most out of it?",
+    gradient:
+      "from-orange-100 to-orange-50 dark:from-orange-950/40 dark:to-orange-900/20",
     icon: "🎧",
   },
 ] as const;
@@ -76,7 +79,7 @@ export default function LearnPage() {
                 <span className="text-5xl">{topic.icon}</span>
               </div>
               <div className="p-3">
-                <h3 className="text-sm font-semibold leading-tight">
+                <h3 className="text-sm leading-tight font-semibold">
                   {topic.title}
                 </h3>
                 <p className="text-muted-foreground mt-1 text-xs leading-snug">

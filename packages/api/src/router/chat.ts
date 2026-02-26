@@ -3,10 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod/v4";
 
 import type { EventContext } from "@acme/ai";
-import {
-  streamDiscoveryResponse,
-  streamLearningResponse,
-} from "@acme/ai";
+import { streamDiscoveryResponse, streamLearningResponse } from "@acme/ai";
 import { desc, eq } from "@acme/db";
 import { ChatMessage, ChatSession, Event, UserProfile } from "@acme/db/schema";
 

@@ -3,18 +3,22 @@ import Link from "next/link";
 
 import { Button } from "@acme/ui/button";
 
+import { getSession } from "~/auth/server";
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { EventFeedSkeleton, FeaturedEvents } from "./_components/event-feed";
 
-export default function HomePage() {
+export default async function HomePage() {
   prefetch(trpc.event.all.queryOptions({}));
+  const session = await getSession();
 
   return (
     <HydrateClient>
       <div className="mx-auto max-w-lg">
         <section className="px-4 pt-6 pb-4">
           <h1 className="text-2xl font-bold tracking-tight">
-            Discover Classical Music
+            {session
+              ? `Welcome back, ${session.user.name.split(" ")[0] ?? "friend"}`
+              : "Discover Classical Music"}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Your AI-powered guide to the world of live performance
@@ -22,20 +26,37 @@ export default function HomePage() {
         </section>
 
         <section className="px-4 pb-4">
-          <Link href="/onboarding" className="block">
-            <div className="flex items-center gap-4 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-800 dark:bg-violet-950/30">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30">
-                <WaveformIcon />
+          {session ? (
+            <Link href="/onboarding" className="block">
+              <div className="flex items-center gap-4 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-800 dark:bg-violet-950/30">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30">
+                  <WaveformIcon />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">Take the Music Quiz</p>
+                  <p className="text-muted-foreground text-xs">
+                    1 min — tell us your taste, hear some music
+                  </p>
+                </div>
+                <ChevronRightIcon />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold">Take the Music Quiz</p>
-                <p className="text-muted-foreground text-xs">
-                  1 min — tell us your taste, hear some music
-                </p>
+            </Link>
+          ) : (
+            <Link href="/sign-in?callbackUrl=/onboarding" className="block">
+              <div className="flex items-center gap-4 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-800 dark:bg-violet-950/30">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30">
+                  <WaveformIcon />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">Sign in & Take the Quiz</p>
+                  <p className="text-muted-foreground text-xs">
+                    1 min — tell us your taste, get personalized picks
+                  </p>
+                </div>
+                <ChevronRightIcon />
               </div>
-              <ChevronRightIcon />
-            </div>
-          </Link>
+            </Link>
+          )}
         </section>
 
         <section className="px-4 pb-6">
@@ -73,7 +94,7 @@ export default function HomePage() {
           <h2 className="mb-3 text-lg font-semibold">Quick Start</h2>
           <div className="grid grid-cols-2 gap-3">
             <Link href="/events?difficulty=beginner" className="group">
-              <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border p-4 transition-colors group-hover:border-emerald-300">
+              <div className="rounded-xl border bg-emerald-50 p-4 transition-colors group-hover:border-emerald-300 dark:bg-emerald-950/30">
                 <p className="text-sm font-semibold">For Beginners</p>
                 <p className="text-muted-foreground mt-0.5 text-xs">
                   First concert? Start here
@@ -81,7 +102,7 @@ export default function HomePage() {
               </div>
             </Link>
             <Link href="/chat?mode=discovery" className="group">
-              <div className="bg-violet-50 dark:bg-violet-950/30 rounded-xl border p-4 transition-colors group-hover:border-violet-300">
+              <div className="rounded-xl border bg-violet-50 p-4 transition-colors group-hover:border-violet-300 dark:bg-violet-950/30">
                 <p className="text-sm font-semibold">Get a Rec</p>
                 <p className="text-muted-foreground mt-0.5 text-xs">
                   AI-picked just for you
@@ -89,7 +110,7 @@ export default function HomePage() {
               </div>
             </Link>
             <Link href="/learn" className="group">
-              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-xl border p-4 transition-colors group-hover:border-amber-300">
+              <div className="rounded-xl border bg-amber-50 p-4 transition-colors group-hover:border-amber-300 dark:bg-amber-950/30">
                 <p className="text-sm font-semibold">Learn</p>
                 <p className="text-muted-foreground mt-0.5 text-xs">
                   Classical music 101
@@ -97,7 +118,7 @@ export default function HomePage() {
               </div>
             </Link>
             <Link href="/journal" className="group">
-              <div className="bg-sky-50 dark:bg-sky-950/30 rounded-xl border p-4 transition-colors group-hover:border-sky-300">
+              <div className="rounded-xl border bg-sky-50 p-4 transition-colors group-hover:border-sky-300 dark:bg-sky-950/30">
                 <p className="text-sm font-semibold">My Journal</p>
                 <p className="text-muted-foreground mt-0.5 text-xs">
                   Track your journey
@@ -113,7 +134,18 @@ export default function HomePage() {
 
 function SparklesIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-primary"
+    >
       <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
     </svg>
   );
@@ -121,7 +153,18 @@ function SparklesIcon() {
 
 function ChevronRightIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-muted-foreground"
+    >
       <path d="m9 18 6-6-6-6" />
     </svg>
   );
@@ -129,7 +172,18 @@ function ChevronRightIcon() {
 
 function WaveformIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-violet-600 dark:text-violet-400">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-violet-600 dark:text-violet-400"
+    >
       <path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" />
     </svg>
   );

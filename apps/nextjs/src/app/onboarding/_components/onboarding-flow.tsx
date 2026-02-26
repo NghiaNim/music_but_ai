@@ -38,13 +38,9 @@ export function OnboardingFlow() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  const replyMutation = useMutation(
-    trpc.onboarding.reply.mutationOptions(),
-  );
+  const replyMutation = useMutation(trpc.onboarding.reply.mutationOptions());
 
-  const speakMutation = useMutation(
-    trpc.onboarding.speak.mutationOptions(),
-  );
+  const speakMutation = useMutation(trpc.onboarding.speak.mutationOptions());
 
   const completeMutation = useMutation(
     trpc.onboarding.complete.mutationOptions({
@@ -206,11 +202,7 @@ export function OnboardingFlow() {
             <MusicScreen
               track={data.tracks[step.index]!}
               tier={
-                step.index === 0
-                  ? "easy"
-                  : step.index === 1
-                    ? "medium"
-                    : "hard"
+                step.index === 0 ? "easy" : step.index === 1 ? "medium" : "hard"
               }
               rating={
                 step.index === 0
@@ -220,9 +212,7 @@ export function OnboardingFlow() {
                     : ratings.hard
               }
               isPlaying={isPlaying}
-              onPlay={() =>
-                handlePlayTrack(data.tracks[step.index]!.file)
-              }
+              onPlay={() => handlePlayTrack(data.tracks[step.index]!.file)}
               onRate={(v) =>
                 handleRate(
                   step.index === 0
@@ -398,7 +388,7 @@ function MusicScreen({
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6">
-      <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+      <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
         {tierLabel} {trackNumber} of 3
       </p>
 
@@ -406,9 +396,7 @@ function MusicScreen({
         <div
           className={cn(
             "mx-auto mb-4 flex size-24 items-center justify-center rounded-full transition-all",
-            isPlaying
-              ? "bg-primary/20 animate-pulse"
-              : "bg-primary/10",
+            isPlaying ? "bg-primary/20 animate-pulse" : "bg-primary/10",
           )}
         >
           <button onClick={onPlay} className="focus:outline-none">
@@ -459,14 +447,14 @@ function DoneScreen({
 }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-      <div className="bg-emerald-100 dark:bg-emerald-900/30 flex size-20 items-center justify-center rounded-full">
+      <div className="flex size-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
         <CheckIcon size={40} />
       </div>
       <div>
         <h1 className="text-2xl font-bold">All set!</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          We've got a great picture of your taste. Sign in to save your
-          profile and get personalized recommendations.
+          We've got a great picture of your taste. Sign in to save your profile
+          and get personalized recommendations.
         </p>
       </div>
       <div className="flex w-full flex-col gap-2">
@@ -493,16 +481,36 @@ function DoneScreen({
 
 function MusicNoteIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-primary"
+    >
       <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
     </svg>
   );
 }
 
 function PlayIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-primary">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="none"
+      className="text-primary"
+    >
       <polygon points="6 3 20 12 6 21 6 3" />
     </svg>
   );
@@ -510,15 +518,34 @@ function PlayIcon({ size = 16 }: { size?: number }) {
 
 function PauseIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-primary">
-      <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="none"
+      className="text-primary"
+    >
+      <rect x="6" y="4" width="4" height="16" />
+      <rect x="14" y="4" width="4" height="16" />
     </svg>
   );
 }
 
 function SendIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
       <path d="m21.854 2.147-10.94 10.939" />
     </svg>
@@ -527,7 +554,17 @@ function SendIcon() {
 
 function SpeakerIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" />
       <path d="M16 9a5 5 0 0 1 0 6" />
     </svg>
@@ -536,7 +573,18 @@ function SpeakerIcon() {
 
 function CheckIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600 dark:text-emerald-400">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-emerald-600 dark:text-emerald-400"
+    >
       <path d="M20 6 9 17l-5-5" />
     </svg>
   );

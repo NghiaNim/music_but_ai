@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "@acme/api";
 import { cn } from "@acme/ui";
@@ -71,9 +67,7 @@ export function Journal() {
 
       {!userEvents?.length && (
         <div className="flex flex-col items-center gap-4 py-16 text-center">
-          <p className="text-muted-foreground text-lg">
-            Your journal is empty
-          </p>
+          <p className="text-muted-foreground text-lg">Your journal is empty</p>
           <p className="text-muted-foreground text-sm">
             Start by saving or attending events
           </p>
@@ -111,9 +105,7 @@ function JournalEntry({ userEvent }: { userEvent: UserEventWithEvent }) {
         <span className="text-primary text-xs font-medium uppercase">
           {date.toLocaleDateString("en-US", { month: "short" })}
         </span>
-        <span className="text-primary text-xl font-bold">
-          {date.getDate()}
-        </span>
+        <span className="text-primary text-xl font-bold">{date.getDate()}</span>
       </div>
       <div className="min-w-0 flex-1">
         <Link
@@ -199,11 +191,17 @@ export function JournalSkeleton() {
     <div className="mt-8">
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-card h-20 animate-pulse rounded-lg border" />
+          <div
+            key={i}
+            className="bg-card h-20 animate-pulse rounded-lg border"
+          />
         ))}
       </div>
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="bg-card mb-3 h-20 animate-pulse rounded-lg border" />
+        <div
+          key={i}
+          className="bg-card mb-3 h-20 animate-pulse rounded-lg border"
+        />
       ))}
     </div>
   );

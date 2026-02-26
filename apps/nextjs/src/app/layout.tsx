@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 
 import { cn } from "@acme/ui";
 import { ThemeProvider, ThemeToggle } from "@acme/ui/theme";
@@ -8,6 +8,7 @@ import { Toaster } from "@acme/ui/toast";
 
 import { env } from "~/env";
 import { TRPCReactProvider } from "~/trpc/react";
+import { AuthHeader } from "./_components/auth-header";
 import { BottomNav } from "./_components/bottom-nav";
 
 import "~/app/styles.css";
@@ -56,15 +57,15 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       >
         <ThemeProvider>
           <TRPCReactProvider>
-            <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
               <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-4">
-                <Link
-                  href="/"
-                  className="text-base font-bold tracking-tight"
-                >
+                <Link href="/" className="text-base font-bold tracking-tight">
                   Classical Music Connect
                 </Link>
-                <ThemeToggle />
+                <div className="flex items-center gap-2">
+                  <AuthHeader />
+                  <ThemeToggle />
+                </div>
               </div>
             </header>
             <div className="pb-16">{props.children}</div>

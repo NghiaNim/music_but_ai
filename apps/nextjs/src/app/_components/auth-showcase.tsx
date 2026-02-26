@@ -35,9 +35,7 @@ export async function AuthShowcase() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-muted-foreground text-sm">
-        {session.user.name}
-      </span>
+      <span className="text-muted-foreground text-sm">{session.user.name}</span>
       <form>
         <Button
           size="sm"

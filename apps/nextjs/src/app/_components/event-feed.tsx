@@ -28,8 +28,7 @@ const DIFFICULTY_COLORS: Record<string, string> = {
     "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
   intermediate:
     "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  advanced:
-    "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400",
+  advanced: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400",
 };
 
 const GENRE_OPTIONS = [
@@ -56,9 +55,7 @@ const CITY_OPTIONS = [
 
 export function FeaturedEvents() {
   const trpc = useTRPC();
-  const { data: events } = useSuspenseQuery(
-    trpc.event.all.queryOptions({}),
-  );
+  const { data: events } = useSuspenseQuery(trpc.event.all.queryOptions({}));
 
   const featured = events.slice(0, 4);
 
@@ -86,9 +83,9 @@ export function EventFeed() {
 
   const [search, setSearch] = useState("");
   const [genreFilter, setGenreFilter] = useState<string | undefined>();
-  const [difficultyFilter, setDifficultyFilter] = useState<
-    string | undefined
-  >(initialDifficulty);
+  const [difficultyFilter, setDifficultyFilter] = useState<string | undefined>(
+    initialDifficulty,
+  );
   const [cityFilter, setCityFilter] = useState<string | undefined>();
 
   const { data: events } = useSuspenseQuery(
@@ -201,12 +198,12 @@ function EventCard({ event }: { event: EventItem }) {
 
   return (
     <Link href={`/event/${event.id}`}>
-      <div className="bg-card flex gap-3 rounded-xl border p-3 transition-colors active:bg-muted/50">
+      <div className="bg-card active:bg-muted/50 flex gap-3 rounded-xl border p-3 transition-colors">
         <div className="bg-primary/5 flex w-14 shrink-0 flex-col items-center justify-center rounded-lg py-2">
           <span className="text-primary text-[10px] font-semibold uppercase">
             {date.toLocaleDateString("en-US", { month: "short" })}
           </span>
-          <span className="text-primary text-lg font-bold leading-none">
+          <span className="text-primary text-lg leading-none font-bold">
             {date.getDate()}
           </span>
         </div>
@@ -227,9 +224,7 @@ function EventCard({ event }: { event: EventItem }) {
                   event.difficulty.slice(1)}
             </span>
           </div>
-          <h3 className="line-clamp-1 text-sm font-semibold">
-            {event.title}
-          </h3>
+          <h3 className="line-clamp-1 text-sm font-semibold">{event.title}</h3>
           <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
             {formattedTime} &middot; {event.venue}
           </p>
@@ -264,10 +259,7 @@ export function EventFeedSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="flex flex-col gap-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-card flex h-20 gap-3 rounded-xl border p-3"
-        >
+        <div key={i} className="bg-card flex h-20 gap-3 rounded-xl border p-3">
           <div className="bg-muted h-full w-14 animate-pulse rounded-lg" />
           <div className="flex-1 space-y-2 py-1">
             <div className="flex gap-1">

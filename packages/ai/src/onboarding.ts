@@ -71,8 +71,7 @@ export function computeExperienceLevel(
   answers: string[],
   ratings: { easy: number; medium: number; hard: number },
 ): "new" | "casual" | "enthusiast" {
-  const avgRating =
-    (ratings.easy + ratings.medium + ratings.hard) / 3;
+  const avgRating = (ratings.easy + ratings.medium + ratings.hard) / 3;
 
   const hasLiveExperience =
     answers[1]?.toLowerCase().includes("yes") ||

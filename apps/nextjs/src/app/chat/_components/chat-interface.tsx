@@ -55,10 +55,7 @@ export function ChatInterface() {
     const content = inputValue.trim();
     if (!content || sendMessage.isPending) return;
 
-    const newMessages: Message[] = [
-      ...messages,
-      { role: "user", content },
-    ];
+    const newMessages: Message[] = [...messages, { role: "user", content }];
     setMessages(newMessages);
     setInputValue("");
 
@@ -130,11 +127,8 @@ export function ChatInterface() {
         </div>
       </div>
 
-      <div className="border-t px-4 pb-2 pt-3">
-        <form
-          onSubmit={handleSubmit}
-          className="mx-auto flex max-w-lg gap-2"
-        >
+      <div className="border-t px-4 pt-3 pb-2">
+        <form onSubmit={handleSubmit} className="mx-auto flex max-w-lg gap-2">
           <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -194,7 +188,7 @@ function ChatBubble({ message }: { message: Message }) {
             : "bg-muted rounded-tl-sm",
         )}
       >
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed whitespace-pre-wrap">
           {message.content}
         </p>
       </div>
@@ -260,16 +254,38 @@ function EmptyState({
 
 function MusicIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-primary"
+    >
       <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
     </svg>
   );
 }
 
 function SendIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
       <path d="m21.854 2.147-10.94 10.939" />
     </svg>

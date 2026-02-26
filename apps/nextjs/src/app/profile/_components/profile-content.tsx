@@ -324,9 +324,7 @@ export function ProfileContent() {
                   </p>
                   <p className="text-muted-foreground text-xs">{stat.label}</p>
                 </div>
-                {index < STATS.length - 1 && (
-                  <div className="bg-border h-px" />
-                )}
+                {index < STATS.length - 1 && <div className="bg-border h-px" />}
               </div>
             ))}
           </div>
