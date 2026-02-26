@@ -6,16 +6,16 @@ export const user = pgTable("user", (t) => ({
   email: t.text().notNull().unique(),
   emailVerified: t.boolean().notNull(),
   image: t.text(),
-  createdAt: t.timestamp().notNull(),
-  updatedAt: t.timestamp().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).notNull(),
+  updatedAt: t.timestamp({ mode: "date" }).notNull(),
 }));
 
 export const session = pgTable("session", (t) => ({
   id: t.text().primaryKey(),
-  expiresAt: t.timestamp().notNull(),
+  expiresAt: t.timestamp({ mode: "date" }).notNull(),
   token: t.text().notNull().unique(),
-  createdAt: t.timestamp().notNull(),
-  updatedAt: t.timestamp().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).notNull(),
+  updatedAt: t.timestamp({ mode: "date" }).notNull(),
   ipAddress: t.text(),
   userAgent: t.text(),
   userId: t
@@ -35,19 +35,19 @@ export const account = pgTable("account", (t) => ({
   accessToken: t.text(),
   refreshToken: t.text(),
   idToken: t.text(),
-  accessTokenExpiresAt: t.timestamp(),
-  refreshTokenExpiresAt: t.timestamp(),
+  accessTokenExpiresAt: t.timestamp({ mode: "date" }),
+  refreshTokenExpiresAt: t.timestamp({ mode: "date" }),
   scope: t.text(),
   password: t.text(),
-  createdAt: t.timestamp().notNull(),
-  updatedAt: t.timestamp().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).notNull(),
+  updatedAt: t.timestamp({ mode: "date" }).notNull(),
 }));
 
 export const verification = pgTable("verification", (t) => ({
   id: t.text().primaryKey(),
   identifier: t.text().notNull(),
   value: t.text().notNull(),
-  expiresAt: t.timestamp().notNull(),
-  createdAt: t.timestamp(),
-  updatedAt: t.timestamp(),
+  expiresAt: t.timestamp({ mode: "date" }).notNull(),
+  createdAt: t.timestamp({ mode: "date" }),
+  updatedAt: t.timestamp({ mode: "date" }),
 }));

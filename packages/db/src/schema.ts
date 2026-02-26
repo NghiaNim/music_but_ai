@@ -47,7 +47,7 @@ export const Post = pgTable("post", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
   title: t.varchar({ length: 256 }).notNull(),
   content: t.text().notNull(),
-  createdAt: t.timestamp().defaultNow().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
     .$onUpdateFn(() => sql`now()`),
@@ -77,7 +77,7 @@ export const UserProfile = pgTable("user_profile", (t) => ({
   musicTasteEasy: t.integer(),
   musicTasteMedium: t.integer(),
   musicTasteHard: t.integer(),
-  createdAt: t.timestamp().defaultNow().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
     .$onUpdateFn(() => sql`now()`),
@@ -88,7 +88,7 @@ export const UserProfile = pgTable("user_profile", (t) => ({
 export const Event = pgTable("event", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
   title: t.varchar({ length: 512 }).notNull(),
-  date: t.timestamp({ withTimezone: true }).notNull(),
+  date: t.timestamp({ mode: "date", withTimezone: true }).notNull(),
   venue: t.varchar({ length: 512 }).notNull(),
   venueAddress: t.text(),
   program: t.text().notNull(),
@@ -102,7 +102,7 @@ export const Event = pgTable("event", (t) => ({
   discountedPriceCents: t.integer().notNull().default(3500),
   ticketsAvailable: t.integer().notNull().default(100),
   createdBy: t.text().references(() => user.id, { onDelete: "set null" }),
-  createdAt: t.timestamp().defaultNow().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
     .$onUpdateFn(() => sql`now()`),
@@ -122,7 +122,7 @@ export const UserEvent = pgTable("user_event", (t) => ({
     .references(() => Event.id, { onDelete: "cascade" }),
   status: eventStatusEnum().notNull(),
   reflection: t.varchar({ length: 280 }),
-  createdAt: t.timestamp().defaultNow().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
     .$onUpdateFn(() => sql`now()`),
@@ -138,7 +138,7 @@ export const ChatSession = pgTable("chat_session", (t) => ({
     .references(() => user.id, { onDelete: "cascade" }),
   eventId: t.uuid().references(() => Event.id, { onDelete: "set null" }),
   mode: chatModeEnum().notNull(),
-  createdAt: t.timestamp().defaultNow().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
     .$onUpdateFn(() => sql`now()`),
@@ -154,7 +154,7 @@ export const ChatMessage = pgTable("chat_message", (t) => ({
     .references(() => ChatSession.id, { onDelete: "cascade" }),
   role: chatRoleEnum().notNull(),
   content: t.text().notNull(),
-  createdAt: t.timestamp().defaultNow().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
 }));
 
 // ─── TicketOrder ─────────────────────────────────────────
@@ -174,7 +174,7 @@ export const TicketOrder = pgTable("ticket_order", (t) => ({
   status: orderStatusEnum().notNull().default("pending"),
   stripeSessionId: t.text(),
   stripePaymentIntentId: t.text(),
-  createdAt: t.timestamp().defaultNow().notNull(),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
     .$onUpdateFn(() => sql`now()`),
