@@ -198,6 +198,35 @@ ChatMessage {
 
 ---
 
+## Ticket Purchasing via AI Concierge (Implemented)
+
+Users can purchase tickets directly through us at a **discounted price** compared to the original listing. The primary purchase flow is through the AI concierge — when the AI recommends an event and the user expresses intent to buy, a checkout button appears inline. Users can also buy directly from event detail pages.
+
+**Flow:**
+1. User asks the AI concierge for recommendations, or browses events directly
+2. AI includes pricing info (original vs discounted) and detects purchase intent
+3. Frontend renders a "Buy Tickets" button when `[BUY_TICKET:<eventId>]` tag is detected in AI response
+4. Clicking triggers a **Stripe Checkout Session** (test mode) and redirects to Stripe hosted checkout
+5. After payment, user returns to `/tickets/success?orderId=...` where the order is confirmed
+6. Order history accessible via Profile → My Tickets (`/tickets`)
+
+**Schema additions:**
+- `Event` now has `original_price_cents`, `discounted_price_cents`, `tickets_available`
+- New `TicketOrder` table: `id`, `userId`, `eventId`, `quantity`, `totalCents`, `status` (pending/completed/failed/refunded), `stripeSessionId`, `stripePaymentIntentId`
+
+**Key dependencies:** `stripe` (Stripe Node SDK), `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+
+---
+
+## Post-Onboarding UX (Implemented)
+
+After completing the voice onboarding quiz:
+- The "Take the Music Quiz" CTA on the home page **disappears** and is replaced by a personalized welcome card showing the user's experience level and music taste ratings
+- Navigating to `/onboarding` when already completed **redirects to home**
+- The onboarding `complete` mutation sets `onboardingCompleted: true` on the user profile
+
+---
+
 ## Hackathon Day Plan
 
 | Block          | Focus                                              |

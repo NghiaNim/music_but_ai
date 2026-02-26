@@ -17,6 +17,8 @@ const config = {
     "@acme/validators",
   ],
 
+  serverExternalPackages: ["better-auth"],
+
   /** We already do linting and typechecking as separate tasks in CI */
   typescript: { ignoreBuildErrors: true },
 };

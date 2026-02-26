@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
@@ -26,6 +26,17 @@ export function OnboardingFlow() {
   const { data } = useSuspenseQuery(
     trpc.onboarding.getQuestions.queryOptions(),
   );
+
+  const { data: profile } = useQuery({
+    ...trpc.userProfile.get.queryOptions(),
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (profile?.onboardingCompleted) {
+      router.replace("/");
+    }
+  }, [profile, router]);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [questionIndex, setQuestionIndex] = useState(0);
