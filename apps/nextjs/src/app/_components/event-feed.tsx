@@ -41,6 +41,19 @@ const GENRE_OPTIONS = [
   "ballet",
 ] as const;
 
+const CITY_OPTIONS = [
+  "New York",
+  "Boston",
+  "Chicago",
+  "San Francisco",
+  "Los Angeles",
+  "Philadelphia",
+  "Washington D.C.",
+  "London",
+  "Vienna",
+  "Berlin",
+] as const;
+
 export function FeaturedEvents() {
   const trpc = useTRPC();
   const { data: events } = useSuspenseQuery(
@@ -76,6 +89,7 @@ export function EventFeed() {
   const [difficultyFilter, setDifficultyFilter] = useState<
     string | undefined
   >(initialDifficulty);
+  const [cityFilter, setCityFilter] = useState<string | undefined>();
 
   const { data: events } = useSuspenseQuery(
     trpc.event.all.queryOptions({
@@ -89,14 +103,36 @@ export function EventFeed() {
     }),
   );
 
+  const filteredEvents = cityFilter
+    ? events.filter(
+        (e) =>
+          e.venue.toLowerCase().includes(cityFilter.toLowerCase()) ||
+          (e.venueAddress?.toLowerCase().includes(cityFilter.toLowerCase()) ??
+            false),
+      )
+    : events;
+
   return (
     <div>
-      <div className="mb-4">
+      <div className="mb-4 flex gap-2">
         <Input
           placeholder="Search events..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          className="flex-1"
         />
+        <select
+          value={cityFilter ?? ""}
+          onChange={(e) => setCityFilter(e.target.value || undefined)}
+          className="bg-card text-foreground h-9 rounded-md border px-3 text-sm"
+        >
+          <option value="">All Cities</option>
+          {CITY_OPTIONS.map((city) => (
+            <option key={city} value={city}>
+              {city}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -133,7 +169,7 @@ export function EventFeed() {
         ))}
       </div>
 
-      {events.length === 0 ? (
+      {filteredEvents.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16">
           <p className="text-muted-foreground text-sm">No events found</p>
           <p className="text-muted-foreground text-xs">
@@ -142,7 +178,7 @@ export function EventFeed() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {events.map((event) => (
+          {filteredEvents.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </div>

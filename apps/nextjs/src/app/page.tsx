@@ -21,23 +21,6 @@ export default function HomePage() {
           </p>
         </section>
 
-        <section className="px-4 pb-4">
-          <Link href="/chat" className="block">
-            <div className="bg-primary/5 border-primary/20 flex items-center gap-4 rounded-xl border p-4">
-              <div className="bg-primary/10 flex size-12 shrink-0 items-center justify-center rounded-full">
-                <SparklesIcon />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold">Ask the AI Mentor</p>
-                <p className="text-muted-foreground text-xs">
-                  Get personalized concert recommendations
-                </p>
-              </div>
-              <ChevronRightIcon />
-            </div>
-          </Link>
-        </section>
-
         <section className="px-4 pb-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Upcoming Events</h2>
@@ -50,6 +33,23 @@ export default function HomePage() {
           <Suspense fallback={<EventFeedSkeleton count={3} />}>
             <FeaturedEvents />
           </Suspense>
+        </section>
+
+        <section className="px-4 pb-6">
+          <Link href="/chat" className="block">
+            <div className="bg-primary/5 border-primary/20 flex items-center gap-4 rounded-xl border p-4">
+              <div className="bg-primary/10 flex size-12 shrink-0 items-center justify-center rounded-full">
+                <SparklesIcon />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">AI Music Mentor</p>
+                <p className="text-muted-foreground text-xs">
+                  Get personalized concert recommendations
+                </p>
+              </div>
+              <ChevronRightIcon />
+            </div>
+          </Link>
         </section>
 
         <section className="px-4 pb-6">
