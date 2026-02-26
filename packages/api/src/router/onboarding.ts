@@ -29,7 +29,7 @@ export const onboardingRouter = {
   reply: publicProcedure
     .input(
       z.object({
-        questionIndex: z.number().min(0).max(2),
+        questionIndex: z.number().min(0).max(0),
         userAnswer: z.string().min(1).max(2000),
         previousAnswers: z.array(z.string()),
       }),
@@ -83,7 +83,7 @@ export const onboardingRouter = {
   complete: protectedProcedure
     .input(
       z.object({
-        answers: z.array(z.string()).length(3),
+        answers: z.array(z.string()).min(1).max(3),
         ratings: z.object({
           easy: z.number().min(1).max(10),
           medium: z.number().min(1).max(10),

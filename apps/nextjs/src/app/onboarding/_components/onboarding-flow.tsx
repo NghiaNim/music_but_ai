@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
@@ -27,19 +32,23 @@ export function OnboardingFlow() {
     trpc.onboarding.getQuestions.queryOptions(),
   );
 
-  const { data: profile } = useQuery({
+  const { data: profile, isSuccess: profileLoaded } = useQuery({
     ...trpc.userProfile.get.queryOptions(),
     retry: false,
+    staleTime: Infinity,
   });
 
+  const alreadyCompleted = profileLoaded && !!profile?.onboardingCompleted;
+  const hasRedirected = useRef(false);
+
   useEffect(() => {
-    if (profile?.onboardingCompleted) {
+    if (alreadyCompleted && !hasRedirected.current) {
+      hasRedirected.current = true;
       router.replace("/");
     }
-  }, [profile, router]);
+  }, [alreadyCompleted, router]);
 
   const [phase, setPhase] = useState<Phase>("idle");
-  const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [musicIndex, setMusicIndex] = useState(0);
   const [ratings, setRatings] = useState<{
@@ -49,18 +58,24 @@ export function OnboardingFlow() {
   }>({ easy: 5, medium: 5, hard: 5 });
   const [statusText, setStatusText] = useState("");
   const [callDuration, setCallDuration] = useState(0);
+  const [saved, setSaved] = useState(false);
 
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const queryClient = useQueryClient();
   const replyMutation = useMutation(trpc.onboarding.reply.mutationOptions());
   const speakMutation = useMutation(trpc.onboarding.speak.mutationOptions());
   const completeMutation = useMutation(
     trpc.onboarding.complete.mutationOptions({
-      onSuccess: (result) => {
+      onSuccess: async (result) => {
+        setSaved(true);
         toast.success(`You're set as a ${result.experienceLevel} listener!`);
+        await queryClient.invalidateQueries({
+          queryKey: trpc.userProfile.get.queryKey(),
+        });
         router.push("/");
       },
       onError: (err) => {
@@ -177,7 +192,7 @@ export function OnboardingFlow() {
     // Small delay to feel like a real connection
     await new Promise((r) => setTimeout(r, 1200));
 
-    const greeting = `Hi there! Welcome to Classical Music Connect. I'm so excited to help you discover amazing music. Let me ask you a few quick questions. ${data.questions[0]}`;
+    const greeting = `Hi there! Welcome to Classical Music Connect. Quick question — ${data.questions[0]}`;
 
     setPhase("ai-speaking");
     setStatusText("AI Mentor is speaking...");
@@ -212,23 +227,11 @@ export function OnboardingFlow() {
       setStatusText("AI Mentor is speaking...");
       await playTTS(result.text);
 
-      if (qIndex < 2) {
-        const nextQ = qIndex + 1;
-        setQuestionIndex(nextQ);
-        setPhase("user-speaking");
-        setStatusText("Your turn — speak now");
-        const nextAnswer = await startListening();
-        await processAnswer(nextQ, nextAnswer, newAnswers);
-      } else {
-        // Transition to music phase
-        setPhase("ai-speaking");
-        setStatusText("Time to listen to some music!");
-        await new Promise((r) => setTimeout(r, 800));
-        setMusicIndex(0);
-        setPhase("music-playing");
-        setStatusText("Listen and rate this track");
-        playMusicTrack(0);
-      }
+      // Single question — go straight to music
+      setMusicIndex(0);
+      setPhase("music-playing");
+      setStatusText("Listen and rate this track");
+      playMusicTrack(0);
     } catch {
       toast.error("Something went wrong");
       setPhase("user-speaking");
@@ -293,8 +296,21 @@ export function OnboardingFlow() {
   };
 
   const handleComplete = () => {
+    if (completeMutation.isPending || saved) return;
     completeMutation.mutate({ answers, ratings });
   };
+
+  if (alreadyCompleted || saved) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-6 px-4 text-center">
+        <div className="flex size-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+          <CheckIcon size={40} />
+        </div>
+        <h1 className="text-xl font-bold">Redirecting...</h1>
+        <p className="text-muted-foreground text-sm">Taking you home</p>
+      </div>
+    );
+  }
 
   // ─── Idle: not started yet ───
   if (phase === "idle") {
@@ -343,16 +359,20 @@ export function OnboardingFlow() {
           </p>
         </div>
         <p className="text-muted-foreground text-sm">
-          Sign in to save your profile and get personalized recommendations.
+          Save your profile and get personalized recommendations.
         </p>
         <div className="flex w-full max-w-xs flex-col gap-2">
           <Button
             size="lg"
             className="w-full"
             onClick={handleComplete}
-            disabled={completeMutation.isPending}
+            disabled={completeMutation.isPending || saved}
           >
-            {completeMutation.isPending ? "Saving..." : "Save & Continue"}
+            {completeMutation.isPending
+              ? "Saving..."
+              : saved
+                ? "Redirecting..."
+                : "Save & Continue"}
           </Button>
           <Button
             variant="ghost"
