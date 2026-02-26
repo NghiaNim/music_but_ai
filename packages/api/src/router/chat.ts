@@ -13,7 +13,7 @@ function eventToContext(event: typeof Event.$inferSelect): EventContext {
   return {
     id: event.id,
     title: event.title,
-    date: event.date.toISOString(),
+    date: event.date instanceof Date ? event.date.toISOString() : String(event.date),
     venue: event.venue,
     program: event.program,
     description: event.description,
