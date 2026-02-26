@@ -16,7 +16,7 @@ export const env = createEnv({
    * This way you can ensure the app isn't built with invalid env vars.
    */
   server: {
-    POSTGRES_URL: z.url(),
+    POSTGRES_URL: z.string().min(1),
     ELEVENLABS_STS_API_KEY: z.string().optional(),
     OPENAI_API_KEY: z.string().optional(),
     STRIPE_SECRET_KEY: z.string().optional(),
