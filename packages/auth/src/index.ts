@@ -10,36 +10,39 @@ export function initAuth<
   TExtraPlugins extends BetterAuthPlugin[] = [],
 >(options: {
   baseUrl: string;
-  productionUrl: string;
+  productionUrl?: string;
   secret: string | undefined;
 
-  discordClientId: string;
-  discordClientSecret: string;
+  discordClientId?: string;
+  discordClientSecret?: string;
   extraPlugins?: TExtraPlugins;
 }) {
+  const isProduction = !!options.productionUrl && options.productionUrl !== options.baseUrl;
+
+  const plugins: BetterAuthPlugin[] = [];
+  if (isProduction && options.productionUrl) {
+    plugins.push(
+      oAuthProxy({ productionURL: options.productionUrl }),
+    );
+  }
+  plugins.push(expo(), ...(options.extraPlugins ?? []));
+
   const config = {
     database: drizzleAdapter(db, {
       provider: "pg",
     }),
     baseURL: options.baseUrl,
     secret: options.secret,
-    plugins: [
-      oAuthProxy({
-        productionURL: options.productionUrl,
-      }),
-      expo(),
-      ...(options.extraPlugins ?? []),
-    ],
+    plugins,
     socialProviders: {
       discord: {
-        clientId: options.discordClientId,
-        clientSecret: options.discordClientSecret,
-        redirectURI: `${options.productionUrl}/api/auth/callback/discord`,
+        clientId: options.discordClientId ?? "",
+        clientSecret: options.discordClientSecret ?? "",
       },
     },
     trustedOrigins: ["expo://"],
     onAPIError: {
-      onError(error, ctx) {
+      onError(error: unknown, ctx: unknown) {
         console.error("BETTER AUTH API ERROR", error, ctx);
       },
     },

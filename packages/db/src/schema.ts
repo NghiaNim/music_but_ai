@@ -50,7 +50,7 @@ export const Post = pgTable("post", (t) => ({
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
-    .$onUpdateFn(() => sql`now()`),
+    .$onUpdateFn(() => new Date()),
 }));
 
 export const CreatePostSchema = createInsertSchema(Post, {
@@ -80,7 +80,7 @@ export const UserProfile = pgTable("user_profile", (t) => ({
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
-    .$onUpdateFn(() => sql`now()`),
+    .$onUpdateFn(() => new Date()),
 }));
 
 // ─── Event ──────────────────────────────────────────────
@@ -105,7 +105,7 @@ export const Event = pgTable("event", (t) => ({
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
-    .$onUpdateFn(() => sql`now()`),
+    .$onUpdateFn(() => new Date()),
 }));
 
 // ─── UserEvent (saved / attended) ───────────────────────
@@ -125,7 +125,7 @@ export const UserEvent = pgTable("user_event", (t) => ({
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
-    .$onUpdateFn(() => sql`now()`),
+    .$onUpdateFn(() => new Date()),
 }));
 
 // ─── ChatSession ────────────────────────────────────────
@@ -141,7 +141,7 @@ export const ChatSession = pgTable("chat_session", (t) => ({
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
-    .$onUpdateFn(() => sql`now()`),
+    .$onUpdateFn(() => new Date()),
 }));
 
 // ─── ChatMessage ────────────────────────────────────────
@@ -177,7 +177,7 @@ export const TicketOrder = pgTable("ticket_order", (t) => ({
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
-    .$onUpdateFn(() => sql`now()`),
+    .$onUpdateFn(() => new Date()),
 }));
 
 // ─── Relations ──────────────────────────────────────────

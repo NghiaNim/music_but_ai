@@ -13,9 +13,13 @@ const baseUrl =
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000";
 
+const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : undefined;
+
 export const auth = initAuth({
   baseUrl,
-  productionUrl: `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "localhost:3000"}`,
+  productionUrl,
   secret: process.env.AUTH_SECRET,
   discordClientId: process.env.AUTH_DISCORD_ID,
   discordClientSecret: process.env.AUTH_DISCORD_SECRET,
