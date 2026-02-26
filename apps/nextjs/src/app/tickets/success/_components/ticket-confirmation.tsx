@@ -23,7 +23,9 @@ export function TicketConfirmation() {
         if (data?.status === "completed") {
           toast.success("Payment confirmed!");
           void queryClient.invalidateQueries({
-            queryKey: trpc.ticket.orderById.queryKey({ orderId: orderId ?? "" }),
+            queryKey: trpc.ticket.orderById.queryKey({
+              orderId: orderId ?? "",
+            }),
           });
         }
       },
@@ -75,11 +77,7 @@ export function TicketConfirmation() {
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center px-4 pt-12 text-center">
       <div className="mb-4 flex size-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-        {isCompleted ? (
-          <CheckIcon />
-        ) : (
-          <ClockIcon />
-        )}
+        {isCompleted ? <CheckIcon /> : <ClockIcon />}
       </div>
 
       <h1 className="mb-2 text-2xl font-bold">
@@ -122,7 +120,7 @@ export function TicketConfirmation() {
           </div>
 
           <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2">
               <CalendarSmallIcon />
               <span>
                 {new Date(orderData.event.date).toLocaleDateString("en-US", {
@@ -133,11 +131,11 @@ export function TicketConfirmation() {
                 })}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2">
               <MapPinSmallIcon />
               <span>{orderData.event.venue}</span>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2">
               <DollarIcon />
               <span>
                 Total paid: ${(orderData.totalCents / 100).toFixed(2)}
@@ -164,9 +162,7 @@ export function TicketConfirmation() {
         </Button>
         {orderData?.event && (
           <Button className="flex-1" asChild>
-            <Link
-              href={`/chat?eventId=${orderData.eventId}&mode=learning`}
-            >
+            <Link href={`/chat?eventId=${orderData.eventId}&mode=learning`}>
               Prepare for the Show
             </Link>
           </Button>

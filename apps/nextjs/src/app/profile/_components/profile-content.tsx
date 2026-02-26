@@ -335,7 +335,7 @@ export function ProfileContent() {
       {/* My Tickets */}
       <Link
         href="/tickets"
-        className="bg-card mt-5 flex items-center gap-3 rounded-2xl border p-4 shadow-sm transition-colors hover:bg-muted/50"
+        className="bg-card hover:bg-muted/50 mt-5 flex items-center gap-3 rounded-2xl border p-4 shadow-sm transition-colors"
       >
         <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
           <svg

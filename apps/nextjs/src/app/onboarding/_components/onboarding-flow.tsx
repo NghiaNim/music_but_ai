@@ -87,10 +87,7 @@ export function OnboardingFlow() {
   // Call timer
   useEffect(() => {
     if (phase !== "idle" && phase !== "done") {
-      timerRef.current = setInterval(
-        () => setCallDuration((d) => d + 1),
-        1000,
-      );
+      timerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -395,7 +392,7 @@ export function OnboardingFlow() {
 
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
-        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Track {musicIndex + 1} of 3
         </p>
         <h2 className="text-lg font-semibold">How did you like it?</h2>
@@ -415,7 +412,11 @@ export function OnboardingFlow() {
             </button>
           ))}
         </div>
-        <Button size="lg" className="mt-2 w-full max-w-xs" onClick={handleNextTrack}>
+        <Button
+          size="lg"
+          className="mt-2 w-full max-w-xs"
+          onClick={handleNextTrack}
+        >
           {musicIndex < 2 ? "Next Track" : "Finish"}
         </Button>
       </div>
@@ -423,7 +424,8 @@ export function OnboardingFlow() {
   }
 
   // ─── Active call: speaking / listening / music ───
-  const isAISpeaking = phase === "ai-speaking" || phase === "connecting" || phase === "processing";
+  const isAISpeaking =
+    phase === "ai-speaking" || phase === "connecting" || phase === "processing";
   const isUserSpeaking = phase === "user-speaking";
   const isMusicPlaying = phase === "music-playing";
 
@@ -443,8 +445,8 @@ export function OnboardingFlow() {
           {/* Pulsing rings for active states */}
           {(isAISpeaking || isUserSpeaking) && (
             <>
-              <div className="absolute -inset-4 animate-ping rounded-full bg-primary/10" />
-              <div className="absolute -inset-8 animate-pulse rounded-full bg-primary/5" />
+              <div className="bg-primary/10 absolute -inset-4 animate-ping rounded-full" />
+              <div className="bg-primary/5 absolute -inset-8 animate-pulse rounded-full" />
             </>
           )}
           {isMusicPlaying && (
@@ -511,16 +513,38 @@ export function OnboardingFlow() {
 
 function AIMentorAvatar({ size = 24 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-primary"
+    >
       <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
     </svg>
   );
 }
 
 function PhoneIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
   );
@@ -528,7 +552,17 @@ function PhoneIcon() {
 
 function HangUpIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
       <line x1="22" y1="2" x2="2" y2="22" />
     </svg>
@@ -537,7 +571,18 @@ function HangUpIcon() {
 
 function MicIcon({ size = 24 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-emerald-500"
+    >
       <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
       <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
       <line x1="12" x2="12" y1="19" y2="22" />
@@ -547,7 +592,18 @@ function MicIcon({ size = 24 }: { size?: number }) {
 
 function WaveformIcon({ size = 24 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-violet-500">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-violet-500"
+    >
       <path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" />
     </svg>
   );
@@ -555,7 +611,14 @@ function WaveformIcon({ size = 24 }: { size?: number }) {
 
 function StopIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="none"
+    >
       <rect x="6" y="6" width="12" height="12" rx="2" />
     </svg>
   );
@@ -563,7 +626,18 @@ function StopIcon() {
 
 function CheckIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600 dark:text-emerald-400">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-emerald-600 dark:text-emerald-400"
+    >
       <path d="M20 6 9 17l-5-5" />
     </svg>
   );

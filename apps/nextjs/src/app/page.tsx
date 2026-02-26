@@ -140,4 +140,3 @@ function ChevronRightIcon() {
     </svg>
   );
 }
-

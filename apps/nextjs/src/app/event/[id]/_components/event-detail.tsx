@@ -108,7 +108,10 @@ export function EventDetail({ eventId }: { eventId: string }) {
             </span>
           </div>
           <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-            {Math.round((1 - event.discountedPriceCents / event.originalPriceCents) * 100)}% off
+            {Math.round(
+              (1 - event.discountedPriceCents / event.originalPriceCents) * 100,
+            )}
+            % off
           </span>
         </div>
         <p className="text-muted-foreground mb-3 text-xs">

@@ -17,13 +17,12 @@ export function initAuth<
   discordClientSecret?: string;
   extraPlugins?: TExtraPlugins;
 }) {
-  const isProduction = !!options.productionUrl && options.productionUrl !== options.baseUrl;
+  const isProduction =
+    !!options.productionUrl && options.productionUrl !== options.baseUrl;
 
   const plugins: BetterAuthPlugin[] = [];
   if (isProduction && options.productionUrl) {
-    plugins.push(
-      oAuthProxy({ productionURL: options.productionUrl }),
-    );
+    plugins.push(oAuthProxy({ productionURL: options.productionUrl }));
   }
   plugins.push(expo(), ...(options.extraPlugins ?? []));
 

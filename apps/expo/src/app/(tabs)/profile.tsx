@@ -7,13 +7,13 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const STATS = [
   { value: "24", label: "Concerts Attended" },
@@ -139,12 +139,15 @@ function BadgeCard({
     <Pressable
       onPress={onFlip}
       style={[cardShadow, { width: badgeCardWidth, marginBottom: 14 }]}
-      className="bg-card items-center rounded-2xl pb-4 pt-5"
+      className="bg-card items-center rounded-2xl pt-5 pb-4"
     >
       <View style={{ width: 116, height: 116 }}>
         {/* Front */}
         <Animated.View
-          style={[frontStyle, { position: "absolute", width: 116, height: 116 }]}
+          style={[
+            frontStyle,
+            { position: "absolute", width: 116, height: 116 },
+          ]}
         >
           <View
             style={{
@@ -306,10 +309,7 @@ export default function ProfileScreen() {
           Profile
         </Text>
 
-        <View
-          className="bg-card mx-5 mt-5 rounded-2xl p-6"
-          style={cardShadow}
-        >
+        <View className="bg-card mx-5 mt-5 rounded-2xl p-6" style={cardShadow}>
           <View className="flex-row">
             <View className="mr-6 items-center">
               <View

@@ -229,9 +229,7 @@ function ChatBubble({ message }: { message: Message }) {
             </span>
             <div className="flex-1">
               <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                {checkout.isPending
-                  ? "Opening checkout..."
-                  : "Buy Tickets Now"}
+                {checkout.isPending ? "Opening checkout..." : "Buy Tickets Now"}
               </span>
               <span className="block text-xs text-emerald-600/70 dark:text-emerald-400/70">
                 Exclusive discounted price through us

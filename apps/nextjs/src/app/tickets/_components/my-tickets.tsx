@@ -75,7 +75,7 @@ export function MyTickets() {
         <Link
           key={order.id}
           href={`/event/${order.eventId}`}
-          className="bg-card flex items-center gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/50"
+          className="bg-card hover:bg-muted/50 flex items-center gap-3 rounded-xl border p-4 transition-colors"
         >
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
             <svg

@@ -27,7 +27,7 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
 
   if (isLoading && isSignedIn) {
     return (
-      <div className="h-[88px] animate-pulse rounded-xl border bg-muted" />
+      <div className="bg-muted h-[88px] animate-pulse rounded-xl border" />
     );
   }
 
@@ -48,7 +48,11 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
         </div>
         {profile.musicTasteEasy != null && (
           <div className="flex gap-1">
-            {[profile.musicTasteEasy, profile.musicTasteMedium, profile.musicTasteHard]
+            {[
+              profile.musicTasteEasy,
+              profile.musicTasteMedium,
+              profile.musicTasteHard,
+            ]
               .filter((v): v is number => v != null)
               .map((rating, i) => (
                 <div
