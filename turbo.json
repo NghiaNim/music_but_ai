@@ -55,7 +55,8 @@
     "AUTH_SECRET",
     "STRIPE_SECRET_KEY",
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
-    "PORT"
+    "PORT",
+    "VERCEL_PROJECT_PRODUCTION_URL"
   ],
   "globalPassThroughEnv": [
     "NODE_ENV",
