@@ -65,6 +65,11 @@ export const UserProfile = pgTable("user_profile", (t) => ({
     .unique()
     .references(() => user.id, { onDelete: "cascade" }),
   experienceLevel: experienceLevelEnum().notNull().default("new"),
+  onboardingCompleted: t.boolean().notNull().default(false),
+  onboardingAnswers: t.jsonb().$type<string[]>(),
+  musicTasteEasy: t.integer(),
+  musicTasteMedium: t.integer(),
+  musicTasteHard: t.integer(),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })

@@ -46,6 +46,7 @@
     }
   },
   "globalEnv": [
+    "ELEVENLABS_STS_API_KEY",
     "OPENAI_API_KEY",
     "POSTGRES_URL",
     "AUTH_DISCORD_ID",

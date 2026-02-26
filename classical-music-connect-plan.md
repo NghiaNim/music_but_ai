@@ -44,6 +44,20 @@ tooling/
 
 ---
 
+## Voice Onboarding (Implemented)
+
+New users are guided through a quick onboarding flow at `/onboarding`:
+
+1. **AI Voice Greeting** — ElevenLabs TTS speaks a welcome message
+2. **3 Open-ended Questions** — AI asks about music taste, live experience, listening preferences. OpenAI generates conversational replies, ElevenLabs voices them.
+3. **3 Music Snippets** — One from each tier (easy/medium/hard). User rates 1-10.
+   - Tracks 1-10: Easy (Bach, Beethoven, Mozart, Vivaldi)
+   - Tracks 11-20: Medium (Shostakovich, Chopin, Tchaikovsky, Rachmaninoff)
+   - Tracks 21-31: Hard but beautiful (R. Strauss, Mahler, Wagner)
+4. **Profile Save** — Answers + ratings stored in `user_profile`. Experience level auto-computed.
+
+---
+
 ## Feature Tiers
 
 ### Tier 1 — Must Demo (Hackathon Core)

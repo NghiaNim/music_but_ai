@@ -21,6 +21,23 @@ export default function HomePage() {
           </p>
         </section>
 
+        <section className="px-4 pb-4">
+          <Link href="/onboarding" className="block">
+            <div className="flex items-center gap-4 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-800 dark:bg-violet-950/30">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30">
+                <WaveformIcon />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Take the Music Quiz</p>
+                <p className="text-muted-foreground text-xs">
+                  1 min — tell us your taste, hear some music
+                </p>
+              </div>
+              <ChevronRightIcon />
+            </div>
+          </Link>
+        </section>
+
         <section className="px-4 pb-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Upcoming Events</h2>
@@ -106,6 +123,14 @@ function ChevronRightIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
       <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
+function WaveformIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-violet-600 dark:text-violet-400">
+      <path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" />
     </svg>
   );
 }
