@@ -1,12 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
@@ -31,7 +32,13 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   advanced: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400",
 };
 
-export function EventDetail({ eventId }: { eventId: string }) {
+export function EventDetail({
+  eventId,
+  isSignedIn,
+}: {
+  eventId: string;
+  isSignedIn: boolean;
+}) {
   const trpc = useTRPC();
   const { data: event } = useSuspenseQuery(
     trpc.event.byId.queryOptions({ id: eventId }),
@@ -52,8 +59,29 @@ export function EventDetail({ eventId }: { eventId: string }) {
   });
 
   return (
-    <div className="mx-auto max-w-lg">
-      <div className="px-4 pt-4 pb-2">
+    <div className="relative mx-auto max-w-lg">
+      {!isSignedIn && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-background/80 px-4 py-6 backdrop-blur-md">
+          <p className="text-center text-sm font-medium">
+            Sign in to view event details, save events, and buy tickets
+          </p>
+          <Button asChild size="lg">
+            <Link
+              href={`/sign-in?callbackUrl=${encodeURIComponent(
+                `/event/${eventId}`,
+              )}`}
+            >
+              Sign in
+            </Link>
+          </Button>
+        </div>
+      )}
+      <div
+        className={cn(
+          !isSignedIn && "pointer-events-none select-none blur-sm",
+        )}
+      >
+        <div className="px-4 pt-4 pb-2">
         <Link
           href="/events"
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
@@ -63,12 +91,14 @@ export function EventDetail({ eventId }: { eventId: string }) {
         </Link>
       </div>
 
-      <div className="mx-4 mb-4 overflow-hidden rounded-xl">
+      <div className="relative mx-4 mb-4 aspect-video overflow-hidden rounded-xl">
         {event.imageUrl ? (
-          <img
+          <Image
             src={event.imageUrl}
             alt={event.title}
-            className="aspect-video w-full object-cover"
+            fill
+            className="object-cover"
+            unoptimized
           />
         ) : (
           <div className="flex aspect-video w-full items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
@@ -91,7 +121,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
             {event.difficulty === "beginner"
               ? "Beginner Friendly"
               : event.difficulty.charAt(0).toUpperCase() +
-              event.difficulty.slice(1)}
+                event.difficulty.slice(1)}
           </span>
         </div>
 
@@ -184,6 +214,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
           </div>
         </section>
       )}
+      </div>
     </div>
   );
 }

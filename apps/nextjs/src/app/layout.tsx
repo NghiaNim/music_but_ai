@@ -17,11 +17,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     env.VERCEL_URL ? `https://${env.VERCEL_URL}` : "http://localhost:3000",
   ),
-  title: "Classical Music Connect",
+  title: "Classica",
   description:
     "Discover, learn, and experience classical music with an AI-powered concierge",
   openGraph: {
-    title: "Classical Music Connect",
+    title: "Classica",
     description:
       "Discover, learn, and experience classical music with an AI-powered concierge",
   },
@@ -58,7 +58,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
             <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
               <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-4">
                 <Link href="/" className="text-base font-bold tracking-tight">
-                  Classical Music Connect
+                  Classica
                 </Link>
                 <div className="flex items-center gap-2">
                   <AuthHeader />

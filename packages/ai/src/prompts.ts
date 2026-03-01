@@ -29,7 +29,7 @@ export function buildDiscoverySystemPrompt(
     })
     .join("\n\n");
 
-  return `You are the Classical Music Connect concierge — a warm, knowledgeable guide who helps people discover classical music events.
+  return `You are the Classica concierge — a warm, knowledgeable guide who helps people discover classical music events.
 
 The user's experience level: ${userExperience}.
 
@@ -58,7 +58,7 @@ export function buildLearningSystemPrompt(
   event: EventContext,
   userExperience: string,
 ): string {
-  return `You are the Classical Music Connect concierge — a warm, knowledgeable guide helping someone learn about a specific event they're interested in.
+  return `You are the Classica concierge — a warm, knowledgeable guide helping someone learn about a specific event they're interested in.
 
 The user's experience level: ${userExperience}.
 

@@ -3,72 +3,77 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 
-const STATS = [
-  { value: "24", label: "Concerts Attended" },
-  { value: "142", label: "Days on the App" },
-  { value: "1,280", label: "Live Pieces Listened" },
-];
+import type { RouterOutputs } from "@acme/api";
+
+import { authClient } from "~/auth/client";
+import { useTRPC } from "~/trpc/react";
+
+type UserEventWithEvent = RouterOutputs["userEvent"]["myEvents"][number];
 
 const BADGES = [
   {
     id: "beethoven",
     label: "Beethoven Lover",
     image: "/badges/badge_beethoven.png",
-    dateEarned: "Jan 12, 2026",
     achievement: "Attended 3 concerts featuring Beethoven pieces",
+    composer: "Beethoven",
+    required: 3,
   },
   {
     id: "mozart",
     label: "Mozart Lover",
     image: "/badges/badge_mozart.png",
-    dateEarned: "Feb 3, 2026",
     achievement: "Attended 3 concerts featuring Mozart pieces",
+    composer: "Mozart",
+    required: 3,
   },
   {
     id: "bach",
     label: "Bach Lover",
     image: "/badges/badge_bach_v2.png",
-    dateEarned: "Feb 18, 2026",
     achievement: "Attended 3 concerts featuring Bach pieces",
+    composer: "Bach",
+    required: 3,
   },
   {
     id: "chopin",
     label: "Chopin Lover",
     image: "/badges/badge_chopin.png",
-    dateEarned: "Dec 5, 2025",
     achievement: "Attended 3 concerts featuring Chopin pieces",
+    composer: "Chopin",
+    required: 3,
   },
   {
     id: "baroque",
     label: "Baroque Era Enthusiast",
     image: "/badges/badge_baroque.png",
-    dateEarned: "Nov 20, 2025",
     achievement: "Listened to 10 pieces written in the Baroque era",
   },
   {
     id: "romantic",
     label: "Romantic Era Enthusiast",
     image: "/badges/badge_romantic_v3.png",
-    dateEarned: "Jan 28, 2026",
     achievement: "Listened to 10 pieces written in the Romantic era",
   },
   {
     id: "classical",
     label: "Classical Era Enthusiast",
     image: "/badges/badge_classical_v3.png",
-    dateEarned: "Feb 10, 2026",
     achievement: "Listened to 10 pieces written in the Classical era",
   },
-];
+] as const;
 
 function BadgeCard({
   badge,
   isFlipped,
+  earned,
   onFlip,
 }: {
   badge: (typeof BADGES)[number];
   isFlipped: boolean;
+  earned: boolean;
   onFlip: () => void;
 }) {
   return (
@@ -256,40 +261,76 @@ function BadgeCard({
           >
             {badge.achievement}
           </p>
-          <div
-            style={{
-              width: 30,
-              height: 1,
-              backgroundColor: "#A8894D",
-              margin: "6px 0",
-              borderRadius: 1,
-              position: "relative",
-            }}
-          />
-          <p
-            style={{
-              color: "#5C4428",
-              fontSize: 9,
-              fontWeight: 600,
-              textAlign: "center",
-              position: "relative",
-              margin: 0,
-            }}
-          >
-            {badge.dateEarned}
-          </p>
         </div>
       </div>
 
       {/* Label */}
-      <p className="text-foreground mt-3 text-center text-sm font-semibold">
+      <p
+        className="mt-3 text-center text-sm font-semibold"
+        style={{
+          color: earned ? "var(--foreground)" : "var(--muted-foreground)",
+        }}
+      >
         {badge.label}
       </p>
+      {!earned && (
+        <p className="text-muted-foreground mt-1 text-center text-[10px] uppercase tracking-wide">
+          Locked
+        </p>
+      )}
     </div>
   );
 }
 
 export function ProfileContent() {
+  const { data: session } = authClient.useSession();
+  const name = session?.user.name ?? "Guest";
+  const isSignedIn = !!session?.user;
+
+  const trpc = useTRPC();
+  const { data: userEvents } = useQuery({
+    ...trpc.userEvent.myEvents.queryOptions(),
+    enabled: isSignedIn,
+  });
+
+  const attended =
+    userEvents?.filter((ue: UserEventWithEvent) => ue.status === "attended") ??
+    [];
+
+  const concertsAttended = attended.length;
+
+  const composerCounts = new Map<string, number>();
+  for (const ue of attended) {
+    const composer = ue.event.program.split(":")[0]?.trim();
+    if (!composer) continue;
+    composerCounts.set(composer, (composerCounts.get(composer) ?? 0) + 1);
+  }
+
+  const badgesWithState = BADGES.map((badge) => {
+    if (badge.composer) {
+      const count = composerCounts.get(badge.composer) ?? 0;
+      return { ...badge, earned: count >= (badge.required ?? 3) };
+    }
+    return { ...badge, earned: false };
+  });
+
+  // Days on app: from user profile createdAt if available, otherwise from first attended event
+  const profile = session?.user.profile as
+    | { createdAt?: string | Date }
+    | undefined;
+  const createdAt =
+    (profile?.createdAt && new Date(profile.createdAt)) ||
+    (attended[0] ? new Date(attended[0].createdAt) : undefined);
+  const daysOnApp =
+    createdAt != null
+      ? Math.max(
+          1,
+          Math.floor(
+            (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24),
+          ),
+        )
+      : 0;
+
   const [flippedIds, setFlippedIds] = useState<Set<string>>(new Set());
 
   const toggleFlip = (id: string) => {
@@ -313,21 +354,25 @@ export function ProfileContent() {
             <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-[#F8E8EE]">
               <span className="text-5xl">🎵</span>
             </div>
-            <p className="text-foreground mt-3 text-xl font-bold">Billy</p>
+            <p className="text-foreground mt-3 text-xl font-bold">{name}</p>
           </div>
 
           <div className="flex flex-1 flex-col justify-center">
-            {STATS.map((stat, index) => (
-              <div key={stat.label}>
-                <div className="py-2.5">
-                  <p className="text-foreground text-2xl font-bold">
-                    {stat.value}
-                  </p>
-                  <p className="text-muted-foreground text-xs">{stat.label}</p>
-                </div>
-                {index < STATS.length - 1 && <div className="bg-border h-px" />}
-              </div>
-            ))}
+            <div className="py-2.5">
+              <p className="text-foreground text-2xl font-bold">
+                {concertsAttended}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Concerts Attended
+              </p>
+            </div>
+            <div className="bg-border h-px" />
+            <div className="py-2.5">
+              <p className="text-foreground text-2xl font-bold">
+                {daysOnApp}
+              </p>
+              <p className="text-muted-foreground text-xs">Days on Classica</p>
+            </div>
           </div>
         </div>
       </div>
@@ -381,17 +426,20 @@ export function ProfileContent() {
       {/* Badges Section */}
       <h2 className="text-foreground mt-8 mb-4 text-xl font-bold">Badges</h2>
       <p className="text-muted-foreground -mt-3 mb-4 text-xs">
-        Tap a badge to flip it
+        Tap a badge to flip it{isSignedIn ? "" : " — sign in to start earning"}
       </p>
       <div className="grid grid-cols-2 gap-3.5">
-        {BADGES.map((badge) => (
+        {(isSignedIn ? badgesWithState : BADGES.map((b) => ({ ...b, earned: false }))).map(
+          (badge) => (
           <BadgeCard
             key={badge.id}
             badge={badge}
             isFlipped={flippedIds.has(badge.id)}
+            earned={badge.earned}
             onFlip={() => toggleFlip(badge.id)}
           />
-        ))}
+        ),
+        )}
       </div>
     </>
   );

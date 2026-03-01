@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import { pgEnum, pgTable } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -39,6 +39,13 @@ export const orderStatusEnum = pgEnum("order_status", [
   "completed",
   "failed",
   "refunded",
+]);
+
+export const externalSourceEnum = pgEnum("external_source", [
+  "carnegie_hall",
+  "met_opera",
+  "juilliard",
+  "msm",
 ]);
 
 // ─── Legacy Post table ──────────────────────────────────
@@ -180,6 +187,23 @@ export const TicketOrder = pgTable("ticket_order", (t) => ({
     .$onUpdateFn(() => new Date()),
 }));
 
+// ─── ExternalEvent (scraped venue events for testing) ─────
+
+export const ExternalEvent = pgTable("external_event", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  source: externalSourceEnum().notNull(),
+  title: t.varchar({ length: 512 }).notNull(),
+  date: t.timestamp({ mode: "date", withTimezone: true }),
+  venueName: t.varchar({ length: 256 }),
+  location: t.varchar({ length: 256 }),
+  buyUrl: t.text().notNull(),
+  raw: t.jsonb().$type<unknown>(),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
+  updatedAt: t
+    .timestamp({ mode: "date", withTimezone: true })
+    .$onUpdateFn(() => new Date()),
+}));
+
 // ─── Relations ──────────────────────────────────────────
 
 export const userRelations = relations(user, ({ one, many }) => ({
@@ -279,6 +303,12 @@ export const CreateChatSessionSchema = createInsertSchema(ChatSession).omit({
 export const CreateChatMessageSchema = createInsertSchema(ChatMessage).omit({
   id: true,
   createdAt: true,
+});
+
+export const CreateExternalEventSchema = createInsertSchema(ExternalEvent).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export * from "./auth-schema";

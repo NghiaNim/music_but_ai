@@ -74,15 +74,17 @@ export const chatRouter = {
         });
       }
 
-      const isAuthenticated = !!ctx.session?.user;
+      const session = ctx.session;
+      const user = session?.user;
+      const isAuthenticated = !!user;
       let sessionId = input.sessionId;
 
-      if (isAuthenticated) {
+      if (user) {
         if (!sessionId) {
           const [newSession] = await ctx.db
             .insert(ChatSession)
             .values({
-              userId: ctx.session!.user.id,
+              userId: user.id,
               eventId: input.eventId ?? null,
               mode: input.mode,
             })
@@ -112,7 +114,7 @@ export const chatRouter = {
         });
         messages.push(
           ...history.map((m) => ({
-            role: m.role as "user" | "assistant",
+            role: m.role,
             content: m.content,
           })),
         );
@@ -124,9 +126,9 @@ export const chatRouter = {
       }
 
       let userExperience = "new";
-      if (isAuthenticated) {
+      if (user) {
         const profile = await ctx.db.query.UserProfile.findFirst({
-          where: eq(UserProfile.userId, ctx.session!.user.id),
+          where: eq(UserProfile.userId, user.id),
         });
         userExperience = profile?.experienceLevel ?? "new";
       }

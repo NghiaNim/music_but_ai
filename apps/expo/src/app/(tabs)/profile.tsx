@@ -15,6 +15,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { authClient } from "~/utils/auth";
+
 const STATS = [
   { value: "24", label: "Concerts Attended" },
   { value: "142", label: "Days on the App" },
@@ -284,6 +286,8 @@ function BadgeCard({
 }
 
 export default function ProfileScreen() {
+  const { data: session } = authClient.useSession();
+  const name = session?.user.name ?? "Guest";
   const [flippedIds, setFlippedIds] = useState<Set<string>>(new Set());
 
   const toggleFlip = (id: string) => {
@@ -319,7 +323,7 @@ export default function ProfileScreen() {
                 <Text style={{ fontSize: 48 }}>🎵</Text>
               </View>
               <Text className="text-foreground mt-3 text-xl font-bold">
-                Billy
+                {name}
               </Text>
             </View>
 

@@ -88,11 +88,7 @@ function BookIcon({ active }: { active: boolean }) {
         stroke="currentColor"
       />
       {active && (
-        <path
-          d="M6.5 17H20"
-          stroke="var(--color-background)"
-          strokeWidth="2"
-        />
+        <path d="M6.5 17H20" stroke="var(--color-background)" strokeWidth="2" />
       )}
     </svg>
   );

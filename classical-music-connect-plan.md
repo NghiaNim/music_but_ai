@@ -1,4 +1,4 @@
-# Classical Music Connect — Hackathon Build Plan
+# Classica — Hackathon Build Plan
 
 ## Vision
 
@@ -241,4 +241,4 @@ After completing the voice onboarding quiz:
 
 ## Pitch Angle (for Judges/VCs)
 
-> "Ticketing apps sell you a seat. Spotify sells you a stream. Nobody helps you **understand, engage, and grow** as a live music audience. Classical Music Connect is the first platform that turns concert attendance into a personal journey — powered by an AI concierge that helps you discover events, learn about the music, and build your cultural identity. We start with classical — a $2–3B segment with a broken business model — but the engagement + identity layer scales to the full $30B live music market."
+> "Ticketing apps sell you a seat. Spotify sells you a stream. Nobody helps you **understand, engage, and grow** as a live music audience. Classica is the first platform that turns concert attendance into a personal journey — powered by an AI concierge that helps you discover events, learn about the music, and build your cultural identity. We start with classical — a $2–3B segment with a broken business model — but the engagement + identity layer scales to the full $30B live music market."
