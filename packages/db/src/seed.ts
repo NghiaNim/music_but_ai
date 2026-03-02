@@ -262,6 +262,57 @@ const events: (typeof schema.Event.$inferInsert)[] = [
       "Think of this as an opera disguised as a church piece. The 'Dies Irae' (Day of Wrath) section will literally make you jump — massive timpani, crashing brass, and a full chorus screaming about the end of the world. It's metal. In a basilica.",
   },
   {
+    title: "Blue Note Jazz Night — Modern Standards",
+    date: new Date("2026-04-09T20:00:00-04:00"),
+    venue: "Blue Note Jazz Club, New York",
+    venueAddress: "131 W 3rd St, New York, NY 10012",
+    program:
+      "Miles Davis: So What\nHerbie Hancock: Cantaloupe Island\nWayne Shorter: Footprints\nOriginal improvisations",
+    description:
+      "A high-energy jazz set featuring contemporary arrangements of iconic standards plus new originals. Expect tight ensemble playing, expressive solos, and an intimate club atmosphere.",
+    difficulty: "beginner",
+    genre: "jazz",
+    originalPriceCents: 7000,
+    discountedPriceCents: 4800,
+    ticketsAvailable: 80,
+    beginnerNotes:
+      "Jazz is about listening to conversation in music. Start with the melody, then notice how each soloist reshapes it in their own way. No two performances are ever the same.",
+  },
+  {
+    title: "Village Vanguard Quartet — Late Set",
+    date: new Date("2026-04-23T22:00:00-04:00"),
+    venue: "Village Vanguard, New York",
+    venueAddress: "178 7th Ave S, New York, NY 10014",
+    program:
+      "John Coltrane: Naima\nThelonious Monk: Round Midnight\nBill Evans: Waltz for Debby\nOriginal quartet works",
+    description:
+      "A late-night jazz quartet session in one of the world's most legendary clubs. Lyric ballads, adventurous harmony, and spontaneous improvisation in a classic listening room.",
+    difficulty: "intermediate",
+    genre: "jazz",
+    originalPriceCents: 6800,
+    discountedPriceCents: 4600,
+    ticketsAvailable: 50,
+    beginnerNotes:
+      "If you're new to jazz, focus on the rhythm section first (piano, bass, drums), then track how the horn enters and exits with each phrase. It's a live conversation with structure.",
+  },
+  {
+    title: "Lincoln Center Jazz Orchestra — Big Band Essentials",
+    date: new Date("2026-05-06T19:30:00-04:00"),
+    venue: "Frederick P. Rose Hall, New York",
+    venueAddress: "10 Columbus Cir, New York, NY 10019",
+    program:
+      "Duke Ellington: Take the 'A' Train\nCount Basie: April in Paris\nCharles Mingus: Better Git It in Your Soul",
+    description:
+      "A full big band program celebrating swing-era classics and modern large-ensemble jazz. Powerful brass sections, lush harmonies, and driving grooves from top-tier players.",
+    difficulty: "beginner",
+    genre: "jazz",
+    originalPriceCents: 9000,
+    discountedPriceCents: 6200,
+    ticketsAvailable: 110,
+    beginnerNotes:
+      "Big band jazz is the easiest entry point for many listeners: strong melodies, clear rhythms, and lots of dynamic contrast. You can feel the groove immediately.",
+  },
+  {
     title: "Debussy & Ravel — French Impressionism",
     date: new Date("2026-03-29T20:00:00-04:00"),
     venue: "Koerner Hall, Toronto",

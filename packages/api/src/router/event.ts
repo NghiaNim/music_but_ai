@@ -65,6 +65,7 @@ export const eventRouter = {
           "solo_recital",
           "choral",
           "ballet",
+          "jazz",
         ]),
         imageUrl: z.string().url().optional(),
         ticketUrl: z.string().url().optional(),

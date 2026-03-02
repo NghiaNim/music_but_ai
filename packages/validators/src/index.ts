@@ -10,6 +10,7 @@ export const Genre = z.enum([
   "solo_recital",
   "choral",
   "ballet",
+  "jazz",
 ]);
 export type Genre = z.infer<typeof Genre>;
 

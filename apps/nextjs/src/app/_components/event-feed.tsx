@@ -22,6 +22,7 @@ const GENRE_LABELS: Record<string, string> = {
   solo_recital: "Solo Recital",
   choral: "Choral",
   ballet: "Ballet",
+  jazz: "Jazz",
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
@@ -39,6 +40,7 @@ const GENRE_OPTIONS = [
   "solo_recital",
   "choral",
   "ballet",
+  "jazz",
 ] as const;
 
 const CITY_OPTIONS = [
@@ -88,6 +90,7 @@ export function EventFeed() {
     initialDifficulty,
   );
   const [cityFilter, setCityFilter] = useState<string | undefined>();
+  const [sortBy, setSortBy] = useState<"day_asc" | "day_desc">("day_asc");
 
   const { data: events } = useSuspenseQuery(
     trpc.event.all.queryOptions({
@@ -109,6 +112,10 @@ export function EventFeed() {
             false),
       )
     : events;
+  const sortedEvents = [...filteredEvents].sort((a, b) => {
+    const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
+    return sortBy === "day_asc" ? diff : -diff;
+  });
 
   return (
     <div>
@@ -130,6 +137,14 @@ export function EventFeed() {
               {city}
             </option>
           ))}
+        </select>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as "day_asc" | "day_desc")}
+          className="bg-card text-foreground h-9 rounded-md border px-3 text-sm"
+        >
+          <option value="day_asc">Soonest Day</option>
+          <option value="day_desc">Latest Day</option>
         </select>
       </div>
 
@@ -167,7 +182,7 @@ export function EventFeed() {
         ))}
       </div>
 
-      {filteredEvents.length === 0 ? (
+      {sortedEvents.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16">
           <p className="text-muted-foreground text-sm">No events found</p>
           <p className="text-muted-foreground text-xs">
@@ -176,7 +191,7 @@ export function EventFeed() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {filteredEvents.map((event) => (
+          {sortedEvents.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </div>

@@ -20,6 +20,7 @@ export const genreEnum = pgEnum("genre", [
   "solo_recital",
   "choral",
   "ballet",
+  "jazz",
 ]);
 
 export const eventStatusEnum = pgEnum("event_status", ["saved", "attended"]);
