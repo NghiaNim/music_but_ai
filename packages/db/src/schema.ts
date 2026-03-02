@@ -41,7 +41,7 @@ export const orderStatusEnum = pgEnum("order_status", [
   "refunded",
 ]);
 
-export const externalSourceEnum = pgEnum("external_source", [
+export const liveEventSourceEnum = pgEnum("live_event_source", [
   "carnegie_hall",
   "met_opera",
   "juilliard",
@@ -187,15 +187,17 @@ export const TicketOrder = pgTable("ticket_order", (t) => ({
     .$onUpdateFn(() => new Date()),
 }));
 
-// ─── ExternalEvent (scraped venue events for testing) ─────
+// ─── LiveEvent (scraped venue events for testing) ─────────
 
-export const ExternalEvent = pgTable("external_event", (t) => ({
+export const LiveEvent = pgTable("live_event", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
-  source: externalSourceEnum().notNull(),
+  source: liveEventSourceEnum().notNull(),
   title: t.varchar({ length: 512 }).notNull(),
   date: t.timestamp({ mode: "date", withTimezone: true }),
+  dateText: t.varchar({ length: 128 }),
   venueName: t.varchar({ length: 256 }),
   location: t.varchar({ length: 256 }),
+  eventUrl: t.text().notNull(),
   buyUrl: t.text().notNull(),
   raw: t.jsonb().$type<unknown>(),
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
@@ -305,7 +307,7 @@ export const CreateChatMessageSchema = createInsertSchema(ChatMessage).omit({
   createdAt: true,
 });
 
-export const CreateExternalEventSchema = createInsertSchema(ExternalEvent).omit({
+export const CreateLiveEventSchema = createInsertSchema(LiveEvent).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

@@ -105,7 +105,7 @@ export default async function SignInPage(props: {
           <div className="rounded-xl border bg-amber-50 p-3 text-center dark:bg-amber-950/30">
             <p className="text-xs font-semibold">Learn</p>
             <p className="text-muted-foreground mt-0.5 text-[10px]">
-              Classical 101
+              Classical & jazz 101
             </p>
           </div>
           <div className="rounded-xl border bg-sky-50 p-3 text-center dark:bg-sky-950/30">

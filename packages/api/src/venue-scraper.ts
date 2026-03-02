@@ -12,6 +12,7 @@ export interface ScrapedEvent {
   dateText?: string;
   venueName?: string;
   location?: string;
+  eventUrl: string;
   buyUrl: string;
 }
 
@@ -25,9 +26,14 @@ function toAbsoluteUrl(href: string, base: string): string {
   return href.startsWith("http") ? href : `${base}${href}`;
 }
 
+function isBlockedHtml(html: string): boolean {
+  return /incapsula|just a moment|cloudflare|noindex, nofollow/i.test(html);
+}
+
 export async function scrapeCarnegieHall(): Promise<ScrapedEvent[]> {
   const base = "https://www.carnegiehall.org";
   const html = await fetchHtml(`${base}/Events`);
+  if (isBlockedHtml(html)) return [];
   const $ = load(html);
   const events: ScrapedEvent[] = [];
 
@@ -45,17 +51,19 @@ export async function scrapeCarnegieHall(): Promise<ScrapedEvent[]> {
     const venueName =
       root.find(".venue, .location").first().text().trim() || undefined;
 
-    const buyHref =
+    const linkHref =
       root.find('a[href*="tickets"], a[href*="event"]').first().attr("href") ??
       "";
-    if (!buyHref) continue;
+    if (!linkHref) continue;
+    const eventUrl = toAbsoluteUrl(linkHref, base);
 
     events.push({
       source: "carnegie_hall",
       title,
       dateText,
       venueName,
-      buyUrl: toAbsoluteUrl(buyHref, base),
+      eventUrl,
+      buyUrl: eventUrl,
     });
   }
 
@@ -80,11 +88,13 @@ export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
       root.find("time").first().text().trim() ||
       root.find(".date").first().text().trim();
 
-    const buyHref =
+    const linkHref =
       root.find('a[href*="tickets"], a[href*="/season/"]').first().attr("href") ??
       root.attr("href") ??
       "";
-    if (!buyHref) continue;
+    if (!linkHref) continue;
+    const eventUrl = toAbsoluteUrl(linkHref, base);
+    if (!eventUrl.includes("/season/")) continue;
 
     events.push({
       source: "met_opera",
@@ -92,7 +102,8 @@ export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
       dateText,
       venueName: "Metropolitan Opera",
       location: "New York, NY",
-      buyUrl: toAbsoluteUrl(buyHref, base),
+      eventUrl,
+      buyUrl: eventUrl,
     });
   }
 
@@ -102,6 +113,7 @@ export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
 export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
   const base = "https://www.juilliard.edu";
   const html = await fetchHtml(`${base}/stage-beyond/performance/calendar`);
+  if (isBlockedHtml(html)) return [];
   const $ = load(html);
   const events: ScrapedEvent[] = [];
 
@@ -116,10 +128,11 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
       root.find("time").first().text().trim() ||
       root.find(".date").first().text().trim();
 
-    const buyHref =
+    const linkHref =
       root.find('a[href*="tickets"], a[href*="/event/"]').first().attr("href") ??
       "";
-    if (!buyHref) continue;
+    if (!linkHref) continue;
+    const eventUrl = toAbsoluteUrl(linkHref, base);
 
     events.push({
       source: "juilliard",
@@ -127,7 +140,8 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
       dateText,
       venueName: "The Juilliard School",
       location: "New York, NY",
-      buyUrl: toAbsoluteUrl(buyHref, base),
+      eventUrl,
+      buyUrl: eventUrl,
     });
   }
 
@@ -151,11 +165,15 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
       root.find("time").first().text().trim() ||
       root.find(".date").first().text().trim();
 
-    const buyHref =
+    const linkHref =
       root.find('a[href*="tickets"], a[href*="/performances/"]').first().attr(
         "href",
       ) ?? "";
-    if (!buyHref) continue;
+    if (!linkHref) continue;
+    const eventUrl = toAbsoluteUrl(linkHref, base);
+    if (eventUrl === `${base}/performances/` || eventUrl === `${base}/performances`) continue;
+    if (/info for|concert-goers|performances$/i.test(title)) continue;
+    if (title.length < 6) continue;
 
     events.push({
       source: "msm",
@@ -163,7 +181,8 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
       dateText,
       venueName: "Manhattan School of Music",
       location: "New York, NY",
-      buyUrl: toAbsoluteUrl(buyHref, base),
+      eventUrl,
+      buyUrl: eventUrl,
     });
   }
 

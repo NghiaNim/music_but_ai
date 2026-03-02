@@ -19,11 +19,11 @@ export const metadata: Metadata = {
   ),
   title: "Classica",
   description:
-    "Discover, learn, and experience classical music with an AI-powered concierge",
+    "Discover, learn, and experience classical and jazz music with an AI-powered concierge",
   openGraph: {
     title: "Classica",
     description:
-      "Discover, learn, and experience classical music with an AI-powered concierge",
+      "Discover, learn, and experience classical and jazz music with an AI-powered concierge",
   },
 };
 

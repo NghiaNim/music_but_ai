@@ -2,11 +2,11 @@ import Link from "next/link";
 
 const TOPICS = [
   {
-    title: "What is Classical Music?",
-    description: "A beginner's guide to the art form",
+    title: "Classical & Jazz Basics",
+    description: "A beginner's guide to both genres",
     href: "/chat?mode=learning",
     prompt:
-      "What exactly is classical music? Give me a beginner-friendly overview.",
+      "What are the key differences between classical and jazz music? Give me a beginner-friendly overview.",
     gradient:
       "from-violet-100 to-violet-50 dark:from-violet-950/40 dark:to-violet-900/20",
     icon: "🎹",
@@ -15,7 +15,7 @@ const TOPICS = [
     title: "Concert Etiquette",
     description: "What to wear, when to clap, and more",
     href: "/chat?mode=learning",
-    prompt: "What's the etiquette for attending a classical music concert?",
+    prompt: "What's the etiquette for attending classical and jazz concerts?",
     gradient:
       "from-rose-100 to-rose-50 dark:from-rose-950/40 dark:to-rose-900/20",
     icon: "🎩",
@@ -31,10 +31,11 @@ const TOPICS = [
     icon: "🎻",
   },
   {
-    title: "Famous Composers",
-    description: "Bach, Mozart, Beethoven, and beyond",
+    title: "Legendary Composers & Artists",
+    description: "Bach, Beethoven, Miles, Coltrane, and beyond",
     href: "/chat?mode=learning",
-    prompt: "Who are the most famous classical composers I should know about?",
+    prompt:
+      "Who are the most important classical composers and jazz artists I should know about?",
     gradient:
       "from-emerald-100 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-900/20",
     icon: "🎼",
@@ -63,7 +64,7 @@ export default function LearnPage() {
     <div className="mx-auto max-w-lg px-4 py-6">
       <h1 className="mb-1 text-2xl font-bold tracking-tight">Learn</h1>
       <p className="text-muted-foreground mb-6 text-sm">
-        Classical music, explained in plain language
+        Classical and jazz, explained in plain language
       </p>
 
       <div className="grid grid-cols-2 gap-3">
@@ -94,7 +95,7 @@ export default function LearnPage() {
       <div className="mt-8 rounded-xl border p-4 text-center">
         <p className="text-sm font-semibold">Have a question?</p>
         <p className="text-muted-foreground mt-1 text-xs">
-          Ask the AI Mentor anything about classical music
+          Ask the AI Mentor anything about classical or jazz music
         </p>
         <Link
           href="/chat?mode=learning"
