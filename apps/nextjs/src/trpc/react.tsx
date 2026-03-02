@@ -2,8 +2,6 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-
-import { env } from "~/env";
 import { QueryClientProvider } from "@tanstack/react-query";
 import {
   createTRPCClient,
@@ -15,6 +13,7 @@ import SuperJSON from "superjson";
 
 import type { AppRouter } from "@acme/api";
 
+import { env } from "~/env";
 import { createQueryClient } from "./query-client";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;

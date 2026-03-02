@@ -29,7 +29,7 @@ const DIFFICULTIES = [
 type Genre = (typeof GENRES)[number]["value"];
 type Difficulty = (typeof DIFFICULTIES)[number]["value"];
 
-export function PostEventForm() {
+export function PostEventForm({ isSignedIn }: { isSignedIn: boolean }) {
   const router = useRouter();
   const trpc = useTRPC();
 
@@ -64,6 +64,11 @@ export function PostEventForm() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (!isSignedIn) {
+      toast.error("Please sign in to post an event");
+      return;
+    }
+
     if (!title || !date || !time || !venue || !program || !description) {
       toast.error("Please fill in all required fields");
       return;
@@ -86,7 +91,22 @@ export function PostEventForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <div className="relative">
+      {!isSignedIn && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 px-4 py-6 backdrop-blur-md">
+          <p className="text-center text-sm font-medium">
+            Sign in to post an event
+          </p>
+          <Button asChild size="sm">
+            <a href="/sign-in?callbackUrl=%2Fpost-event">Sign in</a>
+          </Button>
+        </div>
+      )}
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-5"
+        aria-disabled={!isSignedIn}
+      >
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="title">Event Title *</Label>
         <Input
@@ -150,7 +170,7 @@ export function PostEventForm() {
           id="genre"
           value={genre}
           onChange={(e) => setGenre(e.target.value as Genre)}
-          className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+          className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
         >
           {GENRES.map((g) => (
             <option key={g.value} value={g.value}>
@@ -166,7 +186,7 @@ export function PostEventForm() {
           id="difficulty"
           value={difficulty}
           onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-          className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+          className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
         >
           {DIFFICULTIES.map((d) => (
             <option key={d.value} value={d.value}>
@@ -180,12 +200,14 @@ export function PostEventForm() {
         <Label htmlFor="program">Program *</Label>
         <textarea
           id="program"
-          placeholder={"e.g.\nBeethoven - Piano Sonata No. 14 \"Moonlight\"\nChopin - Ballade No. 1 in G minor"}
+          placeholder={
+            'e.g.\nBeethoven - Piano Sonata No. 14 "Moonlight"\nChopin - Ballade No. 1 in G minor'
+          }
           value={program}
           onChange={(e) => setProgram(e.target.value)}
           required
           rows={4}
-          className="border-input bg-background placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+          className="border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-3 py-2 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
         />
       </div>
 
@@ -198,7 +220,7 @@ export function PostEventForm() {
           onChange={(e) => setDescription(e.target.value)}
           required
           rows={4}
-          className="border-input bg-background placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+          className="border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-3 py-2 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
         />
       </div>
 
@@ -230,12 +252,12 @@ export function PostEventForm() {
         </p>
       </div>
 
-      <Button
-        type="submit"
-        size="lg"
-        className="mt-2 w-full"
-        disabled={createEvent.isPending}
-      >
+        <Button
+          type="submit"
+          size="lg"
+          className="mt-2 w-full"
+          disabled={createEvent.isPending}
+        >
         {createEvent.isPending ? (
           <span className="flex items-center gap-2">
             <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -244,7 +266,8 @@ export function PostEventForm() {
         ) : (
           "Post Event"
         )}
-      </Button>
-    </form>
+        </Button>
+      </form>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -102,11 +103,11 @@ export function EventFeed() {
 
   const filteredEvents = cityFilter
     ? events.filter(
-      (e) =>
-        e.venue.toLowerCase().includes(cityFilter.toLowerCase()) ||
-        (e.venueAddress?.toLowerCase().includes(cityFilter.toLowerCase()) ??
-          false),
-    )
+        (e) =>
+          e.venue.toLowerCase().includes(cityFilter.toLowerCase()) ||
+          (e.venueAddress?.toLowerCase().includes(cityFilter.toLowerCase()) ??
+            false),
+      )
     : events;
 
   return (
@@ -187,7 +188,11 @@ export function EventFeed() {
 function formatFriendlyDate(date: Date): { badge: string; line: string } {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const eventDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const eventDay = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
   const diffDays = Math.round(
     (eventDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
   );
@@ -211,24 +216,26 @@ function formatFriendlyDate(date: Date): { badge: string; line: string } {
 
 function EventCard({ event }: { event: EventItem }) {
   const date = new Date(event.date);
-  const { badge, line } = formatFriendlyDate(date);
+  const { line } = formatFriendlyDate(date);
 
   return (
     <Link href={`/event/${event.id}`}>
       <div className="bg-card active:bg-muted/50 flex gap-3 rounded-xl border p-3 transition-colors">
-        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
           {event.imageUrl ? (
-            <img
+            <Image
               src={event.imageUrl}
               alt={event.title}
-              className="h-full w-full object-cover"
+              fill
+              className="object-cover"
+              unoptimized
             />
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
-              <span className="text-[10px] font-semibold uppercase text-orange-600 dark:text-orange-300">
+              <span className="text-[10px] font-semibold text-orange-600 uppercase dark:text-orange-300">
                 {date.toLocaleDateString("en-US", { month: "short" })}
               </span>
-              <span className="text-xl font-bold leading-none text-orange-700 dark:text-orange-200">
+              <span className="text-xl leading-none font-bold text-orange-700 dark:text-orange-200">
                 {date.getDate()}
               </span>
               <span className="mt-0.5 text-[9px] font-medium text-orange-500 dark:text-orange-400">
@@ -251,7 +258,7 @@ function EventCard({ event }: { event: EventItem }) {
               {event.difficulty === "beginner"
                 ? "Beginner Friendly"
                 : event.difficulty.charAt(0).toUpperCase() +
-                event.difficulty.slice(1)}
+                  event.difficulty.slice(1)}
             </span>
           </div>
           <h3 className="line-clamp-1 text-sm font-semibold">{event.title}</h3>

@@ -55,6 +55,7 @@
     "AUTH_SECRET",
     "STRIPE_SECRET_KEY",
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "NEXT_PUBLIC_APP_URL",
     "PORT"
   ],
   "globalPassThroughEnv": [

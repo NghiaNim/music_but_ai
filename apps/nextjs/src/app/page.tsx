@@ -19,7 +19,7 @@ export default async function HomePage() {
           <h1 className="text-2xl font-bold tracking-tight">
             {session
               ? `Welcome back, ${session.user.name.split(" ")[0] ?? "friend"}`
-              : "Discover Classical Music"}
+              : "Discover Classical & Jazz"}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Your AI-powered guide to the world of live performance
@@ -84,7 +84,7 @@ export default async function HomePage() {
               <div className="rounded-xl border bg-amber-50 p-4 transition-colors group-hover:border-amber-300 dark:bg-amber-950/30">
                 <p className="text-sm font-semibold">Learn</p>
                 <p className="text-muted-foreground mt-0.5 text-xs">
-                  Classical music 101
+                  Classical & jazz 101
                 </p>
               </div>
             </Link>
@@ -139,4 +139,3 @@ function ChevronRightIcon() {
     </svg>
   );
 }
-

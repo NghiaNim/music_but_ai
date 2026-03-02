@@ -260,7 +260,7 @@ function EmptyState({
   onSuggestionClick: (suggestion: string) => void;
 }) {
   const discoverySuggestions = [
-    "I've never been to a classical concert. What's good for a beginner?",
+    "I've never been to a classical or jazz concert. What's good for a beginner?",
     "I'm looking for something fun to do this weekend",
     "What opera would you recommend for a first-timer?",
     "I love dramatic, powerful music. What should I see?",

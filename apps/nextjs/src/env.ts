@@ -12,6 +12,8 @@ export const env = createEnv({
     AUTH_SECRET: z.string().optional(),
     AUTH_DISCORD_ID: z.string().optional(),
     AUTH_DISCORD_SECRET: z.string().optional(),
+    AUTH_GOOGLE_ID: z.string().optional(),
+    AUTH_GOOGLE_SECRET: z.string().optional(),
     ELEVENLABS_STS_API_KEY: z.string().optional(),
     OPENAI_API_KEY: z.string().optional(),
     STRIPE_SECRET_KEY: z.string().optional(),

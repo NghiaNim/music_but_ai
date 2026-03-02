@@ -39,7 +39,7 @@ export function OnboardingFlow() {
   });
 
   const alreadyCompleted =
-    profileLoaded && (profile?.onboardingCompleted === true);
+    profileLoaded && profile?.onboardingCompleted === true;
   const hasRedirected = useRef(false);
 
   useEffect(() => {
@@ -190,7 +190,7 @@ export function OnboardingFlow() {
     // Small delay to feel like a real connection
     await new Promise((r) => setTimeout(r, 1200));
 
-    const greeting = `Hi there! Welcome to Classical Music Connect. Quick question — ${data.questions[0]}`;
+    const greeting = `Hi there! Welcome to Classica. Quick question — ${data.questions[0]}`;
 
     setPhase("ai-speaking");
     setStatusText("AI Mentor is speaking...");

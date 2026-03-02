@@ -15,6 +15,8 @@ export function initAuth<
 
   discordClientId?: string;
   discordClientSecret?: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
   extraPlugins?: TExtraPlugins;
 }) {
   const isProduction =
@@ -37,6 +39,10 @@ export function initAuth<
       discord: {
         clientId: options.discordClientId ?? "",
         clientSecret: options.discordClientSecret ?? "",
+      },
+      google: {
+        clientId: options.googleClientId ?? "",
+        clientSecret: options.googleClientSecret ?? "",
       },
     },
     trustedOrigins: ["expo://"],

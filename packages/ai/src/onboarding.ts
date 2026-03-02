@@ -4,7 +4,7 @@ export const ONBOARDING_QUESTIONS = [
   "What kind of music do you like?",
 ] as const;
 
-const ONBOARDING_SYSTEM_PROMPT = `You are the Classical Music Connect onboarding assistant — a warm, enthusiastic guide welcoming someone new.
+const ONBOARDING_SYSTEM_PROMPT = `You are the Classica onboarding assistant — a warm, enthusiastic guide welcoming someone new.
 
 You are having a quick voice conversation. Keep responses SHORT (1-2 sentences max) and conversational. Sound natural, like you're chatting with a friend.
 
