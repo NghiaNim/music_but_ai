@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 
-import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { getSession } from "~/auth/server";
+import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { EventDetail, EventDetailSkeleton } from "./_components/event-detail";
 
 export default async function EventPage({

@@ -61,7 +61,7 @@ export function EventDetail({
   return (
     <div className="relative mx-auto max-w-lg">
       {!isSignedIn && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-background/80 px-4 py-6 backdrop-blur-md">
+        <div className="bg-background/80 absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-4 py-6 backdrop-blur-md">
           <p className="text-center text-sm font-medium">
             Sign in to view event details, save events, and buy tickets
           </p>
@@ -77,143 +77,142 @@ export function EventDetail({
         </div>
       )}
       <div
-        className={cn(
-          !isSignedIn && "pointer-events-none select-none blur-sm",
-        )}
+        className={cn(!isSignedIn && "pointer-events-none blur-sm select-none")}
       >
         <div className="px-4 pt-4 pb-2">
-        <Link
-          href="/events"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-        >
-          <ArrowLeftIcon />
-          Events
-        </Link>
-      </div>
-
-      <div className="relative mx-4 mb-4 aspect-video overflow-hidden rounded-xl">
-        {event.imageUrl ? (
-          <Image
-            src={event.imageUrl}
-            alt={event.title}
-            fill
-            className="object-cover"
-            unoptimized
-          />
-        ) : (
-          <div className="flex aspect-video w-full items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
-            <EventMusicNoteIcon />
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 pb-4">
-        <div className="mb-2 flex flex-wrap gap-1.5">
-          <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-xs font-medium">
-            {GENRE_LABELS[event.genre] ?? event.genre}
-          </span>
-          <span
-            className={cn(
-              "rounded-full px-2.5 py-0.5 text-xs font-medium",
-              DIFFICULTY_COLORS[event.difficulty],
-            )}
+          <Link
+            href="/events"
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
           >
-            {event.difficulty === "beginner"
-              ? "Beginner Friendly"
-              : event.difficulty.charAt(0).toUpperCase() +
-                event.difficulty.slice(1)}
-          </span>
-        </div>
-
-        <h1 className="text-xl font-bold tracking-tight">{event.title}</h1>
-
-        <div className="text-muted-foreground mt-3 flex flex-col gap-1.5 text-sm">
-          <div className="flex items-center gap-2">
-            <CalendarIcon />
-            <span>
-              {formattedDate} at {formattedTime}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPinIcon />
-            <span>{event.venue}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-4 mb-4 rounded-xl border bg-gradient-to-r from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30">
-        <div className="mb-3 flex items-baseline justify-between">
-          <div>
-            <span className="text-muted-foreground text-sm line-through">
-              ${(event.originalPriceCents / 100).toFixed(2)}
-            </span>
-            <span className="ml-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              ${(event.discountedPriceCents / 100).toFixed(2)}
-            </span>
-          </div>
-          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-            {Math.round(
-              (1 - event.discountedPriceCents / event.originalPriceCents) * 100,
-            )}
-            % off
-          </span>
-        </div>
-        <p className="text-muted-foreground mb-3 text-xs">
-          {event.ticketsAvailable} tickets remaining · Exclusive member price
-        </p>
-        <BuyTicketButton eventId={eventId} eventTitle={event.title} />
-      </div>
-
-      <div className="flex gap-2 px-4 pb-4">
-        <EventActionButtons eventId={eventId} />
-      </div>
-
-      <div className="px-4 pb-4">
-        <Button className="w-full" asChild>
-          <Link href={`/chat?eventId=${eventId}&mode=learning`}>
-            <ChatIcon />
-            Ask AI About This Event
+            <ArrowLeftIcon />
+            Events
           </Link>
-        </Button>
-      </div>
+        </div>
 
-      {event.beginnerNotes && (
-        <div className="border-primary/20 bg-primary/5 mx-4 mb-4 rounded-xl border p-4">
-          <div className="mb-2 flex items-center gap-2">
-            <LightbulbIcon />
-            <h3 className="font-semibold">For Beginners</h3>
+        <div className="relative mx-4 mb-4 aspect-video overflow-hidden rounded-xl">
+          {event.imageUrl ? (
+            <Image
+              src={event.imageUrl}
+              alt={event.title}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            <div className="flex aspect-video w-full items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
+              <EventMusicNoteIcon />
+            </div>
+          )}
+        </div>
+
+        <div className="px-4 pb-4">
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-xs font-medium">
+              {GENRE_LABELS[event.genre] ?? event.genre}
+            </span>
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-0.5 text-xs font-medium",
+                DIFFICULTY_COLORS[event.difficulty],
+              )}
+            >
+              {event.difficulty === "beginner"
+                ? "Beginner Friendly"
+                : event.difficulty.charAt(0).toUpperCase() +
+                  event.difficulty.slice(1)}
+            </span>
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
-            {event.beginnerNotes}
+
+          <h1 className="text-xl font-bold tracking-tight">{event.title}</h1>
+
+          <div className="text-muted-foreground mt-3 flex flex-col gap-1.5 text-sm">
+            <div className="flex items-center gap-2">
+              <CalendarIcon />
+              <span>
+                {formattedDate} at {formattedTime}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPinIcon />
+              <span>{event.venue}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-4 mb-4 rounded-xl border bg-gradient-to-r from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30">
+          <div className="mb-3 flex items-baseline justify-between">
+            <div>
+              <span className="text-muted-foreground text-sm line-through">
+                ${(event.originalPriceCents / 100).toFixed(2)}
+              </span>
+              <span className="ml-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                ${(event.discountedPriceCents / 100).toFixed(2)}
+              </span>
+            </div>
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+              {Math.round(
+                (1 - event.discountedPriceCents / event.originalPriceCents) *
+                  100,
+              )}
+              % off
+            </span>
+          </div>
+          <p className="text-muted-foreground mb-3 text-xs">
+            {event.ticketsAvailable} tickets remaining · Exclusive member price
           </p>
+          <BuyTicketButton eventId={eventId} eventTitle={event.title} />
         </div>
-      )}
 
-      <section className="px-4 pb-4">
-        <h2 className="mb-2 text-base font-semibold">Program</h2>
-        <div className="bg-card rounded-xl border p-3">
-          <p className="text-sm whitespace-pre-line">{event.program}</p>
+        <div className="flex gap-2 px-4 pb-4">
+          <EventActionButtons eventId={eventId} />
         </div>
-      </section>
 
-      <section className="px-4 pb-4">
-        <h2 className="mb-2 text-base font-semibold">About</h2>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {event.description}
-        </p>
-      </section>
+        <div className="px-4 pb-4">
+          <Button className="w-full" asChild>
+            <Link href={`/chat?eventId=${eventId}&mode=learning`}>
+              <ChatIcon />
+              Ask AI About This Event
+            </Link>
+          </Button>
+        </div>
 
-      {event.venueAddress && (
-        <section className="px-4 pb-6">
-          <h2 className="mb-2 text-base font-semibold">Venue</h2>
-          <div className="bg-card rounded-xl border p-3">
-            <p className="text-sm font-medium">{event.venue}</p>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              {event.venueAddress}
+        {event.beginnerNotes && (
+          <div className="border-primary/20 bg-primary/5 mx-4 mb-4 rounded-xl border p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <LightbulbIcon />
+              <h3 className="font-semibold">For Beginners</h3>
+            </div>
+            <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+              {event.beginnerNotes}
             </p>
           </div>
+        )}
+
+        <section className="px-4 pb-4">
+          <h2 className="mb-2 text-base font-semibold">Program</h2>
+          <div className="bg-card rounded-xl border p-3">
+            <p className="text-sm whitespace-pre-line">{event.program}</p>
+          </div>
         </section>
-      )}
+
+        <section className="px-4 pb-4">
+          <h2 className="mb-2 text-base font-semibold">About</h2>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {event.description}
+          </p>
+        </section>
+
+        {event.venueAddress && (
+          <section className="px-4 pb-6">
+            <h2 className="mb-2 text-base font-semibold">Venue</h2>
+            <div className="bg-card rounded-xl border p-3">
+              <p className="text-sm font-medium">{event.venue}</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                {event.venueAddress}
+              </p>
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

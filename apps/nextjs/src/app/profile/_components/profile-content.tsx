@@ -274,7 +274,7 @@ function BadgeCard({
         {badge.label}
       </p>
       {!earned && (
-        <p className="text-muted-foreground mt-1 text-center text-[10px] uppercase tracking-wide">
+        <p className="text-muted-foreground mt-1 text-center text-[10px] tracking-wide uppercase">
           Locked
         </p>
       )}
@@ -362,15 +362,11 @@ export function ProfileContent() {
               <p className="text-foreground text-2xl font-bold">
                 {concertsAttended}
               </p>
-              <p className="text-muted-foreground text-xs">
-                Concerts Attended
-              </p>
+              <p className="text-muted-foreground text-xs">Concerts Attended</p>
             </div>
             <div className="bg-border h-px" />
             <div className="py-2.5">
-              <p className="text-foreground text-2xl font-bold">
-                {daysOnApp}
-              </p>
+              <p className="text-foreground text-2xl font-bold">{daysOnApp}</p>
               <p className="text-muted-foreground text-xs">Days on Classica</p>
             </div>
           </div>
@@ -429,8 +425,10 @@ export function ProfileContent() {
         Tap a badge to flip it{isSignedIn ? "" : " — sign in to start earning"}
       </p>
       <div className="grid grid-cols-2 gap-3.5">
-        {(isSignedIn ? badgesWithState : BADGES.map((b) => ({ ...b, earned: false }))).map(
-          (badge) => (
+        {(isSignedIn
+          ? badgesWithState
+          : BADGES.map((b) => ({ ...b, earned: false }))
+        ).map((badge) => (
           <BadgeCard
             key={badge.id}
             badge={badge}
@@ -438,8 +436,7 @@ export function ProfileContent() {
             earned={badge.earned}
             onFlip={() => toggleFlip(badge.id)}
           />
-        ),
-        )}
+        ))}
       </div>
     </>
   );

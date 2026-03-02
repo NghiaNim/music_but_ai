@@ -1,10 +1,6 @@
 import { load } from "cheerio";
 
-export type ScrapedVenue =
-  | "carnegie_hall"
-  | "met_opera"
-  | "juilliard"
-  | "msm";
+export type ScrapedVenue = "carnegie_hall" | "met_opera" | "juilliard" | "msm";
 
 export interface ScrapedEvent {
   source: ScrapedVenue;
@@ -76,7 +72,9 @@ export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
   const $ = load(html);
   const events: ScrapedEvent[] = [];
 
-  for (const el of $(".calendar-event, .event, a[href*='/season/']").toArray()) {
+  for (const el of $(
+    ".calendar-event, .event, a[href*='/season/']",
+  ).toArray()) {
     const root = $(el);
     const title =
       root.find(".event-title, h3, h2").first().text().trim() ||
@@ -89,7 +87,10 @@ export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
       root.find(".date").first().text().trim();
 
     const linkHref =
-      root.find('a[href*="tickets"], a[href*="/season/"]').first().attr("href") ??
+      root
+        .find('a[href*="tickets"], a[href*="/season/"]')
+        .first()
+        .attr("href") ??
       root.attr("href") ??
       "";
     if (!linkHref) continue;
@@ -129,8 +130,10 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
       root.find(".date").first().text().trim();
 
     const linkHref =
-      root.find('a[href*="tickets"], a[href*="/event/"]').first().attr("href") ??
-      "";
+      root
+        .find('a[href*="tickets"], a[href*="/event/"]')
+        .first()
+        .attr("href") ?? "";
     if (!linkHref) continue;
     const eventUrl = toAbsoluteUrl(linkHref, base);
 
@@ -166,12 +169,17 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
       root.find(".date").first().text().trim();
 
     const linkHref =
-      root.find('a[href*="tickets"], a[href*="/performances/"]').first().attr(
-        "href",
-      ) ?? "";
+      root
+        .find('a[href*="tickets"], a[href*="/performances/"]')
+        .first()
+        .attr("href") ?? "";
     if (!linkHref) continue;
     const eventUrl = toAbsoluteUrl(linkHref, base);
-    if (eventUrl === `${base}/performances/` || eventUrl === `${base}/performances`) continue;
+    if (
+      eventUrl === `${base}/performances/` ||
+      eventUrl === `${base}/performances`
+    )
+      continue;
     if (/info for|concert-goers|performances$/i.test(title)) continue;
     if (title.length < 6) continue;
 
@@ -207,4 +215,3 @@ export async function scrapeAllVenues(): Promise<ScrapedEvent[]> {
     ...collect(msm),
   ];
 }
-
