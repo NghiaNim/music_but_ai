@@ -276,7 +276,7 @@ function EventCard({ event }: { event: EventItem }) {
                   event.difficulty.slice(1)}
             </span>
           </div>
-          <h3 className="line-clamp-1 text-sm font-semibold">{event.title}</h3>
+          <h3 className="line-clamp-1 text-sm font-semibold" style={{ color: "#9C1738" }}>{event.title}</h3>
           <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
             {line} &middot; {event.venue}
           </p>

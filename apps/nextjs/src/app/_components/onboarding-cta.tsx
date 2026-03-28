@@ -71,8 +71,8 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
   if (isSignedIn) {
     return (
       <Link href="/onboarding" className="block">
-        <div className="flex items-center gap-4 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-800 dark:bg-violet-950/30">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30">
+        <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
             <WaveformIcon />
           </div>
           <div className="min-w-0 flex-1">
@@ -89,8 +89,8 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
 
   return (
     <Link href="/sign-in?callbackUrl=/onboarding" className="block">
-      <div className="flex items-center gap-4 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-800 dark:bg-violet-950/30">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30">
+      <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
           <WaveformIcon />
         </div>
         <div className="min-w-0 flex-1">
@@ -137,7 +137,7 @@ function WaveformIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="text-violet-600 dark:text-violet-400"
+      className="text-emerald-600 dark:text-emerald-400"
     >
       <path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" />
     </svg>

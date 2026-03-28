@@ -1,7 +1,7 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod/v4";
 
-import { and, desc, eq, gte, ilike, lte, or } from "@acme/db";
+import { and, asc, eq, gte, ilike, lte, or } from "@acme/db";
 import { Event } from "@acme/db/schema";
 import { EventFiltersSchema } from "@acme/validators";
 
@@ -35,7 +35,7 @@ export const eventRouter = {
 
     return ctx.db.query.Event.findMany({
       where: conditions.length > 0 ? and(...conditions) : undefined,
-      orderBy: [desc(Event.date)],
+      orderBy: [asc(Event.date)],
       limit: 50,
     });
   }),
