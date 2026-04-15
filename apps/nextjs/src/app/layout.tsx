@@ -48,14 +48,14 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "bg-background text-foreground min-h-screen font-sans antialiased",
+          "bg-amber-50/50 text-foreground min-h-screen font-sans antialiased dark:bg-amber-950/10",
           geistSans.variable,
           geistMono.variable,
         )}
       >
         <ThemeProvider>
           <TRPCReactProvider>
-            <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
+            <header className="sticky top-0 z-50 border-b bg-amber-50/90 backdrop-blur supports-backdrop-filter:bg-amber-50/70 dark:bg-amber-950/90 dark:supports-backdrop-filter:bg-amber-950/70">
               <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-4">
                 <Link href="/" className="text-base font-bold tracking-tight">
                   Classica

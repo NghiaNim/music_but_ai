@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const TOPICS = [
@@ -93,15 +94,24 @@ export default function LearnPage() {
       </div>
 
       <div className="mt-8 rounded-xl border p-4 text-center">
+        <div className="mb-2 flex justify-center">
+          <Image
+            src="/tanny.png"
+            alt="Tanny the cat"
+            width={40}
+            height={40}
+            className="rounded-full"
+          />
+        </div>
         <p className="text-sm font-semibold">Have a question?</p>
         <p className="text-muted-foreground mt-1 text-xs">
-          Ask the AI Mentor anything about classical or jazz music
+          Ask Tanny anything about classical or jazz music
         </p>
         <Link
           href="/chat?mode=learning"
           className="text-primary mt-3 inline-block text-sm font-medium"
         >
-          Open AI Mentor →
+          Ask Tanny →
         </Link>
       </div>
     </div>

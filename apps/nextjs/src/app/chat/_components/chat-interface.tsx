@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 
@@ -77,13 +78,22 @@ export function ChatInterface() {
     <div className="flex h-full flex-col">
       <header className="border-b px-4 py-3">
         <div className="mx-auto flex max-w-lg items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold">AI Mentor</h1>
-            <p className="text-muted-foreground text-xs">
-              {mode === "discovery"
-                ? "Help me find a concert"
-                : "Help me understand this event"}
-            </p>
+          <div className="flex items-center gap-2">
+            <Image
+              src="/tanny.png"
+              alt="Tanny"
+              width={32}
+              height={32}
+              className="rounded-full"
+            />
+            <div>
+              <h1 className="text-lg font-semibold">Ask Tanny</h1>
+              <p className="text-muted-foreground text-xs">
+                {mode === "discovery"
+                  ? "Help me find a concert"
+                  : "Help me understand this event"}
+              </p>
+            </div>
           </div>
           {!eventId && (
             <div className="flex gap-1 rounded-lg border p-1">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useMutation,
@@ -193,7 +194,7 @@ export function OnboardingFlow() {
     const greeting = `Hi there! Welcome to Classica. Quick question — ${data.questions[0]}`;
 
     setPhase("ai-speaking");
-    setStatusText("AI Mentor is speaking...");
+    setStatusText("Tanny is speaking...");
     await playTTS(greeting);
 
     // Start listening
@@ -222,7 +223,7 @@ export function OnboardingFlow() {
       });
 
       setPhase("ai-speaking");
-      setStatusText("AI Mentor is speaking...");
+      setStatusText("Tanny is speaking...");
       await playTTS(result.text);
 
       // Single question — go straight to music
@@ -320,7 +321,7 @@ export function OnboardingFlow() {
           </div>
         </div>
         <div>
-          <h1 className="text-xl font-bold">AI Mentor</h1>
+          <h1 className="text-xl font-bold">Ask Tanny</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             A quick voice chat to learn your taste
           </p>
@@ -481,7 +482,7 @@ export function OnboardingFlow() {
               ? `Track ${musicIndex + 1} of 3`
               : isUserSpeaking
                 ? "Listening..."
-                : "AI Mentor"}
+                : "Ask Tanny"}
           </h2>
           {isMusicPlaying && (
             <p className="text-muted-foreground mt-1 text-xs">
@@ -514,22 +515,13 @@ export function OnboardingFlow() {
 
 function AIMentorAvatar({ size = 24 }: { size?: number }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
+    <Image
+      src="/tanny.png"
+      alt="Tanny the cat"
       width={size}
       height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-primary"
-    >
-      <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" />
-      <circle cx="18" cy="16" r="3" />
-    </svg>
+      className="rounded-full"
+    />
   );
 }
 
