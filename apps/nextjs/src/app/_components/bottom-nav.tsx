@@ -17,8 +17,8 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-background/95 supports-[backdrop-filter]:bg-background/60 fixed right-0 bottom-0 left-0 z-50 border-t backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-2">
+    <nav className="sticky bottom-0 z-50 border-t bg-amber-50/90 backdrop-blur supports-backdrop-filter:bg-amber-50/70 dark:bg-amber-950/90 dark:supports-backdrop-filter:bg-amber-950/70">
+      <div className="flex h-16 items-center justify-around px-2">
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.href === "/"

@@ -25,7 +25,7 @@ export default async function HomePage() {
 
           <div className="relative">
             <p className="mb-1 text-sm font-medium text-amber-600 dark:text-amber-400">
-              {session ? `Hey ${firstName} ~` : "Welcome to Classica ~"}
+              {session ? `Hey ${firstName} ~` : "Welcome to Classica"}
             </p>
             <h1 className="text-2xl font-bold tracking-tight">
               {session
@@ -33,7 +33,7 @@ export default async function HomePage() {
                 : "Your next favorite concert is waiting"}
             </h1>
             <p className="text-muted-foreground mt-1.5 text-sm">
-              Discover classical & jazz, powered by curiosity (and a little AI)
+              Discover classical & jazz, powered by curiosity
             </p>
           </div>
         </section>
@@ -147,17 +147,63 @@ export default async function HomePage() {
 
 function FloatingNotes() {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      <svg className="absolute top-3 right-6 text-amber-300/50 dark:text-amber-600/30" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M9 18V5l12-2v13M9 18c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3zm12-2c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z" />
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      aria-hidden
+    >
+      <svg
+        className="absolute top-2 right-4 rotate-12"
+        width="30"
+        height="30"
+        viewBox="0 0 24 24"
+        fill="#FFBE00"
+        opacity="0.7"
+      >
+        <BeamedEighthNote />
       </svg>
-      <svg className="absolute top-8 right-20 text-orange-300/40 dark:text-orange-600/20" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
+      <svg
+        className="absolute top-14 right-14 -rotate-6"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="#FFB777"
+        opacity="0.8"
+      >
+        <EighthNote />
       </svg>
-      <svg className="absolute top-5 left-8 text-rose-300/30 dark:text-rose-600/20" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <circle cx="12" cy="12" r="4" />
+      <svg
+        className="absolute top-5 right-36 rotate-6"
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="#FFB1B7"
+        opacity="0.8"
+      >
+        <EighthNote />
       </svg>
     </div>
+  );
+}
+
+function EighthNote() {
+  return (
+    <>
+      <rect x="11" y="3" width="2" height="13" />
+      <path d="M13 3 Q19 5 19 10 Q19 7 13 7 Z" />
+      <ellipse cx="9" cy="17" rx="4" ry="3" />
+    </>
+  );
+}
+
+function BeamedEighthNote() {
+  return (
+    <>
+      <rect x="5.3" y="6" width="1.4" height="13" />
+      <rect x="17.3" y="4" width="1.4" height="13" />
+      <path d="M5 4.5 L19 2.5 L19 5 L5 7 Z" />
+      <ellipse cx="4" cy="19" rx="3.2" ry="2.3" />
+      <ellipse cx="16" cy="17" rx="3.2" ry="2.3" />
+    </>
   );
 }
 

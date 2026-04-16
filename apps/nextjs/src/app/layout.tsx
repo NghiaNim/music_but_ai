@@ -48,26 +48,31 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "bg-amber-50/50 text-foreground min-h-screen font-sans antialiased dark:bg-amber-950/10",
+          "bg-background text-foreground min-h-screen font-sans antialiased",
           geistSans.variable,
           geistMono.variable,
         )}
       >
         <ThemeProvider>
           <TRPCReactProvider>
-            <header className="sticky top-0 z-50 border-b bg-amber-50/90 backdrop-blur supports-backdrop-filter:bg-amber-50/70 dark:bg-amber-950/90 dark:supports-backdrop-filter:bg-amber-950/70">
-              <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-4">
-                <Link href="/" className="text-base font-bold tracking-tight">
-                  Classica
-                </Link>
-                <div className="flex items-center gap-2">
-                  <AuthHeader />
-                  <ThemeToggle />
+            <div className="relative mx-auto flex min-h-dvh max-w-[430px] flex-col bg-amber-50/50 shadow-sm dark:bg-amber-950/10">
+              <header className="sticky top-0 z-50 border-b bg-amber-50/90 backdrop-blur supports-backdrop-filter:bg-amber-50/70 dark:bg-amber-950/90 dark:supports-backdrop-filter:bg-amber-950/70">
+                <div className="flex h-12 items-center justify-between px-4">
+                  <Link
+                    href="/"
+                    className="text-base font-bold tracking-tight"
+                  >
+                    Classica
+                  </Link>
+                  <div className="flex items-center gap-2">
+                    <AuthHeader />
+                    <ThemeToggle />
+                  </div>
                 </div>
-              </div>
-            </header>
-            <div className="pb-16">{props.children}</div>
-            <BottomNav />
+              </header>
+              <main className="flex-1">{props.children}</main>
+              <BottomNav />
+            </div>
           </TRPCReactProvider>
           <Toaster />
         </ThemeProvider>
