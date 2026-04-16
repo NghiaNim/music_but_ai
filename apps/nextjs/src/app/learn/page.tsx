@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { InstrumentsCard } from "./_components/instruments-card";
+
 const TOPICS = [
   {
     title: "Classical & Jazz Basics",
@@ -20,16 +22,6 @@ const TOPICS = [
     gradient:
       "from-rose-100 to-rose-50 dark:from-rose-950/40 dark:to-rose-900/20",
     icon: "🎩",
-  },
-  {
-    title: "Meet the Instruments",
-    description: "From violins to tubas — the orchestra explained",
-    href: "/chat?mode=learning",
-    prompt:
-      "Tell me about the different sections and instruments in an orchestra.",
-    gradient:
-      "from-amber-100 to-amber-50 dark:from-amber-950/40 dark:to-amber-900/20",
-    icon: "🎻",
   },
   {
     title: "Legendary Composers & Artists",
@@ -69,6 +61,7 @@ export default function LearnPage() {
       </p>
 
       <div className="grid grid-cols-2 gap-3">
+        <InstrumentsCard />
         {TOPICS.map((topic) => (
           <Link
             key={topic.title}
