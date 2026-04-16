@@ -90,6 +90,9 @@ export function EventFeed() {
     initialDifficulty,
   );
   const [cityFilter, setCityFilter] = useState<string | undefined>();
+  const [ticketedFilter, setTicketedFilter] = useState<
+    "ticketed" | "non_ticketed" | undefined
+  >();
   const [sortBy, setSortBy] = useState<"day_asc" | "day_desc">("day_asc");
 
   const { data: events } = useSuspenseQuery(
@@ -104,14 +107,18 @@ export function EventFeed() {
     }),
   );
 
-  const filteredEvents = cityFilter
-    ? events.filter(
-        (e) =>
-          e.venue.toLowerCase().includes(cityFilter.toLowerCase()) ||
-          (e.venueAddress?.toLowerCase().includes(cityFilter.toLowerCase()) ??
-            false),
-      )
-    : events;
+  const filteredEvents = events.filter((e) => {
+    if (cityFilter) {
+      const matchesCity =
+        e.venue.toLowerCase().includes(cityFilter.toLowerCase()) ||
+        (e.venueAddress?.toLowerCase().includes(cityFilter.toLowerCase()) ??
+          false);
+      if (!matchesCity) return false;
+    }
+    if (ticketedFilter === "ticketed" && !e.ticketUrl) return false;
+    if (ticketedFilter === "non_ticketed" && e.ticketUrl) return false;
+    return true;
+  });
   const sortedEvents = [...filteredEvents].sort((a, b) => {
     const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
     return sortBy === "day_asc" ? diff : -diff;
@@ -120,16 +127,19 @@ export function EventFeed() {
   return (
     <div>
       <div className="mb-4 flex gap-2">
-        <Input
-          placeholder="Search events..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1"
-        />
+        <div className="relative flex-1">
+          <SearchIcon />
+          <Input
+            placeholder="Search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full border-zinc-300 bg-white pl-9 text-sm text-zinc-900 placeholder:text-zinc-900 md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-100"
+          />
+        </div>
         <select
           value={cityFilter ?? ""}
           onChange={(e) => setCityFilter(e.target.value || undefined)}
-          className="bg-card text-foreground h-9 rounded-md border px-3 text-sm"
+          className="h-9 w-[88px] rounded-md border border-zinc-300 bg-white px-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <option value="">All Cities</option>
           {CITY_OPTIONS.map((city) => (
@@ -141,9 +151,9 @@ export function EventFeed() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as "day_asc" | "day_desc")}
-          className="bg-card text-foreground h-9 rounded-md border px-3 text-sm"
+          className="h-9 w-[80px] rounded-md border border-zinc-300 bg-white px-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         >
-          <option value="day_asc">Soonest Day</option>
+          <option value="day_asc">By Date</option>
           <option value="day_desc">Latest Day</option>
         </select>
       </div>
@@ -164,7 +174,7 @@ export function EventFeed() {
         ))}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-1.5">
+      <div className="mb-3 flex flex-wrap gap-1.5">
         <FilterChip
           label="All Levels"
           active={!difficultyFilter}
@@ -180,6 +190,32 @@ export function EventFeed() {
             }
           />
         ))}
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        <FilterChip
+          label="All Ticketing Types"
+          active={!ticketedFilter}
+          onClick={() => setTicketedFilter(undefined)}
+        />
+        <FilterChip
+          label="Ticketed"
+          active={ticketedFilter === "ticketed"}
+          onClick={() =>
+            setTicketedFilter(
+              ticketedFilter === "ticketed" ? undefined : "ticketed",
+            )
+          }
+        />
+        <FilterChip
+          label="Non-Ticketed"
+          active={ticketedFilter === "non_ticketed"}
+          onClick={() =>
+            setTicketedFilter(
+              ticketedFilter === "non_ticketed" ? undefined : "non_ticketed",
+            )
+          }
+        />
       </div>
 
       {sortedEvents.length === 0 ? (
@@ -300,10 +336,33 @@ function FilterChip({
       variant={active ? "default" : "outline"}
       size="sm"
       onClick={onClick}
-      className="h-7 rounded-full text-[11px]"
+      className={cn(
+        "h-7 rounded-full border text-[11px]",
+        active && "border-transparent",
+      )}
     >
       {label}
     </Button>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
   );
 }
 
