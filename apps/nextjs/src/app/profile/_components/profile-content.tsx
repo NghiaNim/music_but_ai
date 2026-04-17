@@ -9,6 +9,7 @@ import type { RouterOutputs } from "@acme/api";
 
 import { authClient } from "~/auth/client";
 import { useTRPC } from "~/trpc/react";
+import { LearningProgress } from "./learning-progress";
 
 type UserEventWithEvent = RouterOutputs["userEvent"]["myEvents"][number];
 
@@ -438,6 +439,12 @@ export function ProfileContent() {
           />
         ))}
       </div>
+
+      {/* Learning Progress */}
+      <h2 className="text-foreground mt-8 mb-4 text-xl font-bold">
+        Learning Progress
+      </h2>
+      <LearningProgress />
     </>
   );
 }

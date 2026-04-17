@@ -328,9 +328,9 @@ const BASICS_MODULE: LearningModuleDef = {
 
 const ETIQUETTE_MODULE: LearningModuleDef = {
   slug: "etiquette",
-  title: "Concert Etiquette",
-  shortTitle: "Etiquette",
-  description: "What to wear, when to clap, and more",
+  title: "When the Heck Do I Clap?",
+  shortTitle: "Clap Guide",
+  description: "Etiquette made painless — timing, dress, and more",
   cardIcon: "🎩",
   cardGradient:
     "from-rose-100 to-rose-50 dark:from-rose-950/40 dark:to-rose-900/20",
