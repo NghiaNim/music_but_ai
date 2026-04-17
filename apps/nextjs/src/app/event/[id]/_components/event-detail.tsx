@@ -171,7 +171,7 @@ export function EventDetail({
           <Button className="w-full" asChild>
             <Link href={`/chat?eventId=${eventId}&mode=learning`}>
               <ChatIcon />
-              Ask AI About This Event
+              Ask Tanny About This Event
             </Link>
           </Button>
         </div>
