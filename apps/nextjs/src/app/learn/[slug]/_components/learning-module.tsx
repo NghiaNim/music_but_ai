@@ -6,184 +6,19 @@ import Link from "next/link";
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 
-const POINTS_KEY = "classica-points";
-const COMPLETED_KEY = "classica-completed-modules";
-
-// ─── Content ────────────────────────────────────────────────
-
-interface Lesson {
-  title: string;
-  emoji: string;
-  gradient: string;
-  body: string;
-  examples: string[];
-}
-
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correctIndex: number;
-  explanation: string;
-}
-
-interface Unit {
-  id: string;
-  number: number;
-  title: string;
-  subtitle: string;
-  goal: string;
-  emoji: string;
-  gradient: string;
-  lessons: Lesson[];
-  quiz: QuizQuestion[];
-}
-
-const UNITS: Unit[] = [
-  {
-    id: "families",
-    number: 1,
-    title: "Instrument Families",
-    subtitle: "The big picture",
-    goal: "I can roughly categorize sound",
-    emoji: "🎼",
-    gradient: "from-violet-100 to-fuchsia-50 dark:from-violet-900/40",
-    lessons: [
-      {
-        title: "Strings",
-        emoji: "🎻",
-        gradient: "from-rose-100 to-pink-50",
-        body: "Made from strings that vibrate when bowed, plucked, or struck. Warm, expressive, and often the emotional heart of the orchestra.",
-        examples: ["Violin", "Viola", "Cello", "Double Bass", "Harp"],
-      },
-      {
-        title: "Woodwinds",
-        emoji: "🎷",
-        gradient: "from-emerald-100 to-teal-50",
-        body: "Sound from vibrating air — either through a reed or across an opening. Light, agile, and colorful.",
-        examples: ["Flute", "Clarinet", "Oboe", "Bassoon", "Saxophone"],
-      },
-      {
-        title: "Brass",
-        emoji: "🎺",
-        gradient: "from-amber-100 to-yellow-50",
-        body: "Sound is made by buzzing your lips into a mouthpiece. Bold, powerful, and often used for dramatic moments.",
-        examples: ["Trumpet", "French Horn", "Trombone", "Tuba"],
-      },
-      {
-        title: "Percussion",
-        emoji: "🥁",
-        gradient: "from-sky-100 to-indigo-50",
-        body: "Hit, shaken, or scraped to create sound. Provides rhythm, punctuation, and sometimes melody.",
-        examples: ["Timpani", "Snare Drum", "Cymbals", "Xylophone", "Triangle"],
-      },
-    ],
-    quiz: [
-      {
-        question: "Which family does the violin belong to?",
-        options: ["Brass", "Strings", "Woodwinds", "Percussion"],
-        correctIndex: 1,
-        explanation:
-          "The violin is the most iconic string instrument — its strings vibrate when bowed.",
-      },
-      {
-        question: "What family produces sound by buzzing lips?",
-        options: ["Woodwinds", "Percussion", "Brass", "Strings"],
-        correctIndex: 2,
-        explanation:
-          "Brass players vibrate their lips against the mouthpiece to make the horn sing.",
-      },
-      {
-        question: "Which of these is a woodwind instrument?",
-        options: ["Tuba", "Clarinet", "Cello", "Timpani"],
-        correctIndex: 1,
-        explanation:
-          "The clarinet uses a single reed that vibrates to produce its sound.",
-      },
-      {
-        question: "Which family is the timpani part of?",
-        options: ["Percussion", "Strings", "Brass", "Woodwinds"],
-        correctIndex: 0,
-        explanation:
-          "Timpani (or kettle drums) are tuned drums — classic percussion.",
-      },
-    ],
-  },
-  {
-    id: "spotlight",
-    number: 2,
-    title: "Spotlight Instruments",
-    subtitle: "The stars up close",
-    goal: "I can recognize common instruments",
-    emoji: "⭐",
-    gradient: "from-amber-100 to-orange-50 dark:from-amber-900/40",
-    lessons: [
-      {
-        title: "Violin",
-        emoji: "🎻",
-        gradient: "from-rose-100 to-pink-50",
-        body: "The soprano of the orchestra — often carries the melody. Played with a bow (arco) or plucked (pizzicato). Four strings tuned G–D–A–E.",
-        examples: ["Bright & singing", "String family", "4 strings"],
-      },
-      {
-        title: "Flute",
-        emoji: "🎶",
-        gradient: "from-emerald-100 to-teal-50",
-        body: "A woodwind with no reed — sound is made by blowing across a hole. Bright, clear, and agile. The piccolo is its tiny, even higher cousin.",
-        examples: ["Airy & bright", "Woodwind family", "No reed"],
-      },
-      {
-        title: "Trumpet",
-        emoji: "🎺",
-        gradient: "from-amber-100 to-yellow-50",
-        body: "Three valves let you change pitch. Bold and piercing — used in jazz, classical, fanfares, and marching bands alike.",
-        examples: ["Bold & bright", "Brass family", "3 valves"],
-      },
-      {
-        title: "Piano",
-        emoji: "🎹",
-        gradient: "from-sky-100 to-indigo-50",
-        body: "88 keys, each striking tuned strings inside. Sometimes called a percussion instrument because of the hammers. A whole orchestra in one box.",
-        examples: ["88 keys", "Hammers & strings", "Huge range"],
-      },
-    ],
-    quiz: [
-      {
-        question: "Which instrument is played with a bow?",
-        options: ["Flute", "Trumpet", "Violin", "Piano"],
-        correctIndex: 2,
-        explanation:
-          "The violin is bowed (or plucked) — the bow is drawn across the strings.",
-      },
-      {
-        question: "How does a flute make sound?",
-        options: [
-          "By buzzing the lips",
-          "Blowing across an opening",
-          "Hammering strings",
-          "Using a double reed",
-        ],
-        correctIndex: 1,
-        explanation:
-          "Unlike the clarinet or oboe, the flute has no reed — sound is made by blowing across its mouth hole.",
-      },
-      {
-        question: "How many keys does a standard piano have?",
-        options: ["76", "88", "100", "64"],
-        correctIndex: 1,
-        explanation: "A standard modern piano has 88 keys — 52 white, 36 black.",
-      },
-      {
-        question: "Which of these is a brass instrument?",
-        options: ["Clarinet", "Cello", "Trumpet", "Xylophone"],
-        correctIndex: 2,
-        explanation:
-          "The trumpet is brass — three valves and a buzzing lip vibration.",
-      },
-    ],
-  },
-];
-
-// ─── Types ──────────────────────────────────────────────────
+import type {
+  LearningModuleDef,
+  Lesson,
+  QuizQuestion,
+  Unit,
+} from "../../_lib/modules";
+import {
+  COMPLETED_KEY,
+  getCompletedSet,
+  getStoredNumber,
+  POINTS_KEY,
+  unitKey,
+} from "../../_lib/progress";
 
 type Screen =
   | { type: "overview" }
@@ -191,28 +26,7 @@ type Screen =
   | { type: "quiz"; unitId: string; index: number }
   | { type: "result"; unitId: string; score: number };
 
-// ─── Helpers ────────────────────────────────────────────────
-
-function getStoredNumber(key: string): number {
-  if (typeof window === "undefined") return 0;
-  const v = window.localStorage.getItem(key);
-  return v ? Number(v) || 0 : 0;
-}
-
-function getStoredSet(key: string): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return new Set();
-    return new Set(JSON.parse(raw) as string[]);
-  } catch {
-    return new Set();
-  }
-}
-
-// ─── Main component ─────────────────────────────────────────
-
-export function InstrumentsModule() {
+export function LearningModule({ module }: { module: LearningModuleDef }) {
   const [screen, setScreen] = useState<Screen>({ type: "overview" });
   const [points, setPoints] = useState(0);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
@@ -220,7 +34,7 @@ export function InstrumentsModule() {
 
   useEffect(() => {
     setPoints(getStoredNumber(POINTS_KEY));
-    setCompleted(getStoredSet(COMPLETED_KEY));
+    setCompleted(getCompletedSet());
   }, []);
 
   function awardPoints(amount: number) {
@@ -234,7 +48,7 @@ export function InstrumentsModule() {
   function markCompleted(unitId: string) {
     setCompleted((prev) => {
       const next = new Set(prev);
-      next.add(unitId);
+      next.add(unitKey(module.slug, unitId));
       window.localStorage.setItem(COMPLETED_KEY, JSON.stringify([...next]));
       return next;
     });
@@ -247,7 +61,7 @@ export function InstrumentsModule() {
 
   function advance() {
     if (screen.type !== "lesson") return;
-    const unit = UNITS.find((u) => u.id === screen.unitId)!;
+    const unit = module.units.find((u) => u.id === screen.unitId)!;
     if (screen.index + 1 < unit.lessons.length) {
       setScreen({
         type: "lesson",
@@ -269,24 +83,23 @@ export function InstrumentsModule() {
 
   function answerQuestion(choiceIndex: number) {
     if (screen.type !== "quiz") return;
-    const unit = UNITS.find((u) => u.id === screen.unitId)!;
+    const unit = module.units.find((u) => u.id === screen.unitId)!;
     const question = unit.quiz[screen.index]!;
     const isCorrect = choiceIndex === question.correctIndex;
-    const newAnswers = [...answers, choiceIndex];
-    setAnswers(newAnswers);
+    setAnswers([...answers, choiceIndex]);
     if (isCorrect) awardPoints(2);
   }
 
   function nextQuestion() {
     if (screen.type !== "quiz") return;
-    const unit = UNITS.find((u) => u.id === screen.unitId)!;
+    const unit = module.units.find((u) => u.id === screen.unitId)!;
     if (screen.index + 1 < unit.quiz.length) {
       setScreen({ ...screen, index: screen.index + 1 });
     } else {
       const score = answers.filter(
         (a, i) => a === unit.quiz[i]!.correctIndex,
       ).length;
-      const isFirstTime = !completed.has(unit.id);
+      const isFirstTime = !completed.has(unitKey(module.slug, unit.id));
       if (isFirstTime && score === unit.quiz.length) {
         awardPoints(10);
       }
@@ -295,11 +108,10 @@ export function InstrumentsModule() {
     }
   }
 
-  // ─── Render ────────────────────────────────────────────
-
   if (screen.type === "overview") {
     return (
       <OverviewScreen
+        module={module}
         points={points}
         completed={completed}
         onStart={startUnit}
@@ -307,7 +119,7 @@ export function InstrumentsModule() {
     );
   }
 
-  const unit = UNITS.find((u) => u.id === screen.unitId)!;
+  const unit = module.units.find((u) => u.id === screen.unitId)!;
 
   if (screen.type === "lesson") {
     const lesson = unit.lessons[screen.index]!;
@@ -353,10 +165,12 @@ export function InstrumentsModule() {
 // ─── Overview ────────────────────────────────────────────────
 
 function OverviewScreen({
+  module,
   points,
   completed,
   onStart,
 }: {
+  module: LearningModuleDef;
   points: number;
   completed: Set<string>;
   onStart: (unitId: string) => void;
@@ -374,18 +188,16 @@ function OverviewScreen({
 
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Meet the Instruments
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">{module.title}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Short modules & quizzes — earn points!
+            {module.description}
           </p>
         </div>
         <PointsBadge points={points} />
       </div>
 
       <div className="flex flex-col gap-3">
-        {UNITS.map((unit) => (
+        {module.units.map((unit) => (
           <button
             key={unit.id}
             onClick={() => onStart(unit.id)}
@@ -413,7 +225,7 @@ function OverviewScreen({
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
-                {completed.has(unit.id) && (
+                {completed.has(unitKey(module.slug, unit.id)) && (
                   <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-semibold text-white">
                     ✓ Done
                   </span>
