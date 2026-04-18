@@ -42,10 +42,12 @@ export function EventDetail({
   eventId,
   isSignedIn,
   viewerId,
+  previewAsAttendee = false,
 }: {
   eventId: string;
   isSignedIn: boolean;
   viewerId: string | null;
+  previewAsAttendee?: boolean;
 }) {
   const trpc = useTRPC();
   const { data: event } = useSuspenseQuery(
@@ -56,6 +58,8 @@ export function EventDetail({
 
   const isCancelled = event.publicationStatus === "cancelled";
   const isHost = !!viewerId && event.createdBy === viewerId;
+  const showHostView = isHost && !previewAsAttendee;
+  const isHostPreviewing = isHost && previewAsAttendee;
 
   const date = new Date(event.date);
   const formattedDate = date.toLocaleDateString("en-US", {
@@ -100,6 +104,20 @@ export function EventDetail({
           </Link>
         </div>
 
+        {isHostPreviewing ? (
+          <div className="mx-4 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs dark:border-amber-900/40 dark:bg-amber-950/40">
+            <span className="font-medium text-amber-900 dark:text-amber-200">
+              Preview mode · you're viewing this as an attendee
+            </span>
+            <Link
+              href={`/event/${eventId}`}
+              className="font-semibold text-amber-900 underline underline-offset-2 dark:text-amber-200"
+            >
+              Exit preview
+            </Link>
+          </div>
+        ) : null}
+
         <div className="relative mx-4 mb-4 aspect-video overflow-hidden rounded-xl">
           {event.imageUrl ? (
             <Image
@@ -123,7 +141,7 @@ export function EventDetail({
             </div>
           ) : null}
           <div className="mb-2 flex flex-wrap gap-1.5">
-            {isHost ? (
+            {showHostView ? (
               <span className="rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
                 You're the host
               </span>
@@ -168,18 +186,24 @@ export function EventDetail({
           </div>
         </div>
 
-        {isHost ? (
+        {showHostView ? (
           <div className="mx-4 mb-4 rounded-xl border bg-amber-50 p-4 dark:bg-amber-950/30">
             <p className="mb-1 text-sm font-semibold text-amber-900 dark:text-amber-200">
               You're hosting this event
             </p>
             <p className="text-muted-foreground mb-3 text-xs">
-              Update details or cancel the listing. Attendees can't buy tickets
-              from their own events.
+              Update details or cancel the listing.
             </p>
-            <Button className="w-full" asChild>
-              <Link href={`/post-event/${eventId}/edit`}>Edit event</Link>
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button className="flex-1" asChild>
+                <Link href={`/post-event/${eventId}/edit`}>Edit event</Link>
+              </Button>
+              <Button className="flex-1" variant="outline" asChild>
+                <Link href={`/event/${eventId}?preview=1`}>
+                  Preview as attendee
+                </Link>
+              </Button>
+            </div>
           </div>
         ) : event.isFree ? (
           <div className="mx-4 mb-4 rounded-xl border bg-gradient-to-r from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30">
@@ -191,10 +215,19 @@ export function EventDetail({
               {event.ticketUrl ? " RSVP at the link below if requested." : ""}
             </p>
             {event.ticketUrl ? (
-              <Button className="mt-3 w-full" variant="outline" asChild>
-                <a href={event.ticketUrl} target="_blank" rel="noreferrer">
-                  RSVP / More info
-                </a>
+              <Button
+                className="mt-3 w-full"
+                variant="outline"
+                asChild={!isHostPreviewing}
+                disabled={isHostPreviewing}
+              >
+                {isHostPreviewing ? (
+                  <span>RSVP / More info</span>
+                ) : (
+                  <a href={event.ticketUrl} target="_blank" rel="noreferrer">
+                    RSVP / More info
+                  </a>
+                )}
               </Button>
             ) : null}
           </div>
@@ -211,18 +244,26 @@ export function EventDetail({
             <BuyTicketButton
               eventId={eventId}
               eventTitle={event.title}
-              disabled={isCancelled}
+              disabled={isCancelled || isHostPreviewing}
+            />
+            {isHostPreviewing ? (
+              <p className="text-muted-foreground mt-2 text-center text-[11px]">
+                Buy Tickets is disabled in preview mode.
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        {showHostView ? null : (
+          <div className="flex gap-2 px-4 pb-4">
+            <EventActionButtons
+              eventId={eventId}
+              disabled={isHostPreviewing}
             />
           </div>
         )}
 
-        {isHost ? null : (
-          <div className="flex gap-2 px-4 pb-4">
-            <EventActionButtons eventId={eventId} />
-          </div>
-        )}
-
-        {!isCancelled ? (
+        {!isCancelled && !isHostPreviewing ? (
           <div className="px-4 pb-4">
             <Button className="w-full" asChild>
               <Link href={`/chat?eventId=${eventId}&mode=learning`}>
@@ -275,7 +316,13 @@ export function EventDetail({
   );
 }
 
-function EventActionButtons({ eventId }: { eventId: string }) {
+function EventActionButtons({
+  eventId,
+  disabled,
+}: {
+  eventId: string;
+  disabled?: boolean;
+}) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -324,7 +371,7 @@ function EventActionButtons({ eventId }: { eventId: string }) {
         size="sm"
         className="flex-1"
         onClick={() => toggleSave.mutate({ eventId, status: "saved" })}
-        disabled={toggleSave.isPending}
+        disabled={disabled || toggleSave.isPending}
       >
         <BookmarkIcon />
         Save
@@ -334,7 +381,7 @@ function EventActionButtons({ eventId }: { eventId: string }) {
         size="sm"
         className="flex-1"
         onClick={() => toggleAttended.mutate({ eventId, status: "attended" })}
-        disabled={toggleAttended.isPending}
+        disabled={disabled || toggleAttended.isPending}
       >
         <CheckCircleIcon />I Went
       </Button>
