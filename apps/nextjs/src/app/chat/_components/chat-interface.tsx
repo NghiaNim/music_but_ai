@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
@@ -36,6 +37,11 @@ export function ChatInterface() {
 
   const trpc = useTRPC();
 
+  const { data: contextEvent } = useQuery({
+    ...trpc.event.byId.queryOptions({ id: eventId ?? "" }),
+    enabled: !!eventId,
+  });
+
   const sendMessage = useMutation(
     trpc.chat.send.mutationOptions({
       onSuccess: (data) => {
@@ -56,6 +62,14 @@ export function ChatInterface() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const announcedRef = useRef(false);
+  useEffect(() => {
+    if (contextEvent && !announcedRef.current) {
+      announcedRef.current = true;
+      toast.success(`Now chatting about "${contextEvent.title}"`);
+    }
+  }, [contextEvent]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,12 +101,14 @@ export function ChatInterface() {
               height={32}
               className="rounded-full"
             />
-            <div>
+            <div className="min-w-0">
               <h1 className="text-lg font-semibold">Ask Tanny</h1>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-muted-foreground truncate text-xs">
                 {mode === "discovery"
                   ? "Help me find a concert"
-                  : "Help me understand this event"}
+                  : contextEvent
+                    ? `About: ${contextEvent.title}`
+                    : "Help me understand this event"}
               </p>
             </div>
           </div>
@@ -134,9 +150,18 @@ export function ChatInterface() {
             <BackIcon />
             Back
           </button>
+          {contextEvent ? (
+            <EventContextBanner
+              eventId={contextEvent.id}
+              title={contextEvent.title}
+              date={contextEvent.date}
+              venue={contextEvent.venue}
+            />
+          ) : null}
           {messages.length === 0 && (
             <EmptyState
               mode={mode}
+              eventTitle={contextEvent?.title}
               onSuggestionClick={(s) => setInputValue(s)}
             />
           )}
@@ -270,11 +295,52 @@ function ChatBubble({ message }: { message: Message }) {
   );
 }
 
+function EventContextBanner({
+  eventId,
+  title,
+  date,
+  venue,
+}: {
+  eventId: string;
+  title: string;
+  date: Date | string;
+  venue: string;
+}) {
+  const when = new Date(date).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+  return (
+    <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/40 dark:bg-amber-950/30">
+      <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-amber-900 dark:bg-amber-900/50 dark:text-amber-200">
+        <MusicIcon size={14} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+          Talking about
+        </p>
+        <p className="truncate text-sm font-medium">{title}</p>
+        <p className="text-muted-foreground truncate text-xs">
+          {when} · {venue}
+        </p>
+      </div>
+      <Link
+        href={`/event/${eventId}`}
+        className="shrink-0 text-xs font-medium text-amber-800 underline-offset-2 hover:underline dark:text-amber-200"
+      >
+        View
+      </Link>
+    </div>
+  );
+}
+
 function EmptyState({
   mode,
+  eventTitle,
   onSuggestionClick,
 }: {
   mode: "discovery" | "learning";
+  eventTitle?: string;
   onSuggestionClick: (suggestion: string) => void;
 }) {
   const discoverySuggestions = [
@@ -284,15 +350,22 @@ function EmptyState({
     "I love dramatic, powerful music. What should I see?",
   ];
 
-  const learningSuggestions = [
-    "What should I listen for during the performance?",
-    "Tell me about the composer",
-    "What's the dress code? Any etiquette tips?",
-    "Why is this piece considered a masterwork?",
-  ];
+  const learningSuggestionsForEvent = eventTitle
+    ? [
+        `What should I listen for during "${eventTitle}"?`,
+        `Tell me about the composer(s) on this program`,
+        `What's the dress code and etiquette for this concert?`,
+        `Why is this program special?`,
+      ]
+    : [
+        "What should I listen for during the performance?",
+        "Tell me about the composer",
+        "What's the dress code? Any etiquette tips?",
+        "Why is this piece considered a masterwork?",
+      ];
 
   const suggestions =
-    mode === "discovery" ? discoverySuggestions : learningSuggestions;
+    mode === "discovery" ? discoverySuggestions : learningSuggestionsForEvent;
 
   return (
     <div className="flex flex-col items-center gap-6 py-8 text-center">
@@ -303,12 +376,16 @@ function EmptyState({
         <h2 className="text-xl font-semibold">
           {mode === "discovery"
             ? "What are you in the mood for?"
-            : "What would you like to learn?"}
+            : eventTitle
+              ? `Ask me about "${eventTitle}"`
+              : "What would you like to learn?"}
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
           {mode === "discovery"
             ? "I can help you find the perfect concert based on your interests."
-            : "Ask me anything about the event, the music, or the composers."}
+            : eventTitle
+              ? "I have the program and event details loaded — ask anything."
+              : "Ask me anything about the event, the music, or the composers."}
         </p>
       </div>
       <div className="grid w-full gap-2">
