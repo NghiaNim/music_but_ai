@@ -36,6 +36,27 @@ export const ticketRouter = {
         throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
       }
 
+      if (event.isFree) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This event is free — no checkout required.",
+        });
+      }
+
+      if (event.publicationStatus === "cancelled") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This event has been cancelled.",
+        });
+      }
+
+      if (event.createdBy === ctx.session.user.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You can't buy a ticket for your own event.",
+        });
+      }
+
       if (event.ticketsAvailable < input.quantity) {
         throw new TRPCError({
           code: "BAD_REQUEST",

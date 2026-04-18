@@ -41,9 +41,11 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 export function EventDetail({
   eventId,
   isSignedIn,
+  viewerId,
 }: {
   eventId: string;
   isSignedIn: boolean;
+  viewerId: string | null;
 }) {
   const trpc = useTRPC();
   const { data: event } = useSuspenseQuery(
@@ -53,6 +55,7 @@ export function EventDetail({
   if (!event) return null;
 
   const isCancelled = event.publicationStatus === "cancelled";
+  const isHost = !!viewerId && event.createdBy === viewerId;
 
   const date = new Date(event.date);
   const formattedDate = date.toLocaleDateString("en-US", {
@@ -120,6 +123,11 @@ export function EventDetail({
             </div>
           ) : null}
           <div className="mb-2 flex flex-wrap gap-1.5">
+            {isHost ? (
+              <span className="rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
+                You're the host
+              </span>
+            ) : null}
             <span className="bg-muted text-foreground rounded-full px-2.5 py-0.5 text-xs font-medium">
               {LISTING_LABELS[event.listingCategory] ?? event.listingCategory}
             </span>
@@ -137,6 +145,11 @@ export function EventDetail({
                 : event.difficulty.charAt(0).toUpperCase() +
                   event.difficulty.slice(1)}
             </span>
+            {event.isFree ? (
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                Free
+              </span>
+            ) : null}
           </div>
 
           <h1 className="text-xl font-bold tracking-tight">{event.title}</h1>
@@ -155,37 +168,59 @@ export function EventDetail({
           </div>
         </div>
 
-        <div className="mx-4 mb-4 rounded-xl border bg-gradient-to-r from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30">
-          <div className="mb-3 flex items-baseline justify-between">
-            <div>
-              <span className="text-muted-foreground text-sm line-through">
-                ${(event.originalPriceCents / 100).toFixed(2)}
-              </span>
-              <span className="ml-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+        {isHost ? (
+          <div className="mx-4 mb-4 rounded-xl border bg-amber-50 p-4 dark:bg-amber-950/30">
+            <p className="mb-1 text-sm font-semibold text-amber-900 dark:text-amber-200">
+              You're hosting this event
+            </p>
+            <p className="text-muted-foreground mb-3 text-xs">
+              Update details or cancel the listing. Attendees can't buy tickets
+              from their own events.
+            </p>
+            <Button className="w-full" asChild>
+              <Link href={`/post-event/${eventId}/edit`}>Edit event</Link>
+            </Button>
+          </div>
+        ) : event.isFree ? (
+          <div className="mx-4 mb-4 rounded-xl border bg-gradient-to-r from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30">
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+              Free admission
+            </p>
+            <p className="text-muted-foreground text-xs">
+              No ticket required — just show up.
+              {event.ticketUrl ? " RSVP at the link below if requested." : ""}
+            </p>
+            {event.ticketUrl ? (
+              <Button className="mt-3 w-full" variant="outline" asChild>
+                <a href={event.ticketUrl} target="_blank" rel="noreferrer">
+                  RSVP / More info
+                </a>
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mx-4 mb-4 rounded-xl border bg-gradient-to-r from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30">
+            <div className="mb-3 flex items-baseline justify-between">
+              <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                 ${(event.discountedPriceCents / 100).toFixed(2)}
               </span>
             </div>
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-              {Math.round(
-                (1 - event.discountedPriceCents / event.originalPriceCents) *
-                  100,
-              )}
-              % off
-            </span>
+            <p className="text-muted-foreground mb-3 text-xs">
+              {event.ticketsAvailable} tickets remaining
+            </p>
+            <BuyTicketButton
+              eventId={eventId}
+              eventTitle={event.title}
+              disabled={isCancelled}
+            />
           </div>
-          <p className="text-muted-foreground mb-3 text-xs">
-            {event.ticketsAvailable} tickets remaining · Exclusive member price
-          </p>
-          <BuyTicketButton
-            eventId={eventId}
-            eventTitle={event.title}
-            disabled={isCancelled}
-          />
-        </div>
+        )}
 
-        <div className="flex gap-2 px-4 pb-4">
-          <EventActionButtons eventId={eventId} />
-        </div>
+        {isHost ? null : (
+          <div className="flex gap-2 px-4 pb-4">
+            <EventActionButtons eventId={eventId} />
+          </div>
+        )}
 
         {!isCancelled ? (
           <div className="px-4 pb-4">

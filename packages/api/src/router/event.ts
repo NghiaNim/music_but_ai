@@ -30,7 +30,21 @@ const createFields = z.object({
   listingCategory: z.enum(["local", "concert"]),
   imageUrl: z.string().url().optional(),
   ticketUrl: z.string().url().optional(),
+  isFree: z.boolean().default(false),
+  priceCents: z.number().int().nonnegative().max(1_000_000).optional(),
 });
+
+function resolvePricing(input: { isFree: boolean; priceCents?: number }) {
+  if (input.isFree) {
+    return { isFree: true, originalPriceCents: 0, discountedPriceCents: 0 };
+  }
+  const cents = input.priceCents ?? 3500;
+  return {
+    isFree: false,
+    originalPriceCents: cents,
+    discountedPriceCents: cents,
+  };
+}
 
 export const eventRouter = {
   all: publicProcedure.input(EventFiltersSchema).query(({ ctx, input }) => {
@@ -77,10 +91,13 @@ export const eventRouter = {
   }),
 
   create: protectedProcedure.input(createFields).mutation(({ ctx, input }) => {
+    const { isFree, priceCents, ...rest } = input;
+    const pricing = resolvePricing({ isFree, priceCents });
     return ctx.db
       .insert(Event)
       .values({
-        ...input,
+        ...rest,
+        ...pricing,
         createdBy: ctx.session.user.id,
       })
       .returning();
@@ -111,11 +128,13 @@ export const eventRouter = {
         });
       }
 
-      const { eventId, notifySubscribers, ...rest } = input;
+      const { eventId, notifySubscribers, isFree, priceCents, ...rest } =
+        input;
+      const pricing = resolvePricing({ isFree, priceCents });
 
       const [updated] = await ctx.db
         .update(Event)
-        .set(rest)
+        .set({ ...rest, ...pricing })
         .where(eq(Event.id, eventId))
         .returning();
 

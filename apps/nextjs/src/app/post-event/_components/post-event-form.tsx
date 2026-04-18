@@ -116,6 +116,8 @@ function HostEventFormShell({
         listingCategory: "local" as Listing,
         imageUrl: "",
         ticketUrl: "",
+        isFree: true,
+        price: "",
       };
     }
     const { date, time } = localDateTimeParts(new Date(event.date));
@@ -132,6 +134,10 @@ function HostEventFormShell({
       listingCategory: event.listingCategory as Listing,
       imageUrl: event.imageUrl ?? "",
       ticketUrl: event.ticketUrl ?? "",
+      isFree: event.isFree,
+      price: event.isFree
+        ? ""
+        : (event.discountedPriceCents / 100).toFixed(2),
     };
   }, [event]);
 
@@ -149,6 +155,8 @@ function HostEventFormShell({
   );
   const [imageUrl, setImageUrl] = useState(initial.imageUrl);
   const [ticketUrl, setTicketUrl] = useState(initial.ticketUrl);
+  const [isFree, setIsFree] = useState(initial.isFree);
+  const [price, setPrice] = useState(initial.price);
   const [notifySubscribers, setNotifySubscribers] = useState(false);
 
   const createEvent = useMutation(
@@ -213,6 +221,16 @@ function HostEventFormShell({
 
     const eventDate = new Date(`${date}T${time}`);
 
+    let priceCents: number | undefined;
+    if (!isFree) {
+      const parsed = Number(price);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        toast.error("Enter a valid ticket price, or mark the event as free");
+        return;
+      }
+      priceCents = Math.round(parsed * 100);
+    }
+
     const payload = {
       title,
       date: eventDate,
@@ -225,6 +243,8 @@ function HostEventFormShell({
       listingCategory,
       imageUrl: imageUrl || undefined,
       ticketUrl: ticketUrl || undefined,
+      isFree,
+      priceCents,
     };
 
     if (mode === "create") {
@@ -399,6 +419,41 @@ function HostEventFormShell({
             rows={4}
             className="border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-3 py-2 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
           />
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-lg border p-3">
+          <Label className="text-sm font-medium">Tickets</Label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isFree}
+              onChange={(e) => setIsFree(e.target.checked)}
+            />
+            <span>This event is free</span>
+          </label>
+          {!isFree ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="price">Ticket price (USD) *</Label>
+              <Input
+                id="price"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                placeholder="e.g. 15.00"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                required
+              />
+              <p className="text-muted-foreground text-xs">
+                Attendees will pay this price through Classica checkout.
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-xs">
+              Attendees won't see a checkout button — just event details.
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">

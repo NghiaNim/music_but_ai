@@ -13,13 +13,18 @@ export default async function EventPage({
 
   const session = await getSession();
   const isSignedIn = !!session;
+  const viewerId = session?.user.id ?? null;
 
   prefetch(trpc.event.byId.queryOptions({ id }));
 
   return (
     <HydrateClient>
       <Suspense fallback={<EventDetailSkeleton />}>
-        <EventDetail eventId={id} isSignedIn={isSignedIn} />
+        <EventDetail
+          eventId={id}
+          isSignedIn={isSignedIn}
+          viewerId={viewerId}
+        />
       </Suspense>
     </HydrateClient>
   );

@@ -121,6 +121,7 @@ export const Event = pgTable("event", (t) => ({
   beginnerNotes: t.text(),
   imageUrl: t.text(),
   ticketUrl: t.text(),
+  isFree: t.boolean().notNull().default(false),
   originalPriceCents: t.integer().notNull().default(5000),
   discountedPriceCents: t.integer().notNull().default(3500),
   ticketsAvailable: t.integer().notNull().default(100),
