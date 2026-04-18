@@ -10,6 +10,7 @@ export interface ScrapedEvent {
   location?: string;
   eventUrl: string;
   buyUrl: string;
+  posterImageUrl?: string;
 }
 
 async function fetchHtml(url: string): Promise<string> {
@@ -153,35 +154,38 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
 
 export async function scrapeMSM(): Promise<ScrapedEvent[]> {
   const base = "https://www.msmnyc.edu";
-  const html = await fetchHtml(`${base}/performances`);
+  const html = await fetchHtml(`${base}/performances/`);
+  if (isBlockedHtml(html)) return [];
   const $ = load(html);
   const events: ScrapedEvent[] = [];
+  const seen = new Set<string>();
 
-  for (const el of $(".event, .performance, li, article").toArray()) {
+  for (const el of $("#performances-list .newsBlock").toArray()) {
     const root = $(el);
-    const title =
-      root.find("a, h3, h2").first().text().trim() ||
-      root.find(".event-title").first().text().trim();
-    if (!title) continue;
+    const link = root.find(".newsBlock_info h2 a").first();
+    const linkHref = link.attr("href")?.trim() ?? "";
+    if (!linkHref.includes("/performances/")) continue;
 
-    const dateText =
-      root.find("time").first().text().trim() ||
-      root.find(".date").first().text().trim();
-
-    const linkHref =
-      root
-        .find('a[href*="tickets"], a[href*="/performances/"]')
-        .first()
-        .attr("href") ?? "";
-    if (!linkHref) continue;
     const eventUrl = toAbsoluteUrl(linkHref, base);
     if (
       eventUrl === `${base}/performances/` ||
       eventUrl === `${base}/performances`
     )
       continue;
-    if (/info for|concert-goers|performances$/i.test(title)) continue;
-    if (title.length < 6) continue;
+
+    const title = link.text().replace(/\s+/g, " ").trim();
+    if (!title || title.length < 4) continue;
+
+    const dateText =
+      root.find(".newsBlock_info time").first().text().trim() || undefined;
+
+    if (seen.has(eventUrl)) continue;
+    seen.add(eventUrl);
+
+    const imgHref = root.find(".newsBlock_image img").first().attr("src");
+    const posterImageUrl = imgHref
+      ? toAbsoluteUrl(imgHref, base)
+      : undefined;
 
     events.push({
       source: "msm",
@@ -191,6 +195,7 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
       location: "New York, NY",
       eventUrl,
       buyUrl: eventUrl,
+      posterImageUrl,
     });
   }
 

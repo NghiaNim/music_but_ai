@@ -2,9 +2,14 @@ import { Suspense } from "react";
 
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { EventFeed, EventFeedSkeleton } from "../_components/event-feed";
+import {
+  LiveEventFeed,
+  LiveEventFeedSkeleton,
+} from "../_components/live-event-feed";
 
 export default function EventsPage() {
   prefetch(trpc.event.all.queryOptions({}));
+  prefetch(trpc.liveEvent.all.queryOptions({ upcomingOnly: true }));
 
   return (
     <HydrateClient>
@@ -13,6 +18,9 @@ export default function EventsPage() {
         <p className="text-muted-foreground mb-4 text-sm">
           Find your next classical or jazz experience
         </p>
+        <Suspense fallback={<LiveEventFeedSkeleton />}>
+          <LiveEventFeed />
+        </Suspense>
         <Suspense fallback={<EventFeedSkeleton />}>
           <EventFeed />
         </Suspense>

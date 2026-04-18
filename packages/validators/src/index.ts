@@ -26,10 +26,14 @@ export type ChatRole = z.infer<typeof ChatRole>;
 export const ExperienceLevel = z.enum(["new", "casual", "enthusiast"]);
 export type ExperienceLevel = z.infer<typeof ExperienceLevel>;
 
+export const EventListingCategory = z.enum(["local", "concert"]);
+export type EventListingCategory = z.infer<typeof EventListingCategory>;
+
 export const EventFiltersSchema = z.object({
   search: z.string().optional(),
   genre: Genre.optional(),
   difficulty: Difficulty.optional(),
+  listingCategory: EventListingCategory.optional(),
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),
 });

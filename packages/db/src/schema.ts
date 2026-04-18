@@ -49,6 +49,17 @@ export const liveEventSourceEnum = pgEnum("live_event_source", [
   "msm",
 ]);
 
+/** Distinguishes informal community listings from formal concerts. */
+export const eventListingCategoryEnum = pgEnum("event_listing_category", [
+  "local",
+  "concert",
+]);
+
+export const eventPublicationStatusEnum = pgEnum("event_publication_status", [
+  "active",
+  "cancelled",
+]);
+
 // ─── Legacy Post table ──────────────────────────────────
 
 export const Post = pgTable("post", (t) => ({
@@ -93,6 +104,10 @@ export const UserProfile = pgTable("user_profile", (t) => ({
 
 // ─── Event ──────────────────────────────────────────────
 
+/**
+ * Event: user-created listings only (local community events + user-posted concerts).
+ * Scraped venue concerts live in `LiveEvent` — never mix the two tables.
+ */
 export const Event = pgTable("event", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
   title: t.varchar({ length: 512 }).notNull(),
@@ -109,6 +124,8 @@ export const Event = pgTable("event", (t) => ({
   originalPriceCents: t.integer().notNull().default(5000),
   discountedPriceCents: t.integer().notNull().default(3500),
   ticketsAvailable: t.integer().notNull().default(100),
+  listingCategory: eventListingCategoryEnum().notNull().default("concert"),
+  publicationStatus: eventPublicationStatusEnum().notNull().default("active"),
   createdBy: t.text().references(() => user.id, { onDelete: "set null" }),
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
@@ -188,8 +205,13 @@ export const TicketOrder = pgTable("ticket_order", (t) => ({
     .$onUpdateFn(() => new Date()),
 }));
 
-// ─── LiveEvent (scraped venue events for testing) ─────────
+// ─── LiveEvent (scraped venue concerts) ─────────────────
 
+/**
+ * LiveEvent: concerts scraped from external venues (MSM, Carnegie, Met, Juilliard).
+ * Refreshed on a schedule via Supabase pg_cron → /api/cron/sync-msm.
+ * Never written to by end users. `eventUrl` is the stable external identity.
+ */
 export const LiveEvent = pgTable("live_event", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
   source: liveEventSourceEnum().notNull(),
@@ -198,9 +220,12 @@ export const LiveEvent = pgTable("live_event", (t) => ({
   dateText: t.varchar({ length: 128 }),
   venueName: t.varchar({ length: 256 }),
   location: t.varchar({ length: 256 }),
-  eventUrl: t.text().notNull(),
+  imageUrl: t.text(),
+  genre: genreEnum().notNull().default("solo_recital"),
+  eventUrl: t.text().notNull().unique(),
   buyUrl: t.text().notNull(),
   raw: t.jsonb().$type<unknown>(),
+  lastSeenAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })

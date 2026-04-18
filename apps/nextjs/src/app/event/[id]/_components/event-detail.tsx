@@ -22,6 +22,12 @@ const GENRE_LABELS: Record<string, string> = {
   solo_recital: "Solo Recital",
   choral: "Choral",
   ballet: "Ballet",
+  jazz: "Jazz",
+};
+
+const LISTING_LABELS: Record<string, string> = {
+  local: "Local / community",
+  concert: "Concert",
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
@@ -45,6 +51,8 @@ export function EventDetail({
   );
 
   if (!event) return null;
+
+  const isCancelled = event.publicationStatus === "cancelled";
 
   const date = new Date(event.date);
   const formattedDate = date.toLocaleDateString("en-US", {
@@ -106,7 +114,15 @@ export function EventDetail({
         </div>
 
         <div className="px-4 pb-4">
+          {isCancelled ? (
+            <div className="border-destructive/40 bg-destructive/10 text-destructive mb-3 rounded-lg border px-3 py-2 text-sm font-medium">
+              This event has been cancelled by the host.
+            </div>
+          ) : null}
           <div className="mb-2 flex flex-wrap gap-1.5">
+            <span className="bg-muted text-foreground rounded-full px-2.5 py-0.5 text-xs font-medium">
+              {LISTING_LABELS[event.listingCategory] ?? event.listingCategory}
+            </span>
             <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-xs font-medium">
               {GENRE_LABELS[event.genre] ?? event.genre}
             </span>
@@ -160,21 +176,27 @@ export function EventDetail({
           <p className="text-muted-foreground mb-3 text-xs">
             {event.ticketsAvailable} tickets remaining · Exclusive member price
           </p>
-          <BuyTicketButton eventId={eventId} eventTitle={event.title} />
+          <BuyTicketButton
+            eventId={eventId}
+            eventTitle={event.title}
+            disabled={isCancelled}
+          />
         </div>
 
         <div className="flex gap-2 px-4 pb-4">
           <EventActionButtons eventId={eventId} />
         </div>
 
-        <div className="px-4 pb-4">
-          <Button className="w-full" asChild>
-            <Link href={`/chat?eventId=${eventId}&mode=learning`}>
-              <ChatIcon />
-              Ask Tanny About This Event
-            </Link>
-          </Button>
-        </div>
+        {!isCancelled ? (
+          <div className="px-4 pb-4">
+            <Button className="w-full" asChild>
+              <Link href={`/chat?eventId=${eventId}&mode=learning`}>
+                <ChatIcon />
+                Ask Tanny About This Event
+              </Link>
+            </Button>
+          </div>
+        ) : null}
 
         {event.beginnerNotes && (
           <div className="border-primary/20 bg-primary/5 mx-4 mb-4 rounded-xl border p-4">
@@ -288,9 +310,11 @@ function EventActionButtons({ eventId }: { eventId: string }) {
 function BuyTicketButton({
   eventId,
   eventTitle: _eventTitle,
+  disabled,
 }: {
   eventId: string;
   eventTitle: string;
+  disabled?: boolean;
 }) {
   const trpc = useTRPC();
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
@@ -323,7 +347,7 @@ function BuyTicketButton({
       className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
       size="lg"
       onClick={() => checkout.mutate({ eventId, quantity: 1 })}
-      disabled={checkout.isPending}
+      disabled={disabled || checkout.isPending}
     >
       {checkout.isPending ? (
         <span className="flex items-center gap-2">

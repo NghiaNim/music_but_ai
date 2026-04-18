@@ -15,6 +15,7 @@
     "dev": "tsc",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint --flag unstable_native_nodejs_ts_config",
+    "sync-msm-events": "dotenv -e ../../.env -- tsx scripts/sync-msm-events.ts",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "@acme/auth": "workspace:*",
     "@acme/db": "workspace:*",
     "@acme/validators": "workspace:*",
+    "@sendgrid/mail": "^8.1.6",
     "@trpc/server": "catalog:",
     "cheerio": "^1.1.0",
     "stripe": "^17.7.0",
@@ -32,8 +34,10 @@
     "@acme/eslint-config": "workspace:*",
     "@acme/prettier-config": "workspace:*",
     "@acme/tsconfig": "workspace:*",
+    "dotenv-cli": "^10.0.0",
     "eslint": "catalog:",
     "prettier": "catalog:",
+    "tsx": "^4.19.0",
     "typescript": "catalog:"
   },
   "prettier": "@acme/prettier-config"

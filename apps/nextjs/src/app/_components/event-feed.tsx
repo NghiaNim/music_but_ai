@@ -25,6 +25,11 @@ const GENRE_LABELS: Record<string, string> = {
   jazz: "Jazz",
 };
 
+const LISTING_LABELS: Record<string, string> = {
+  local: "Local",
+  concert: "Concert",
+};
+
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner:
     "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
@@ -93,6 +98,9 @@ export function EventFeed() {
   const [ticketedFilter, setTicketedFilter] = useState<
     "ticketed" | "non_ticketed" | undefined
   >();
+  const [listingFilter, setListingFilter] = useState<
+    "local" | "concert" | undefined
+  >();
   const [sortBy, setSortBy] = useState<"day_asc" | "day_desc">("day_asc");
 
   const { data: events } = useSuspenseQuery(
@@ -104,6 +112,7 @@ export function EventFeed() {
         | "intermediate"
         | "advanced"
         | undefined,
+      listingCategory: listingFilter,
     }),
   );
 
@@ -172,6 +181,30 @@ export function EventFeed() {
             onClick={() => setGenreFilter(genreFilter === g ? undefined : g)}
           />
         ))}
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        <FilterChip
+          label="All listings"
+          active={!listingFilter}
+          onClick={() => setListingFilter(undefined)}
+        />
+        <FilterChip
+          label="Local"
+          active={listingFilter === "local"}
+          onClick={() =>
+            setListingFilter(listingFilter === "local" ? undefined : "local")
+          }
+        />
+        <FilterChip
+          label="Concerts"
+          active={listingFilter === "concert"}
+          onClick={() =>
+            setListingFilter(
+              listingFilter === "concert" ? undefined : "concert",
+            )
+          }
+        />
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -297,6 +330,9 @@ function EventCard({ event }: { event: EventItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap gap-1">
+            <span className="bg-muted text-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">
+              {LISTING_LABELS[event.listingCategory] ?? event.listingCategory}
+            </span>
             <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium">
               {GENRE_LABELS[event.genre] ?? event.genre}
             </span>

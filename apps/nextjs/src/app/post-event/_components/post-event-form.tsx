@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 
+import type { RouterOutputs } from "@acme/api";
 import { Button } from "@acme/ui/button";
 import { Input } from "@acme/ui/input";
 import { Label } from "@acme/ui/label";
@@ -18,6 +19,7 @@ const GENRES = [
   { value: "opera", label: "Opera" },
   { value: "choral", label: "Choral" },
   { value: "ballet", label: "Ballet" },
+  { value: "jazz", label: "Jazz" },
 ] as const;
 
 const DIFFICULTIES = [
@@ -26,29 +28,134 @@ const DIFFICULTIES = [
   { value: "advanced", label: "Advanced" },
 ] as const;
 
+const LISTING = [
+  {
+    value: "local" as const,
+    label: "Local / community",
+    hint: "House concerts, reading groups, meetups, and other informal gatherings.",
+  },
+  {
+    value: "concert" as const,
+    label: "Concert",
+    hint: "Formal performances, recitals, and ticketed shows.",
+  },
+];
+
 type Genre = (typeof GENRES)[number]["value"];
 type Difficulty = (typeof DIFFICULTIES)[number]["value"];
+type Listing = (typeof LISTING)[number]["value"];
+
+type EventRow = NonNullable<RouterOutputs["event"]["byId"]>;
+
+function localDateTimeParts(d: Date) {
+  const dt = new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  const hh = String(dt.getHours()).padStart(2, "0");
+  const mm = String(dt.getMinutes()).padStart(2, "0");
+  return { date: `${y}-${m}-${day}`, time: `${hh}:${mm}` };
+}
 
 export function PostEventForm({ isSignedIn }: { isSignedIn: boolean }) {
+  return (
+    <HostEventFormShell isSignedIn={isSignedIn} mode="create" event={undefined} />
+  );
+}
+
+export function PostEventEditForm({ eventId }: { eventId: string }) {
+  const trpc = useTRPC();
+  const { data: event } = useSuspenseQuery(
+    trpc.event.byId.queryOptions({ id: eventId }),
+  );
+
+  if (!event) {
+    return (
+      <p className="text-muted-foreground text-sm">
+        This event could not be found.
+      </p>
+    );
+  }
+
+  if (event.publicationStatus === "cancelled") {
+    return (
+      <p className="text-muted-foreground text-sm">
+        This event has been cancelled and can no longer be edited.
+      </p>
+    );
+  }
+
+  return <HostEventFormShell isSignedIn event={event} mode="edit" />;
+}
+
+function HostEventFormShell({
+  isSignedIn,
+  mode,
+  event,
+}: {
+  isSignedIn: boolean;
+  mode: "create" | "edit";
+  event: EventRow | undefined;
+}) {
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [venue, setVenue] = useState("");
-  const [venueAddress, setVenueAddress] = useState("");
-  const [program, setProgram] = useState("");
-  const [description, setDescription] = useState("");
-  const [genre, setGenre] = useState<Genre>("solo_recital");
-  const [difficulty, setDifficulty] = useState<Difficulty>("beginner");
-  const [imageUrl, setImageUrl] = useState("");
-  const [ticketUrl, setTicketUrl] = useState("");
+  const initial = useMemo(() => {
+    if (!event) {
+      return {
+        title: "",
+        date: "",
+        time: "",
+        venue: "",
+        venueAddress: "",
+        program: "",
+        description: "",
+        genre: "solo_recital" as Genre,
+        difficulty: "beginner" as Difficulty,
+        listingCategory: "local" as Listing,
+        imageUrl: "",
+        ticketUrl: "",
+      };
+    }
+    const { date, time } = localDateTimeParts(new Date(event.date));
+    return {
+      title: event.title,
+      date,
+      time,
+      venue: event.venue,
+      venueAddress: event.venueAddress ?? "",
+      program: event.program,
+      description: event.description,
+      genre: event.genre as Genre,
+      difficulty: event.difficulty as Difficulty,
+      listingCategory: event.listingCategory as Listing,
+      imageUrl: event.imageUrl ?? "",
+      ticketUrl: event.ticketUrl ?? "",
+    };
+  }, [event]);
+
+  const [title, setTitle] = useState(initial.title);
+  const [date, setDate] = useState(initial.date);
+  const [time, setTime] = useState(initial.time);
+  const [venue, setVenue] = useState(initial.venue);
+  const [venueAddress, setVenueAddress] = useState(initial.venueAddress);
+  const [program, setProgram] = useState(initial.program);
+  const [description, setDescription] = useState(initial.description);
+  const [genre, setGenre] = useState<Genre>(initial.genre);
+  const [difficulty, setDifficulty] = useState<Difficulty>(initial.difficulty);
+  const [listingCategory, setListingCategory] = useState<Listing>(
+    initial.listingCategory,
+  );
+  const [imageUrl, setImageUrl] = useState(initial.imageUrl);
+  const [ticketUrl, setTicketUrl] = useState(initial.ticketUrl);
+  const [notifySubscribers, setNotifySubscribers] = useState(false);
 
   const createEvent = useMutation(
     trpc.event.create.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
         toast.success("Event posted successfully!");
+        await queryClient.invalidateQueries(trpc.event.pathFilter());
         router.push("/events");
       },
       onError: (err) => {
@@ -57,6 +164,36 @@ export function PostEventForm({ isSignedIn }: { isSignedIn: boolean }) {
           return;
         }
         toast.error(err.message || "Failed to post event");
+      },
+    }),
+  );
+
+  const updateEvent = useMutation(
+    trpc.event.update.mutationOptions({
+      onSuccess: async () => {
+        toast.success("Event updated");
+        await queryClient.invalidateQueries(trpc.event.pathFilter());
+        router.push("/events");
+      },
+      onError: (err) => {
+        toast.error(err.message || "Failed to update event");
+      },
+    }),
+  );
+
+  const cancelEvent = useMutation(
+    trpc.event.cancel.mutationOptions({
+      onSuccess: async (data) => {
+        toast.success(
+          data.emailed > 0
+            ? `Event cancelled · emailed ${data.emailed} subscriber(s)`
+            : "Event cancelled",
+        );
+        await queryClient.invalidateQueries(trpc.event.pathFilter());
+        router.push("/post-event");
+      },
+      onError: (err) => {
+        toast.error(err.message || "Could not cancel event");
       },
     }),
   );
@@ -76,7 +213,7 @@ export function PostEventForm({ isSignedIn }: { isSignedIn: boolean }) {
 
     const eventDate = new Date(`${date}T${time}`);
 
-    createEvent.mutate({
+    const payload = {
       title,
       date: eventDate,
       venue,
@@ -85,10 +222,23 @@ export function PostEventForm({ isSignedIn }: { isSignedIn: boolean }) {
       description,
       genre,
       difficulty,
+      listingCategory,
       imageUrl: imageUrl || undefined,
       ticketUrl: ticketUrl || undefined,
-    });
+    };
+
+    if (mode === "create") {
+      createEvent.mutate(payload);
+    } else if (event) {
+      updateEvent.mutate({
+        ...payload,
+        eventId: event.id,
+        notifySubscribers,
+      });
+    }
   }
+
+  const busy = createEvent.isPending || updateEvent.isPending;
 
   return (
     <div className="relative">
@@ -162,6 +312,33 @@ export function PostEventForm({ isSignedIn }: { isSignedIn: boolean }) {
             value={venueAddress}
             onChange={(e) => setVenueAddress(e.target.value)}
           />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label>Listing type *</Label>
+          <div className="flex flex-col gap-2">
+            {LISTING.map((opt) => (
+              <label
+                key={opt.value}
+                className="border-input has-[:checked]:border-primary/60 bg-card flex cursor-pointer gap-2 rounded-lg border p-3 text-sm"
+              >
+                <input
+                  type="radio"
+                  name="listingCategory"
+                  value={opt.value}
+                  checked={listingCategory === opt.value}
+                  onChange={() => setListingCategory(opt.value)}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="font-medium">{opt.label}</span>
+                  <span className="text-muted-foreground block text-xs">
+                    {opt.hint}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -252,21 +429,63 @@ export function PostEventForm({ isSignedIn }: { isSignedIn: boolean }) {
           </p>
         </div>
 
-        <Button
-          type="submit"
-          size="lg"
-          className="mt-2 w-full"
-          disabled={createEvent.isPending}
-        >
-          {createEvent.isPending ? (
+        {mode === "edit" && event ? (
+          <label className="flex cursor-pointer items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={notifySubscribers}
+              onChange={(e) => setNotifySubscribers(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              Email people who saved this event or completed a ticket purchase
+              when I save changes
+            </span>
+          </label>
+        ) : null}
+
+        <Button type="submit" size="lg" className="mt-2 w-full" disabled={busy}>
+          {busy ? (
             <span className="flex items-center gap-2">
               <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Posting...
+              {mode === "create" ? "Posting..." : "Saving..."}
             </span>
-          ) : (
+          ) : mode === "create" ? (
             "Post Event"
+          ) : (
+            "Save changes"
           )}
         </Button>
+
+        {mode === "edit" && event ? (
+          <div className="border-destructive/30 bg-destructive/5 rounded-xl border p-4">
+            <p className="mb-2 text-sm font-medium text-red-900 dark:text-red-200">
+              Cancel this event
+            </p>
+            <p className="text-muted-foreground mb-3 text-xs">
+              Cancelling marks the event as inactive, removes it from the public
+              list, and emails everyone who saved it or bought tickets through
+              the app (when SendGrid is configured).
+            </p>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={cancelEvent.isPending}
+              onClick={() => {
+                if (
+                  !confirm(
+                    "Cancel this event and notify subscribers by email?",
+                  )
+                )
+                  return;
+                cancelEvent.mutate({ eventId: event.id });
+              }}
+            >
+              {cancelEvent.isPending ? "Cancelling…" : "Cancel event"}
+            </Button>
+          </div>
+        ) : null}
       </form>
     </div>
   );
