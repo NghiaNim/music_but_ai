@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "@acme/api";
 import { cn } from "@acme/ui";
@@ -14,6 +14,11 @@ import { Input } from "@acme/ui/input";
 import { useTRPC } from "~/trpc/react";
 
 type EventItem = RouterOutputs["event"]["all"][number];
+type LiveEventItem = RouterOutputs["liveEvent"]["page"]["items"][number];
+
+type UnifiedRow =
+  | { kind: "created"; event: EventItem }
+  | { kind: "live"; event: LiveEventItem };
 
 const GENRE_LABELS: Record<string, string> = {
   orchestral: "Orchestral",
@@ -61,6 +66,75 @@ const CITY_OPTIONS = [
   "Berlin",
 ] as const;
 
+const VENUE_SOURCES = [
+  "msm",
+  "juilliard",
+  "met_opera",
+  "carnegie_hall",
+] as const;
+
+type VenueSource = (typeof VENUE_SOURCES)[number];
+type SourceFilter = "all" | "community" | VenueSource;
+
+const SOURCE_FILTER_LABELS: Record<SourceFilter, string> = {
+  all: "All sources",
+  community: "Community",
+  msm: "MSM",
+  juilliard: "Juilliard",
+  met_opera: "Met Opera",
+  carnegie_hall: "Carnegie Hall",
+};
+
+const LIVE_VENUE_LABELS: Record<VenueSource, string> = {
+  msm: "Manhattan School of Music",
+  juilliard: "Juilliard",
+  met_opera: "Metropolitan Opera",
+  carnegie_hall: "Carnegie Hall",
+};
+
+const LIVE_PAGE_SIZE = 15;
+
+function liveSortTime(ev: LiveEventItem): number {
+  if (ev.date) return new Date(ev.date).getTime();
+  const raw = ev.dateText?.split(/\s*\|/)[0]?.trim();
+  if (raw) {
+    const t = Date.parse(raw);
+    if (!Number.isNaN(t)) return t;
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
+function matchesCityFilter(
+  row: UnifiedRow,
+  city: string,
+): boolean {
+  const q = city.toLowerCase();
+  if (row.kind === "created") {
+    const e = row.event;
+    return (
+      e.venue.toLowerCase().includes(q) ||
+      (e.venueAddress?.toLowerCase().includes(q) ?? false)
+    );
+  }
+  const e = row.event;
+  return (
+    (e.venueName?.toLowerCase().includes(q) ?? false) ||
+    (e.location?.toLowerCase().includes(q) ?? false)
+  );
+}
+
+function matchesTicketedFilter(
+  row: UnifiedRow,
+  filter: "ticketed" | "non_ticketed",
+): boolean {
+  if (row.kind === "created") {
+    const has = !!row.event.ticketUrl;
+    return filter === "ticketed" ? has : !has;
+  }
+  const has = !!row.event.buyUrl;
+  return filter === "ticketed" ? has : !has;
+}
+
 export function FeaturedEvents() {
   const trpc = useTRPC();
   const { data: events } = useSuspenseQuery(trpc.event.all.queryOptions({}));
@@ -102,11 +176,21 @@ export function EventFeed() {
     "local" | "concert" | undefined
   >();
   const [sortBy, setSortBy] = useState<"day_asc" | "day_desc">("day_asc");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
 
-  const { data: events } = useSuspenseQuery(
-    trpc.event.all.queryOptions({
+  const showUser = sourceFilter === "all" || sourceFilter === "community";
+  const liveSource: VenueSource | undefined =
+    sourceFilter !== "all" && sourceFilter !== "community"
+      ? sourceFilter
+      : undefined;
+  const showLive = sourceFilter === "all" || liveSource !== undefined;
+
+  const genreArg = genreFilter as (typeof GENRE_OPTIONS)[number] | undefined;
+
+  const userQuery = useQuery({
+    ...trpc.event.all.queryOptions({
       search: search || undefined,
-      genre: genreFilter as (typeof GENRE_OPTIONS)[number] | undefined,
+      genre: genreArg,
       difficulty: difficultyFilter as
         | "beginner"
         | "intermediate"
@@ -114,23 +198,55 @@ export function EventFeed() {
         | undefined,
       listingCategory: listingFilter,
     }),
-  );
-
-  const filteredEvents = events.filter((e) => {
-    if (cityFilter) {
-      const matchesCity =
-        e.venue.toLowerCase().includes(cityFilter.toLowerCase()) ||
-        (e.venueAddress?.toLowerCase().includes(cityFilter.toLowerCase()) ??
-          false);
-      if (!matchesCity) return false;
-    }
-    if (ticketedFilter === "ticketed" && !e.ticketUrl) return false;
-    if (ticketedFilter === "non_ticketed" && e.ticketUrl) return false;
-    return true;
+    enabled: showUser,
   });
-  const sortedEvents = [...filteredEvents].sort((a, b) => {
-    const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
+
+  const liveQuery = useInfiniteQuery({
+    ...trpc.liveEvent.page.infiniteQueryOptions(
+      {
+        upcomingOnly: true,
+        limit: LIVE_PAGE_SIZE,
+        search: search || undefined,
+        genre: genreArg,
+        source: liveSource,
+      },
+      {
+        getNextPageParam: (last) => last.nextCursor ?? undefined,
+      },
+    ),
+    initialPageParam: 0,
+    enabled: showLive,
+  });
+
+  const loadingInitial =
+    (showUser && userQuery.isPending) || (showLive && liveQuery.isPending);
+
+  const userEvents = userQuery.data ?? [];
+  const liveEvents = liveQuery.data?.pages.flatMap((p) => p.items) ?? [];
+
+  const merged: UnifiedRow[] = [
+    ...userEvents.map((event) => ({ kind: "created" as const, event })),
+    ...liveEvents.map((event) => ({ kind: "live" as const, event })),
+  ];
+
+  const mergedSorted = [...merged].sort((a, b) => {
+    const ta =
+      a.kind === "created"
+        ? new Date(a.event.date).getTime()
+        : liveSortTime(a.event);
+    const tb =
+      b.kind === "created"
+        ? new Date(b.event.date).getTime()
+        : liveSortTime(b.event);
+    const diff = ta - tb;
     return sortBy === "day_asc" ? diff : -diff;
+  });
+
+  const filteredEvents = mergedSorted.filter((row) => {
+    if (cityFilter && !matchesCityFilter(row, cityFilter)) return false;
+    if (ticketedFilter && !matchesTicketedFilter(row, ticketedFilter))
+      return false;
+    return true;
   });
 
   return (
@@ -165,6 +281,31 @@ export function EventFeed() {
           <option value="day_asc">By Date</option>
           <option value="day_desc">Latest Day</option>
         </select>
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        <FilterChip
+          label={SOURCE_FILTER_LABELS.all}
+          active={sourceFilter === "all"}
+          onClick={() => setSourceFilter("all")}
+        />
+        <FilterChip
+          label={SOURCE_FILTER_LABELS.community}
+          active={sourceFilter === "community"}
+          onClick={() =>
+            setSourceFilter(
+              sourceFilter === "community" ? "all" : "community",
+            )
+          }
+        />
+        {VENUE_SOURCES.map((s) => (
+          <FilterChip
+            key={s}
+            label={SOURCE_FILTER_LABELS[s]}
+            active={sourceFilter === s}
+            onClick={() => setSourceFilter(sourceFilter === s ? "all" : s)}
+          />
+        ))}
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -251,7 +392,9 @@ export function EventFeed() {
         />
       </div>
 
-      {sortedEvents.length === 0 ? (
+      {loadingInitial ? (
+        <EventFeedSkeleton />
+      ) : filteredEvents.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16">
           <p className="text-muted-foreground text-sm">No events found</p>
           <p className="text-muted-foreground text-xs">
@@ -259,11 +402,31 @@ export function EventFeed() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {sortedEvents.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
+        <>
+          <div className="flex flex-col gap-3">
+            {filteredEvents.map((row) =>
+              row.kind === "created" ? (
+                <EventCard key={row.event.id} event={row.event} />
+              ) : (
+                <LiveEventCard key={row.event.id} event={row.event} />
+              ),
+            )}
+          </div>
+          {showLive && liveQuery.hasNextPage ? (
+            <div className="mt-4 flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-w-[8rem]"
+                disabled={liveQuery.isFetchingNextPage}
+                onClick={() => void liveQuery.fetchNextPage()}
+              >
+                {liveQuery.isFetchingNextPage ? "Loading…" : "See more"}
+              </Button>
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );
@@ -348,13 +511,61 @@ function EventCard({ event }: { event: EventItem }) {
                   event.difficulty.slice(1)}
             </span>
           </div>
-          <h3 className="line-clamp-1 text-sm font-semibold" style={{ color: "#9C1738" }}>{event.title}</h3>
+          <h3
+            className="line-clamp-1 text-sm font-semibold"
+            style={{ color: "#9C1738" }}
+          >
+            {event.title}
+          </h3>
           <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
             {line} &middot; {event.venue}
           </p>
         </div>
       </div>
     </Link>
+  );
+}
+
+function LiveEventCard({ event }: { event: LiveEventItem }) {
+  const sourceLabel = LIVE_VENUE_LABELS[event.source] ?? event.source;
+  return (
+    <a
+      href={event.eventUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="bg-card hover:bg-muted/40 flex gap-3 rounded-xl border p-3 transition-colors"
+    >
+      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+        {event.imageUrl ? (
+          <Image
+            src={event.imageUrl}
+            alt={event.title}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-sky-200 to-indigo-100 text-xs font-semibold text-sky-700 dark:from-sky-900/50 dark:to-indigo-800/30 dark:text-sky-200">
+            Live
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex flex-wrap gap-1">
+          <span className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-200 rounded-full px-2 py-0.5 text-[10px] font-medium">
+            {sourceLabel}
+          </span>
+          <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium">
+            {GENRE_LABELS[event.genre] ?? event.genre}
+          </span>
+        </div>
+        <h3 className="line-clamp-2 text-sm font-semibold">{event.title}</h3>
+        <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
+          {event.dateText ?? ""}
+          {event.venueName ? ` · ${event.venueName}` : ""}
+        </p>
+      </div>
+    </a>
   );
 }
 

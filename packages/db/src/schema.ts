@@ -212,11 +212,13 @@ export const TicketOrder = pgTable("ticket_order", (t) => ({
  * LiveEvent: concerts scraped from external venues (MSM, Carnegie, Met, Juilliard).
  * Refreshed on a schedule via Supabase pg_cron → /api/cron/sync-venues.
  * Never written to by end users. `eventUrl` is the stable external identity.
+ * `cancelled` is set from feeds (e.g. Juilliard title prefix); hidden from the public API.
  */
 export const LiveEvent = pgTable("live_event", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
   source: liveEventSourceEnum().notNull(),
   title: t.varchar({ length: 512 }).notNull(),
+  cancelled: t.boolean().notNull().default(false),
   date: t.timestamp({ mode: "date", withTimezone: true }),
   dateText: t.varchar({ length: 128 }),
   venueName: t.varchar({ length: 256 }),

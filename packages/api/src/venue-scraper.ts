@@ -5,6 +5,8 @@ export type ScrapedVenue = "carnegie_hall" | "met_opera" | "juilliard" | "msm";
 export interface ScrapedEvent {
   source: ScrapedVenue;
   title: string;
+  /** True when the venue feed marks the performance as cancelled (still stored for ops). */
+  cancelled?: boolean;
   dateText?: string;
   venueName?: string;
   location?: string;
@@ -92,7 +94,169 @@ function mapCarnegieApiPayload(data: unknown): ScrapedEvent[] {
   return events;
 }
 
+/** SPARQL JSON (`results.bindings`) row from data.carnegiehall.org. */
+interface CarnegieSparqlBinding {
+  event?: { value: string };
+  label?: { value: string };
+  startDate?: { value: string };
+  venueName?: { value: string };
+}
+
+/** Comparable `YYYY-MM-DDTHH:mm:ss` string in America/New_York (LOD uses NY wall times). */
+function carnegieNyWallComparable(d: Date): string {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+    .format(d)
+    .replace(" ", "T");
+}
+
+/**
+ * Upcoming performances from Carnegie Hall's **linked open data** SPARQL API.
+ * This works from servers and cron jobs.
+ *
+ * `https://www.carnegiehall.org/Events` is protected by DataDome + Incapsula — a
+ * normal `fetch` only sees a challenge page (not your browser session), so HTML
+ * scraping reliably returns 0 rows. The public LOD endpoint is the supported path.
+ *
+ * The LOD dump often **lags** the live site (max `schema:startDate` can be days
+ * before “now”), so we query a recent window, sort newest-first, then prefer
+ * events at/after NY-local “now”, falling back to the newest rows in the dump.
+ *
+ * @see https://data.carnegiehall.org/sparql/
+ */
+async function scrapeCarnegieHallFromLinkedData(): Promise<ScrapedEvent[]> {
+  const wide = new Date();
+  wide.setUTCDate(wide.getUTCDate() - 400);
+  const y = wide.getUTCFullYear();
+  const mo = String(wide.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(wide.getUTCDate()).padStart(2, "0");
+  const sparqlCutoff = `${y}-${mo}-${day}T00:00:00`;
+
+  const query = `PREFIX schema: <http://schema.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?event ?label ?startDate ?venueName WHERE {
+  ?event a schema:Event .
+  ?event schema:startDate ?startDate .
+  ?event rdfs:label ?label .
+  OPTIONAL {
+    ?event schema:location ?loc .
+    ?loc rdfs:label ?venueName .
+  }
+  FILTER (?startDate > "${sparqlCutoff}"^^xsd:dateTime)
+}
+ORDER BY DESC(?startDate)
+LIMIT 500`;
+
+  const res = await fetch("https://data.carnegiehall.org/sparql/", {
+    method: "POST",
+    headers: {
+      ...BROWSER_FETCH_HEADERS,
+      Accept: "application/sparql-results+json",
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({ query }),
+  });
+  if (!res.ok) {
+    throw new Error(`Carnegie SPARQL HTTP ${res.status}`);
+  }
+
+  const data = (await res.json()) as {
+    results?: { bindings?: CarnegieSparqlBinding[] };
+  };
+  const bindings = data.results?.bindings ?? [];
+
+  type Row = {
+    eventUrl: string;
+    title: string;
+    startComparable: string;
+    startRaw: string;
+    hall?: string;
+  };
+  const rows: Row[] = [];
+  const seen = new Set<string>();
+
+  for (const row of bindings) {
+    const eventUri = row.event?.value;
+    const title = row.label?.value?.trim();
+    const start = row.startDate?.value;
+    if (!eventUri || !title || !start) continue;
+
+    const idMatch = /\/events\/(\d+)/.exec(eventUri);
+    if (!idMatch?.[1]) continue;
+    const eventUrl = `https://data.carnegiehall.org/events/${idMatch[1]}/about`;
+    if (seen.has(eventUrl)) continue;
+    seen.add(eventUrl);
+
+    const startComparable = start.slice(0, 19);
+    rows.push({
+      eventUrl,
+      title,
+      startComparable,
+      startRaw: start,
+      hall: row.venueName?.value?.trim(),
+    });
+  }
+
+  const nowNy = carnegieNyWallComparable(new Date());
+  const twoWeeksAgoNy = carnegieNyWallComparable(
+    new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+  );
+
+  let chosen = rows.filter((r) => r.startComparable >= nowNy);
+  if (chosen.length === 0) {
+    chosen = rows.filter((r) => r.startComparable >= twoWeeksAgoNy);
+  }
+  if (chosen.length === 0) {
+    chosen = rows;
+  }
+
+  chosen.sort((a, b) => b.startComparable.localeCompare(a.startComparable));
+
+  const events: ScrapedEvent[] = [];
+  for (const r of chosen.slice(0, 250)) {
+    const startDate = new Date(r.startRaw);
+    const dateText = Number.isNaN(startDate.getTime())
+      ? r.startRaw
+      : startDate.toLocaleString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          timeZone: "America/New_York",
+        });
+
+    events.push({
+      source: "carnegie_hall",
+      title: r.title,
+      dateText,
+      venueName: r.hall ?? "Carnegie Hall",
+      location: "New York, NY",
+      eventUrl: r.eventUrl,
+      buyUrl: r.eventUrl,
+    });
+  }
+
+  return events;
+}
+
 export async function scrapeCarnegieHall(): Promise<ScrapedEvent[]> {
+  try {
+    const fromLod = await scrapeCarnegieHallFromLinkedData();
+    if (fromLod.length > 0) return fromLod;
+  } catch {
+    /* fall through to legacy */
+  }
+
   const base = "https://www.carnegiehall.org";
 
   const jsonAttempt = await fetch(`${base}/api/events/upcoming`, {
@@ -225,8 +389,13 @@ interface JuilliardApiEvent {
   venues?: { name?: string; address?: string };
 }
 
+/** Juilliard marks cancellations by prefixing the title (API has no separate flag). */
+function isJuilliardCanceledTitle(title: string): boolean {
+  return /^\s*(canceled|cancelled)\s*:/i.test(title.trim());
+}
+
 export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
-  const res = await fetch("https://calendar.juilliard.edu/api/events", {
+  const res = await fetch("https://calendar.juilliard.edu/api/events/", {
     headers: {
       ...BROWSER_FETCH_HEADERS,
       Accept: "application/json",
@@ -248,6 +417,9 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
   const events: ScrapedEvent[] = [];
 
   for (const e of data) {
+    const title = e.title.replace(/\s+/g, " ").trim();
+    const cancelled = isJuilliardCanceledTitle(title);
+
     const start = new Date(e.date_start_time);
     if (Number.isNaN(start.getTime()) || start < startOfYesterday) continue;
 
@@ -265,7 +437,8 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
 
     events.push({
       source: "juilliard",
-      title: e.title.replace(/\s+/g, " ").trim(),
+      title,
+      cancelled,
       dateText: e.date_start_time,
       venueName,
       location,

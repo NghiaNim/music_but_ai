@@ -27,7 +27,7 @@ const LiveEventFilters = z.object({
 
 const LiveEventPageInput = LiveEventFilters.extend({
   /** Page size (we fetch one extra row to detect `hasMore`). */
-  limit: z.number().min(1).max(50).default(5),
+  limit: z.number().min(1).max(50).default(15),
   /** Row offset; driven by `useInfiniteQuery` / `cursor` from the previous page. */
   cursor: z.number().min(0).default(0),
 });
@@ -51,6 +51,8 @@ function buildLiveEventWhere(
     );
     if (searchCond) conditions.push(searchCond);
   }
+
+  conditions.push(eq(LiveEvent.cancelled, false));
 
   return conditions.length > 0 ? and(...conditions) : undefined;
 }

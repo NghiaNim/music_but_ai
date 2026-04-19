@@ -1,4 +1,4 @@
-import { and, eq, notInArray } from "@acme/db";
+import { and, eq, notInArray, sql } from "@acme/db";
 import { db } from "@acme/db/client";
 import { LiveEvent } from "@acme/db/schema";
 
@@ -49,10 +49,14 @@ function parseScrapedDate(dateText: string | undefined): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function stripCancellationTitlePrefix(title: string): string {
+  return title.replace(/^\s*(canceled|cancelled)\s*:\s*/i, "").trim() || title;
+}
+
 function inferGenreFromTitle(
   title: string,
 ): (typeof LiveEvent.$inferInsert)["genre"] {
-  const t = title.toLowerCase();
+  const t = stripCancellationTitlePrefix(title).toLowerCase();
   if (t.includes("opera")) return "opera";
   if (t.includes("jazz")) return "jazz";
   if (t.includes("ballet")) return "ballet";
@@ -106,6 +110,7 @@ export async function syncVenueToLiveEvents(
     const values: typeof LiveEvent.$inferInsert = {
       source,
       title: s.title.slice(0, 512),
+      cancelled: s.cancelled ?? false,
       date: parseScrapedDate(s.dateText),
       dateText: s.dateText,
       venueName: s.venueName ?? defaults.venueName,
@@ -125,6 +130,7 @@ export async function syncVenueToLiveEvents(
         target: LiveEvent.eventUrl,
         set: {
           title: values.title,
+          cancelled: values.cancelled,
           date: values.date,
           dateText: values.dateText,
           venueName: values.venueName,
@@ -160,6 +166,16 @@ export async function syncAllVenuesToLiveEvents(
   totalRemoved: number;
   results: VenueSyncResult[];
 }> {
+  await database
+    .update(LiveEvent)
+    .set({ cancelled: true, updatedAt: new Date() })
+    .where(
+      and(
+        eq(LiveEvent.cancelled, false),
+        sql`trim(${LiveEvent.title}) ~* '^\\s*(canceled|cancelled)\\s*:'`,
+      ),
+    );
+
   const settled = await Promise.allSettled(
     ALL_VENUE_SOURCES.map((source) => syncVenueToLiveEvents(source, database)),
   );
