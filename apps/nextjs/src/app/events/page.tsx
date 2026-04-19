@@ -9,7 +9,15 @@ import {
 
 export default function EventsPage() {
   prefetch(trpc.event.all.queryOptions({}));
-  prefetch(trpc.liveEvent.all.queryOptions({ upcomingOnly: true }));
+  prefetch({
+    ...trpc.liveEvent.page.infiniteQueryOptions(
+      { upcomingOnly: true, limit: 15 },
+      {
+        getNextPageParam: (last) => last.nextCursor ?? undefined,
+      },
+    ),
+    initialPageParam: 0,
+  });
 
   return (
     <HydrateClient>

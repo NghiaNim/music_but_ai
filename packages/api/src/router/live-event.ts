@@ -1,7 +1,7 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod/v4";
 
-import { and, asc, eq, gte, ilike, isNull, or } from "@acme/db";
+import { and, asc, eq, gte, ilike, isNull, or, sql } from "@acme/db";
 import { LiveEvent } from "@acme/db/schema";
 
 import { publicProcedure } from "../trpc";
@@ -25,29 +25,60 @@ const LiveEventFilters = z.object({
   upcomingOnly: z.boolean().default(true),
 });
 
+const LiveEventPageInput = LiveEventFilters.extend({
+  /** Page size (we fetch one extra row to detect `hasMore`). */
+  limit: z.number().min(1).max(50).default(5),
+  /** Row offset; driven by `useInfiniteQuery` / `cursor` from the previous page. */
+  cursor: z.number().min(0).default(0),
+});
+
+function buildLiveEventWhere(
+  input: z.infer<typeof LiveEventPageInput>,
+): ReturnType<typeof and> | undefined {
+  const conditions = [];
+
+  if (input.upcomingOnly) {
+    const now = new Date();
+    const upcoming = or(gte(LiveEvent.date, now), isNull(LiveEvent.date));
+    if (upcoming) conditions.push(upcoming);
+  }
+  if (input.source) conditions.push(eq(LiveEvent.source, input.source));
+  if (input.genre) conditions.push(eq(LiveEvent.genre, input.genre));
+  if (input.search) {
+    const searchCond = or(
+      ilike(LiveEvent.title, `%${input.search}%`),
+      ilike(LiveEvent.venueName, `%${input.search}%`),
+    );
+    if (searchCond) conditions.push(searchCond);
+  }
+
+  return conditions.length > 0 ? and(...conditions) : undefined;
+}
+
 export const liveEventRouter = {
-  all: publicProcedure.input(LiveEventFilters).query(({ ctx, input }) => {
-    const conditions = [];
+  /**
+   * Paginated live venue feed. Use with `infiniteQueryOptions` on the client.
+   * Ordering: dated events soonest-first, then rows with no parsed date (e.g. Met).
+   */
+  page: publicProcedure.input(LiveEventPageInput).query(async ({ ctx, input }) => {
+    const where = buildLiveEventWhere(input);
+    const take = input.limit + 1;
 
-    if (input.upcomingOnly) {
-      const now = new Date();
-      const upcoming = or(gte(LiveEvent.date, now), isNull(LiveEvent.date));
-      if (upcoming) conditions.push(upcoming);
-    }
-    if (input.source) conditions.push(eq(LiveEvent.source, input.source));
-    if (input.genre) conditions.push(eq(LiveEvent.genre, input.genre));
-    if (input.search) {
-      const searchCond = or(
-        ilike(LiveEvent.title, `%${input.search}%`),
-        ilike(LiveEvent.venueName, `%${input.search}%`),
-      );
-      if (searchCond) conditions.push(searchCond);
-    }
-
-    return ctx.db.query.LiveEvent.findMany({
-      where: conditions.length > 0 ? and(...conditions) : undefined,
-      orderBy: [asc(LiveEvent.date)],
-      limit: 100,
+    const rows = await ctx.db.query.LiveEvent.findMany({
+      where,
+      orderBy: [
+        asc(sql`${LiveEvent.date} IS NULL`),
+        asc(LiveEvent.date),
+        asc(LiveEvent.id),
+      ],
+      limit: take,
+      offset: input.cursor,
     });
+
+    const hasMore = rows.length > input.limit;
+    const items = hasMore ? rows.slice(0, input.limit) : rows;
+    const nextCursor = hasMore ? input.cursor + input.limit : null;
+
+    return { items, nextCursor };
   }),
 } satisfies TRPCRouterRecord;

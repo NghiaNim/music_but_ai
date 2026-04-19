@@ -1,6 +1,9 @@
--- Supabase pg_cron job: refresh MSM performances daily.
--- Run this once in the Supabase SQL editor, then keep it in source control.
--- Dependencies: pg_cron (for scheduling) and pg_net (for HTTP calls).
+-- Supabase pg_cron job: refresh all scraped venue events daily.
+-- Hits /api/cron/sync-venues which runs every venue scraper concurrently
+-- (Carnegie Hall, Met Opera, Juilliard, MSM) and upserts into LiveEvent.
+--
+-- Run this once in the Supabase SQL editor; keep in source control.
+-- Dependencies: pg_cron (scheduling) + pg_net (HTTP calls).
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
@@ -12,19 +15,16 @@ create extension if not exists pg_net;
 -- ─────────────────────────────────────────────
 
 alter database postgres
-  set app.settings.cron_target_url = 'https://<YOUR_APP_DOMAIN>/api/cron/sync-msm';
+  set app.settings.cron_target_url = 'https://<YOUR_APP_DOMAIN>/api/cron/sync-venues';
 
 alter database postgres
   set app.settings.cron_secret = '<PASTE_CRON_SECRET_HERE>';
 
--- If you're on a Supabase project whose primary DB is not named "postgres",
--- swap the name above. Check with:   select current_database();
+-- If your Supabase primary DB is not named "postgres", swap the name above:
+--   select current_database();
 
 -- ─────────────────────────────────────────────
--- 2) Schedule the job (idempotent).
---    14:00 UTC = 09:00 America/New_York during EDT.
---    During EST (Nov–Mar) this runs at 10:00 NYC time;
---    use '0 13 * * *' instead if you care about strict 9am year-round.
+-- 2) Unschedule any prior jobs (idempotent).
 -- ─────────────────────────────────────────────
 
 do $$
@@ -34,9 +34,22 @@ exception when others then
   null;
 end $$;
 
+do $$
+begin
+  perform cron.unschedule('classica-sync-venues');
+exception when others then
+  null;
+end $$;
+
+-- ─────────────────────────────────────────────
+-- 3) Schedule the combined venue sync.
+--    14:00 UTC = 09:00 America/New_York during EDT
+--    (10:00 NYC during EST). Use '0 13 * * *' for strict 9am year-round.
+-- ─────────────────────────────────────────────
+
 select
   cron.schedule(
-    'classica-sync-msm',
+    'classica-sync-venues',
     '0 14 * * *',
     $cron$
     select
@@ -46,26 +59,26 @@ select
           'Authorization',  'Bearer ' || current_setting('app.settings.cron_secret'),
           'x-supabase-cron', '1'
         ),
-        timeout_milliseconds := 60000
+        timeout_milliseconds := 120000
       );
     $cron$
   );
 
 -- ─────────────────────────────────────────────
--- 3) Verify / inspect
+-- 4) Verify / inspect
 -- ─────────────────────────────────────────────
 
--- Confirm the settings were persisted (note: these return the value in NEW sessions,
--- so open a fresh SQL editor tab after ALTER DATABASE to see them):
+-- Confirm the settings were persisted (open a fresh SQL editor tab after
+-- ALTER DATABASE so the new session picks them up):
 --   show app.settings.cron_target_url;
 --   show app.settings.cron_secret;
 
 -- List scheduled jobs:
---   select * from cron.job where jobname = 'classica-sync-msm';
+--   select * from cron.job where jobname = 'classica-sync-venues';
 
 -- See recent runs and HTTP responses:
 --   select * from cron.job_run_details
---   where jobid = (select jobid from cron.job where jobname = 'classica-sync-msm')
+--   where jobid = (select jobid from cron.job where jobname = 'classica-sync-venues')
 --   order by start_time desc
 --   limit 20;
 

@@ -210,7 +210,7 @@ export const TicketOrder = pgTable("ticket_order", (t) => ({
 
 /**
  * LiveEvent: concerts scraped from external venues (MSM, Carnegie, Met, Juilliard).
- * Refreshed on a schedule via Supabase pg_cron → /api/cron/sync-msm.
+ * Refreshed on a schedule via Supabase pg_cron → /api/cron/sync-venues.
  * Never written to by end users. `eventUrl` is the stable external identity.
  */
 export const LiveEvent = pgTable("live_event", (t) => ({

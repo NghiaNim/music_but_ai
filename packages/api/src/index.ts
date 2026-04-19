@@ -20,5 +20,11 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 export { type AppRouter, appRouter } from "./root";
 export { createTRPCContext } from "./trpc";
-export { syncMsmPerformancesToLiveEvents } from "./msm-sync";
+export {
+  ALL_VENUE_SOURCES,
+  syncAllVenuesToLiveEvents,
+  syncMsmPerformancesToLiveEvents,
+  syncVenueToLiveEvents,
+  type VenueSyncResult,
+} from "./live-event-sync";
 export type { RouterInputs, RouterOutputs };

@@ -1,13 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "@acme/api";
+import { Button } from "@acme/ui/button";
 
 import { useTRPC } from "~/trpc/react";
 
-type LiveEventItem = RouterOutputs["liveEvent"]["all"][number];
+type LiveEventItem = RouterOutputs["liveEvent"]["page"]["items"][number];
+
+const PAGE_SIZE = 15;
 
 const SOURCE_LABELS: Record<string, string> = {
   msm: "Manhattan School of Music",
@@ -18,9 +21,18 @@ const SOURCE_LABELS: Record<string, string> = {
 
 export function LiveEventFeed() {
   const trpc = useTRPC();
-  const { data: liveEvents } = useSuspenseQuery(
-    trpc.liveEvent.all.queryOptions({ upcomingOnly: true }),
-  );
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useSuspenseInfiniteQuery({
+      ...trpc.liveEvent.page.infiniteQueryOptions(
+        { upcomingOnly: true, limit: PAGE_SIZE },
+        {
+          getNextPageParam: (last) => last.nextCursor ?? undefined,
+        },
+      ),
+      initialPageParam: 0,
+    });
+
+  const liveEvents = data.pages.flatMap((p) => p.items);
 
   if (liveEvents.length === 0) {
     return null;
@@ -39,6 +51,20 @@ export function LiveEventFeed() {
           <LiveEventCard key={ev.id} event={ev} />
         ))}
       </div>
+      {hasNextPage ? (
+        <div className="mt-4 flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-w-[8rem]"
+            disabled={isFetchingNextPage}
+            onClick={() => void fetchNextPage()}
+          >
+            {isFetchingNextPage ? "Loading…" : "See more"}
+          </Button>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -13,10 +13,26 @@ export interface ScrapedEvent {
   posterImageUrl?: string;
 }
 
-async function fetchHtml(url: string): Promise<string> {
-  const res = await fetch(url);
+/** Mimic a browser so fewer venues return 403 / empty shells to server-side fetch. */
+const BROWSER_FETCH_HEADERS: Record<string, string> = {
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  Accept:
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9",
+};
+
+async function fetchText(url: string, init?: RequestInit): Promise<string> {
+  const res = await fetch(url, {
+    ...init,
+    headers: { ...BROWSER_FETCH_HEADERS, ...init?.headers },
+  });
   if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
   return await res.text();
+}
+
+async function fetchHtml(url: string): Promise<string> {
+  return fetchText(url);
 }
 
 function toAbsoluteUrl(href: string, base: string): string {
@@ -27,8 +43,77 @@ function isBlockedHtml(html: string): boolean {
   return /incapsula|just a moment|cloudflare|noindex, nofollow/i.test(html);
 }
 
+function slugToTitle(slug: string): string {
+  try {
+    slug = decodeURIComponent(slug);
+  } catch {
+    /* ignore */
+  }
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+/** Try to map Carnegie JSON if the site returns `application/json` (often blocked by Incapsula). */
+function mapCarnegieApiPayload(data: unknown): ScrapedEvent[] {
+  const rows = Array.isArray(data)
+    ? data
+    : data &&
+        typeof data === "object" &&
+        "events" in data &&
+        Array.isArray((data as { events: unknown }).events)
+      ? (data as { events: unknown[] }).events
+      : null;
+  if (!rows) return [];
+
+  const events: ScrapedEvent[] = [];
+  for (const item of rows) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const title = String(o.title ?? o.name ?? o.eventTitle ?? "").trim();
+    const rawUrl = String(
+      o.url ?? o.link ?? o.uri ?? o.eventUrl ?? o.href ?? "",
+    ).trim();
+    if (!title || !rawUrl) continue;
+    const eventUrl = rawUrl.startsWith("http")
+      ? rawUrl
+      : toAbsoluteUrl(rawUrl, "https://www.carnegiehall.org");
+    const dateText = String(o.date ?? o.startDate ?? o.dateText ?? "").trim();
+    events.push({
+      source: "carnegie_hall",
+      title,
+      dateText: dateText || undefined,
+      eventUrl,
+      buyUrl: String(o.ticketUrl ?? o.buyUrl ?? eventUrl).trim() || eventUrl,
+    });
+  }
+  return events;
+}
+
 export async function scrapeCarnegieHall(): Promise<ScrapedEvent[]> {
   const base = "https://www.carnegiehall.org";
+
+  const jsonAttempt = await fetch(`${base}/api/events/upcoming`, {
+    headers: {
+      ...BROWSER_FETCH_HEADERS,
+      Accept: "application/json, text/plain, */*",
+    },
+  });
+  if (jsonAttempt.ok) {
+    const ct = jsonAttempt.headers.get("content-type") ?? "";
+    if (ct.includes("json")) {
+      try {
+        const data: unknown = await jsonAttempt.json();
+        const mapped = mapCarnegieApiPayload(data);
+        if (mapped.length > 0) return mapped;
+      } catch {
+        /* fall through */
+      }
+    }
+  }
+
   const html = await fetchHtml(`${base}/Events`);
   if (isBlockedHtml(html)) return [];
   const $ = load(html);
@@ -67,85 +152,126 @@ export async function scrapeCarnegieHall(): Promise<ScrapedEvent[]> {
   return events;
 }
 
+function normalizeMetOperaSeasonPath(href: string): string | null {
+  const raw = href.trim().split("?")[0]?.split("#")[0] ?? "";
+  if (!raw.includes("/season/")) return null;
+  const path = raw.startsWith("http")
+    ? (() => {
+        try {
+          return new URL(raw).pathname;
+        } catch {
+          return null;
+        }
+      })()
+    : raw;
+  if (!path) return null;
+  const parts = path.replace(/\/$/, "").split("/").filter(Boolean);
+  if (parts.length < 3 || parts[0] !== "season") return null;
+  return path.endsWith("/") ? path : `${path}/`;
+}
+
 export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
   const base = "https://www.metopera.org";
   const html = await fetchHtml(`${base}/calendar/`);
   const $ = load(html);
-  const events: ScrapedEvent[] = [];
 
-  for (const el of $(
-    ".calendar-event, .event, a[href*='/season/']",
-  ).toArray()) {
-    const root = $(el);
-    const title =
-      root.find(".event-title, h3, h2").first().text().trim() ||
-      root.attr("aria-label")?.trim() ||
-      "";
-    if (!title) continue;
+  const byUrl = new Map<string, string>();
 
-    const dateText =
-      root.find("time").first().text().trim() ||
-      root.find(".date").first().text().trim();
-
-    const linkHref =
-      root
-        .find('a[href*="tickets"], a[href*="/season/"]')
-        .first()
-        .attr("href") ??
-      root.attr("href") ??
-      "";
-    if (!linkHref) continue;
-    const eventUrl = toAbsoluteUrl(linkHref, base);
-    if (!eventUrl.includes("/season/")) continue;
-
-    events.push({
-      source: "met_opera",
-      title,
-      dateText,
-      venueName: "Metropolitan Opera",
-      location: "New York, NY",
-      eventUrl,
-      buyUrl: eventUrl,
-    });
+  function addFromPath(path: string, titleHint?: string) {
+    const normalized = normalizeMetOperaSeasonPath(path);
+    if (!normalized) return;
+    const eventUrl = toAbsoluteUrl(normalized, base);
+    const slug =
+      normalized.replace(/\/$/, "").split("/").pop() ?? "";
+    const fromSlug = slug ? slugToTitle(slug) : "";
+    let title =
+      titleHint?.replace(/\s+/g, " ").trim() ||
+      fromSlug;
+    if (!title) return;
+    if (/^(buy tickets|more|read more)$/i.test(title)) title = fromSlug;
+    if (!byUrl.has(eventUrl)) byUrl.set(eventUrl, title);
   }
 
-  return events;
+  for (const el of $('a[href*="/season/"]').toArray()) {
+    const href = $(el).attr("href")?.trim() ?? "";
+    const text = $(el).text().replace(/\s+/g, " ").trim();
+    addFromPath(href, text || undefined);
+  }
+
+  const embeddedPath =
+    /\/season\/\d{4}-\d{2}-[^/]+\/[^"'\\s<>?]+/g;
+  let m: RegExpExecArray | null;
+  while ((m = embeddedPath.exec(html))) {
+    addFromPath(m[0]);
+  }
+
+  return [...byUrl.entries()].map(([eventUrl, title]) => ({
+    source: "met_opera" as const,
+    title,
+    venueName: "Metropolitan Opera",
+    location: "New York, NY",
+    eventUrl,
+    buyUrl: eventUrl,
+  }));
+}
+
+interface JuilliardApiEvent {
+  id: number;
+  title: string;
+  date_start_time: string;
+  purchase_url?: string;
+  video_url?: string;
+  image?: { url?: string | null };
+  venues?: { name?: string; address?: string };
 }
 
 export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
-  const base = "https://www.juilliard.edu";
-  const html = await fetchHtml(`${base}/stage-beyond/performance/calendar`);
-  if (isBlockedHtml(html)) return [];
-  const $ = load(html);
+  const res = await fetch("https://calendar.juilliard.edu/api/events", {
+    headers: {
+      ...BROWSER_FETCH_HEADERS,
+      Accept: "application/json",
+    },
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch Juilliard calendar API: ${res.status}`,
+    );
+  }
+
+  const data = (await res.json()) as JuilliardApiEvent[];
+  if (!Array.isArray(data)) return [];
+
+  const startOfYesterday = new Date();
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+  startOfYesterday.setHours(0, 0, 0, 0);
+
   const events: ScrapedEvent[] = [];
 
-  for (const el of $(".event, article, .views-row").toArray()) {
-    const root = $(el);
-    const title =
-      root.find("a, h3, h2").first().text().trim() ||
-      root.find(".event-title").first().text().trim();
-    if (!title) continue;
+  for (const e of data) {
+    const start = new Date(e.date_start_time);
+    if (Number.isNaN(start.getTime()) || start < startOfYesterday) continue;
 
-    const dateText =
-      root.find("time").first().text().trim() ||
-      root.find(".date").first().text().trim();
+    const purchase = e.purchase_url?.trim() ?? "";
+    const video = e.video_url?.trim() ?? "";
+    const eventUrl = purchase || video || `https://calendar.juilliard.edu/#/events/${e.id}`;
+    const buyUrl = purchase || video || eventUrl;
 
-    const linkHref =
-      root
-        .find('a[href*="tickets"], a[href*="/event/"]')
-        .first()
-        .attr("href") ?? "";
-    if (!linkHref) continue;
-    const eventUrl = toAbsoluteUrl(linkHref, base);
+    const venueName = e.venues?.name?.trim() || "The Juilliard School";
+    const location =
+      e.venues?.address?.trim() || "New York, NY";
+    const posterImageUrl = e.image?.url?.trim()
+      ? e.image.url.trim()
+      : undefined;
 
     events.push({
       source: "juilliard",
-      title,
-      dateText,
-      venueName: "The Juilliard School",
-      location: "New York, NY",
+      title: e.title.replace(/\s+/g, " ").trim(),
+      dateText: e.date_start_time,
+      venueName,
+      location,
       eventUrl,
-      buyUrl: eventUrl,
+      buyUrl,
+      posterImageUrl,
     });
   }
 
