@@ -221,8 +221,13 @@ export function EventFeed() {
   const loadingInitial =
     (showUser && userQuery.isPending) || (showLive && liveQuery.isPending);
 
-  const userEvents = userQuery.data ?? [];
-  const liveEvents = liveQuery.data?.pages.flatMap((p) => p.items) ?? [];
+  // When a query is disabled, React Query may still return cached `data` from a
+  // previous filter (e.g. community events after switching to “Juilliard” only).
+  // Never merge rows for sources we are not currently showing.
+  const userEvents = showUser ? (userQuery.data ?? []) : [];
+  const liveEvents = showLive
+    ? (liveQuery.data?.pages.flatMap((p) => p.items) ?? [])
+    : [];
 
   const merged: UnifiedRow[] = [
     ...userEvents.map((event) => ({ kind: "created" as const, event })),
