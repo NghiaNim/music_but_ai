@@ -14,15 +14,15 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { authClient } from "~/utils/auth";
 import bachBadgeImage from "../../../assets/badges/badge_bach_v2.png";
 import classicalBadgeImage from "../../../assets/badges/badge_classical_v3.png";
-import romanticBadgeImage from "../../../assets/badges/badge_romantic_v3.png";
 import baroqueBadgeImage from "../../../assets/badges/baroque_badge.png";
 import beethovenBadgeImage from "../../../assets/badges/beethoven_badge.png";
-import chopinBadgeImage from "../../../assets/badges/chopin_badge.png";
 import mozartBadgeImage from "../../../assets/badges/mozart_badge.png";
+import chopinBadgeImage from "../../../assets/badges/chopin_badge.png";
+import romanticBadgeImage from "../../../assets/badges/badge_romantic_v3.png";
+
+import { authClient } from "~/utils/auth";
 
 const STATS = [
   { value: "24", label: "Concerts Attended" },
