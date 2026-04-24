@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -14,6 +14,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import bachBadgeImage from "../../../assets/badges/badge_bach_v2.png";
+import classicalBadgeImage from "../../../assets/badges/badge_classical_v3.png";
+import baroqueBadgeImage from "../../../assets/badges/baroque_badge.png";
+import beethovenBadgeImage from "../../../assets/badges/beethoven_badge.png";
+import mozartBadgeImage from "../../../assets/badges/mozart_badge.png";
+import chopinBadgeImage from "../../../assets/badges/chopin_badge.png";
+import romanticBadgeImage from "../../../assets/badges/badge_romantic_v3.png";
 
 import { authClient } from "~/utils/auth";
 
@@ -24,13 +31,13 @@ const STATS = [
 ];
 
 const BADGE_IMAGES = {
-  beethoven: require("../../../assets/badges/beethoven_badge.png") as number,
-  mozart: require("../../../assets/badges/mozart_badge.png") as number,
-  chopin: require("../../../assets/badges/chopin_badge.png") as number,
-  baroque: require("../../../assets/badges/baroque_badge.png") as number,
-  romantic: require("../../../assets/badges/badge_romantic_v3.png") as number,
-  classical: require("../../../assets/badges/badge_classical_v3.png") as number,
-  bach: require("../../../assets/badges/badge_bach_v2.png") as number,
+  beethoven: beethovenBadgeImage,
+  mozart: mozartBadgeImage,
+  chopin: chopinBadgeImage,
+  baroque: baroqueBadgeImage,
+  romantic: romanticBadgeImage,
+  classical: classicalBadgeImage,
+  bach: bachBadgeImage,
 };
 
 interface BadgeData {
@@ -114,12 +121,9 @@ function BadgeCard({
   onFlip: () => void;
 }) {
   const rotation = useSharedValue(0);
-  const lastFlipped = useRef(false);
-
-  if (isFlipped !== lastFlipped.current) {
-    lastFlipped.current = isFlipped;
+  useEffect(() => {
     rotation.value = withTiming(isFlipped ? 180 : 0, { duration: 700 });
-  }
+  }, [isFlipped, rotation]);
 
   const frontStyle = useAnimatedStyle(() => ({
     transform: [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 import { getStoredNumber, POINTS_KEY } from "../../learn/_lib/progress";
@@ -27,15 +27,9 @@ function getLevel(points: number) {
 }
 
 export function LearningProgress() {
-  const [points, setPoints] = useState(0);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setPoints(getStoredNumber(POINTS_KEY));
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
+  const [points] = useState(() =>
+    typeof window === "undefined" ? 0 : getStoredNumber(POINTS_KEY),
+  );
 
   const { current, next, currentIndex } = getLevel(points);
   const levelStart = current.min;

@@ -537,7 +537,7 @@ function EventCard({ event }: { event: EventItem }) {
 }
 
 function LiveEventCard({ event }: { event: LiveEventItem }) {
-  const sourceLabel = LIVE_VENUE_LABELS[event.source] ?? event.source;
+  const sourceLabel = LIVE_VENUE_LABELS[event.source];
   const when = liveEventCardWhenLine(event);
   const venue = event.venueName?.trim() ?? "";
   const thumbDate = parseLiveEventInstant(event);

@@ -58,6 +58,25 @@ function slugToTitle(slug: string): string {
     .join(" ");
 }
 
+function valueToText(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return undefined;
+}
+
+function pickText(
+  obj: Record<string, unknown>,
+  ...keys: string[]
+): string | undefined {
+  for (const key of keys) {
+    const text = valueToText(obj[key])?.trim();
+    if (text) return text;
+  }
+  return undefined;
+}
+
 /** Try to map Carnegie JSON if the site returns `application/json` (often blocked by Incapsula). */
 function mapCarnegieApiPayload(data: unknown): ScrapedEvent[] {
   const rows = Array.isArray(data)
@@ -74,21 +93,20 @@ function mapCarnegieApiPayload(data: unknown): ScrapedEvent[] {
   for (const item of rows) {
     if (!item || typeof item !== "object") continue;
     const o = item as Record<string, unknown>;
-    const title = String(o.title ?? o.name ?? o.eventTitle ?? "").trim();
-    const rawUrl = String(
-      o.url ?? o.link ?? o.uri ?? o.eventUrl ?? o.href ?? "",
-    ).trim();
+    const title = pickText(o, "title", "name", "eventTitle") ?? "";
+    const rawUrl = pickText(o, "url", "link", "uri", "eventUrl", "href") ?? "";
     if (!title || !rawUrl) continue;
     const eventUrl = rawUrl.startsWith("http")
       ? rawUrl
       : toAbsoluteUrl(rawUrl, "https://www.carnegiehall.org");
-    const dateText = String(o.date ?? o.startDate ?? o.dateText ?? "").trim();
+    const dateText = pickText(o, "date", "startDate", "dateText") ?? "";
+    const ticketUrl = pickText(o, "ticketUrl", "buyUrl");
     events.push({
       source: "carnegie_hall",
       title,
       dateText: dateText || undefined,
       eventUrl,
-      buyUrl: String(o.ticketUrl ?? o.buyUrl ?? eventUrl).trim() || eventUrl,
+      buyUrl: ticketUrl ?? eventUrl,
     });
   }
   return events;
@@ -174,19 +192,19 @@ LIMIT 500`;
   };
   const bindings = data.results?.bindings ?? [];
 
-  type Row = {
+  interface Row {
     eventUrl: string;
     title: string;
     startComparable: string;
     startRaw: string;
     hall?: string;
-  };
+  }
   const rows: Row[] = [];
   const seen = new Set<string>();
 
   for (const row of bindings) {
     const eventUri = row.event?.value;
-    const title = row.label?.value?.trim();
+    const title = row.label?.value.trim();
     const start = row.startDate?.value;
     if (!eventUri || !title || !start) continue;
 
@@ -202,7 +220,7 @@ LIMIT 500`;
       title,
       startComparable,
       startRaw: start,
-      hall: row.venueName?.value?.trim(),
+      hall: row.venueName?.value.trim(),
     });
   }
 
@@ -347,7 +365,9 @@ export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
     const eventUrl = toAbsoluteUrl(normalized, base);
     const slug = normalized.replace(/\/$/, "").split("/").pop() ?? "";
     const fromSlug = slug ? slugToTitle(slug) : "";
-    let title = titleHint?.replace(/\s+/g, " ").trim() || fromSlug;
+    const normalizedHint = titleHint?.replace(/\s+/g, " ").trim();
+    let title =
+      normalizedHint && normalizedHint.length > 0 ? normalizedHint : fromSlug;
     if (!title) return;
     if (/^(buy tickets|more|read more)$/i.test(title)) title = fromSlug;
     if (!byUrl.has(eventUrl)) byUrl.set(eventUrl, title);
@@ -423,8 +443,8 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
       purchase || video || `https://calendar.juilliard.edu/#/events/${e.id}`;
     const buyUrl = purchase || video || eventUrl;
 
-    const venueName = e.venues?.name?.trim() || "The Juilliard School";
-    const location = e.venues?.address?.trim() || "New York, NY";
+    const venueName = e.venues?.name?.trim() ?? "The Juilliard School";
+    const location = e.venues?.address?.trim() ?? "New York, NY";
     const posterImageUrl = e.image?.url?.trim()
       ? e.image.url.trim()
       : undefined;

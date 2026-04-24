@@ -1,5 +1,5 @@
+import type { db } from "@acme/db/client";
 import { and, eq, inArray } from "@acme/db";
-import { db } from "@acme/db/client";
 import { TicketOrder, user, UserEvent } from "@acme/db/schema";
 
 export async function emailsForEventInterest(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 import { cn } from "@acme/ui";
@@ -26,16 +26,19 @@ type Screen =
   | { type: "quiz"; unitId: string; index: number }
   | { type: "result"; unitId: string; score: number };
 
+function findUnitById(module: LearningModuleDef, unitId: string): Unit | null {
+  return module.units.find((u) => u.id === unitId) ?? null;
+}
+
 export function LearningModule({ module }: { module: LearningModuleDef }) {
   const [screen, setScreen] = useState<Screen>({ type: "overview" });
-  const [points, setPoints] = useState(0);
-  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [points, setPoints] = useState(() =>
+    typeof window === "undefined" ? 0 : getStoredNumber(POINTS_KEY),
+  );
+  const [completed, setCompleted] = useState<Set<string>>(() =>
+    typeof window === "undefined" ? new Set() : getCompletedSet(),
+  );
   const [answers, setAnswers] = useState<number[]>([]);
-
-  useEffect(() => {
-    setPoints(getStoredNumber(POINTS_KEY));
-    setCompleted(getCompletedSet());
-  }, []);
 
   function awardPoints(amount: number) {
     setPoints((prev) => {
@@ -61,7 +64,8 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
 
   function advance() {
     if (screen.type !== "lesson") return;
-    const unit = module.units.find((u) => u.id === screen.unitId)!;
+    const unit = findUnitById(module, screen.unitId);
+    if (!unit) return;
     if (screen.index + 1 < unit.lessons.length) {
       setScreen({
         type: "lesson",
@@ -83,8 +87,10 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
 
   function answerQuestion(choiceIndex: number) {
     if (screen.type !== "quiz") return;
-    const unit = module.units.find((u) => u.id === screen.unitId)!;
-    const question = unit.quiz[screen.index]!;
+    const unit = findUnitById(module, screen.unitId);
+    if (!unit) return;
+    const question = unit.quiz[screen.index];
+    if (!question) return;
     const isCorrect = choiceIndex === question.correctIndex;
     setAnswers([...answers, choiceIndex]);
     if (isCorrect) awardPoints(2);
@@ -92,12 +98,13 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
 
   function nextQuestion() {
     if (screen.type !== "quiz") return;
-    const unit = module.units.find((u) => u.id === screen.unitId)!;
+    const unit = findUnitById(module, screen.unitId);
+    if (!unit) return;
     if (screen.index + 1 < unit.quiz.length) {
       setScreen({ ...screen, index: screen.index + 1 });
     } else {
       const score = answers.filter(
-        (a, i) => a === unit.quiz[i]!.correctIndex,
+        (a, i) => a === unit.quiz[i]?.correctIndex,
       ).length;
       const isFirstTime = !completed.has(unitKey(module.slug, unit.id));
       if (isFirstTime && score === unit.quiz.length) {
@@ -119,10 +126,12 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
     );
   }
 
-  const unit = module.units.find((u) => u.id === screen.unitId)!;
+  const unit = findUnitById(module, screen.unitId);
+  if (!unit) return null;
 
   if (screen.type === "lesson") {
-    const lesson = unit.lessons[screen.index]!;
+    const lesson = unit.lessons[screen.index];
+    if (!lesson) return null;
     return (
       <LessonScreen
         unit={unit}
@@ -136,7 +145,8 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
   }
 
   if (screen.type === "quiz") {
-    const question = unit.quiz[screen.index]!;
+    const question = unit.quiz[screen.index];
+    if (!question) return null;
     const selected = answers[screen.index];
     return (
       <QuizScreen
