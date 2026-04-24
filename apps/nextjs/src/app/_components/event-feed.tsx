@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -32,11 +32,6 @@ const GENRE_LABELS: Record<string, string> = {
   choral: "Choral",
   ballet: "Ballet",
   jazz: "Jazz",
-};
-
-const LISTING_LABELS: Record<string, string> = {
-  local: "Local",
-  concert: "Concert",
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
@@ -173,11 +168,9 @@ export function EventFeed() {
   const [ticketedFilter, setTicketedFilter] = useState<
     "ticketed" | "non_ticketed" | undefined
   >();
-  const [listingFilter, setListingFilter] = useState<
-    "local" | "concert" | undefined
-  >();
   const [sortBy, setSortBy] = useState<"day_asc" | "day_desc">("day_asc");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const [visibleCount, setVisibleCount] = useState(LIVE_PAGE_SIZE);
 
   const showUser = sourceFilter === "all" || sourceFilter === "community";
   const liveSource: VenueSource | undefined =
@@ -197,7 +190,6 @@ export function EventFeed() {
         | "intermediate"
         | "advanced"
         | undefined,
-      listingCategory: listingFilter,
     }),
     enabled: showUser,
   });
@@ -254,6 +246,19 @@ export function EventFeed() {
       return false;
     return true;
   });
+  const visibleEvents = filteredEvents.slice(0, visibleCount);
+
+  useEffect(() => {
+    setVisibleCount(LIVE_PAGE_SIZE);
+  }, [
+    search,
+    genreFilter,
+    difficultyFilter,
+    cityFilter,
+    ticketedFilter,
+    sortBy,
+    sourceFilter,
+  ]);
 
   return (
     <div>
@@ -330,30 +335,6 @@ export function EventFeed() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         <FilterChip
-          label="All listings"
-          active={!listingFilter}
-          onClick={() => setListingFilter(undefined)}
-        />
-        <FilterChip
-          label="Local"
-          active={listingFilter === "local"}
-          onClick={() =>
-            setListingFilter(listingFilter === "local" ? undefined : "local")
-          }
-        />
-        <FilterChip
-          label="Concerts"
-          active={listingFilter === "concert"}
-          onClick={() =>
-            setListingFilter(
-              listingFilter === "concert" ? undefined : "concert",
-            )
-          }
-        />
-      </div>
-
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        <FilterChip
           label="All Levels"
           active={!difficultyFilter}
           onClick={() => setDifficultyFilter(undefined)}
@@ -408,7 +389,7 @@ export function EventFeed() {
       ) : (
         <>
           <div className="flex flex-col gap-3">
-            {filteredEvents.map((row) =>
+            {visibleEvents.map((row) =>
               row.kind === "created" ? (
                 <EventCard key={row.event.id} event={row.event} />
               ) : (
@@ -416,7 +397,7 @@ export function EventFeed() {
               ),
             )}
           </div>
-          {showLive && liveQuery.hasNextPage ? (
+          {filteredEvents.length > visibleCount || (showLive && liveQuery.hasNextPage) ? (
             <div className="mt-4 flex justify-center">
               <Button
                 type="button"
@@ -424,7 +405,16 @@ export function EventFeed() {
                 size="sm"
                 className="min-w-[8rem]"
                 disabled={liveQuery.isFetchingNextPage}
-                onClick={() => void liveQuery.fetchNextPage()}
+                onClick={() => {
+                  setVisibleCount((v) => v + LIVE_PAGE_SIZE);
+                  if (
+                    showLive &&
+                    liveQuery.hasNextPage &&
+                    filteredEvents.length <= visibleCount + LIVE_PAGE_SIZE
+                  ) {
+                    void liveQuery.fetchNextPage();
+                  }
+                }}
               >
                 {liveQuery.isFetchingNextPage ? "Loading…" : "See more"}
               </Button>
@@ -503,9 +493,6 @@ function EventCard({ event }: { event: EventItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap gap-1">
-            <span className="bg-muted text-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">
-              {LISTING_LABELS[event.listingCategory] ?? event.listingCategory}
-            </span>
             <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium">
               {GENRE_LABELS[event.genre] ?? event.genre}
             </span>
@@ -576,9 +563,6 @@ function LiveEventCard({ event }: { event: LiveEventItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap gap-1">
-            <span className="bg-muted text-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">
-              Concert
-            </span>
             <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-800 dark:bg-sky-900/30 dark:text-sky-200">
               {sourceLabel}
             </span>

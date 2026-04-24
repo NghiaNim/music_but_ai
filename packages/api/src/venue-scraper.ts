@@ -42,7 +42,9 @@ function toAbsoluteUrl(href: string, base: string): string {
 }
 
 function isBlockedHtml(html: string): boolean {
-  return /incapsula|just a moment|cloudflare|noindex, nofollow/i.test(html);
+  return /incapsula|just a moment|attention required|noindex,\s*nofollow/i.test(
+    html,
+  );
 }
 
 function slugToTitle(slug: string): string {
@@ -352,6 +354,139 @@ function normalizeMetOperaSeasonPath(href: string): string | null {
   return path.endsWith("/") ? path : `${path}/`;
 }
 
+function normalizeMetDateText(raw: string): string | undefined {
+  const cleaned = raw.replace(/\s+/g, " ").trim();
+  if (!cleaned) return undefined;
+  // "Apr 24 at 7:30 PM" -> "Apr 24, 7:30 PM" (better Date parsing)
+  const replaced = cleaned.replace(/\s+at\s+/i, ", ");
+  // "1 PM" -> "1:00 PM" for consistent parsing.
+  return replaced.replace(/\b(\d{1,2})\s*(AM|PM)\b/i, "$1:00 $2");
+}
+
+function inferMetSeasonYears(productionUrl: string): {
+  startYear: number;
+  endYear: number;
+} | null {
+  const m = /\/season\/(\d{4})-(\d{2})-season\//.exec(productionUrl);
+  if (!m) return null;
+  const startYear = Number(m[1]);
+  const endYear = Number(`${String(startYear).slice(0, 2)}${m[2]}`);
+  if (!Number.isFinite(startYear) || !Number.isFinite(endYear)) return null;
+  return { startYear, endYear };
+}
+
+function withMetSeasonYear(input: {
+  monthDayTime: string;
+  productionUrl: string;
+}): string {
+  const seasonYears = inferMetSeasonYears(input.productionUrl);
+  if (!seasonYears) {
+    return input.monthDayTime;
+  }
+
+  const monthMatch = /\b([A-Za-z]{3,9})\b/.exec(input.monthDayTime);
+  const monthName = monthMatch?.[1]?.toLowerCase();
+  const monthIndex = monthName
+    ? [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+      ].findIndex((m) => m.startsWith(monthName))
+    : -1;
+
+  // Met seasons cross years (fall -> spring): Jul-Dec => startYear, Jan-Jun => endYear.
+  const year =
+    monthIndex >= 6 ? seasonYears.startYear : seasonYears.endYear;
+  const m = /^([A-Za-z]{3,9}\s+\d{1,2}),\s*(.+)$/.exec(input.monthDayTime);
+  if (!m) {
+    return `${input.monthDayTime}, ${year}`;
+  }
+  const monthDay = m[1];
+  const timePart = m[2];
+  return `${monthDay}, ${year}, ${timePart}`;
+}
+
+async function scrapeMetProductionPerformances(input: {
+  productionUrl: string;
+  title: string;
+}): Promise<ScrapedEvent[]> {
+  const html = await fetchHtml(input.productionUrl);
+  if (isBlockedHtml(html)) return [];
+  const $ = load(html);
+
+  const ogImage = $('meta[property="og:image"]').attr("content")?.trim();
+  const twitterImage = $('meta[name="twitter:image"]').attr("content")?.trim();
+  const heroImage =
+    $(".hero-image img").first().attr("src")?.trim() ||
+    $(".hero-image source").first().attr("srcset")?.split(",")[0]?.trim() ||
+    $(".hero-image").first().attr("data-src")?.trim() ||
+    undefined;
+  const embeddedGlobalAsset = (() => {
+    const m = /\/globalassets\/[^"'()\s>]+\.(?:png|jpe?g|webp)/i.exec(html);
+    return m?.[0];
+  })();
+
+  const coverImageCandidate =
+    (ogImage && ogImage.length > 0 ? ogImage : undefined) ??
+    (twitterImage && twitterImage.length > 0 ? twitterImage : undefined) ??
+    heroImage ??
+    embeddedGlobalAsset;
+  const coverImageUrl = coverImageCandidate
+    ? toAbsoluteUrl(coverImageCandidate, "https://www.metopera.org")
+    : undefined;
+
+  const rows: ScrapedEvent[] = [];
+  for (const item of $(".upcomingperfs-item").toArray()) {
+    const root = $(item);
+    const day = root.find(".upcomingperfs-item-time").first().text().trim();
+    const atLine = root.find(".upcomingperfs-item-title").first().text().trim();
+    const perfId =
+      root
+        .find(".upcomingperf-link-js")
+        .first()
+        .attr("data-performance-id")
+        ?.trim() ?? "";
+
+    const normalized = normalizeMetDateText(atLine);
+    if (!normalized) continue;
+    const dateText = withMetSeasonYear({
+      monthDayTime: normalized,
+      productionUrl: input.productionUrl,
+    });
+    const eventUrl = perfId
+      ? `${input.productionUrl}?perf=${encodeURIComponent(perfId)}`
+      : input.productionUrl;
+
+    rows.push({
+      source: "met_opera",
+      title: input.title,
+      dateText,
+      venueName: "Metropolitan Opera",
+      location: "New York, NY",
+      eventUrl,
+      buyUrl: input.productionUrl,
+      posterImageUrl: coverImageUrl,
+    });
+  }
+
+  rows.sort((a, b) => {
+    const ta = a.dateText ? Date.parse(a.dateText) : Number.MAX_SAFE_INTEGER;
+    const tb = b.dateText ? Date.parse(b.dateText) : Number.MAX_SAFE_INTEGER;
+    return ta - tb;
+  });
+
+  return rows;
+}
+
 export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
   const base = "https://www.metopera.org";
   const html = await fetchHtml(`${base}/calendar/`);
@@ -385,14 +520,27 @@ export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
     addFromPath(m[0]);
   }
 
-  return [...byUrl.entries()].map(([eventUrl, title]) => ({
-    source: "met_opera" as const,
-    title,
-    venueName: "Metropolitan Opera",
-    location: "New York, NY",
+  const productions = [...byUrl.entries()].map(([eventUrl, title]) => ({
     eventUrl,
-    buyUrl: eventUrl,
+    title,
   }));
+
+  const events: ScrapedEvent[] = [];
+  for (const prod of productions) {
+    try {
+      const perfRows = await scrapeMetProductionPerformances({
+        productionUrl: prod.eventUrl,
+        title: prod.title,
+      });
+      if (perfRows.length > 0) {
+        events.push(...perfRows);
+      }
+    } catch {
+      /* skip production if we cannot extract dated performance rows */
+    }
+  }
+
+  return events;
 }
 
 interface JuilliardApiEvent {

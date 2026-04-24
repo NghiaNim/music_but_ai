@@ -53,8 +53,12 @@ function stripCancellationTitlePrefix(title: string): string {
 }
 
 function inferGenreFromTitle(
+  source: ScrapedVenue,
   title: string,
 ): (typeof LiveEvent.$inferInsert)["genre"] {
+  // Met productions are opera by default; title-only inference often mislabels
+  // items like "La Boheme" as solo recital.
+  if (source === "met_opera") return "opera";
   const t = stripCancellationTitlePrefix(title).toLowerCase();
   if (t.includes("opera")) return "opera";
   if (t.includes("jazz")) return "jazz";
@@ -115,7 +119,7 @@ export async function syncVenueToLiveEvents(
       venueName: s.venueName ?? defaults.venueName,
       location: s.location ?? defaults.location,
       imageUrl: s.posterImageUrl,
-      genre: inferGenreFromTitle(s.title),
+      genre: inferGenreFromTitle(source, s.title),
       eventUrl: s.eventUrl,
       buyUrl: s.buyUrl,
       raw: s,
