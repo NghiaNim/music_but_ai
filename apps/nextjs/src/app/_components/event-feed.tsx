@@ -534,10 +534,8 @@ function EventCard({ event }: { event: EventItem }) {
 function LiveEventCard({ event }: { event: LiveEventItem }) {
   const sourceLabel = LIVE_VENUE_LABELS[event.source] ?? event.source;
   return (
-    <a
-      href={event.eventUrl}
-      target="_blank"
-      rel="noreferrer"
+    <Link
+      href={`/live-event/${event.id}`}
       className="bg-card hover:bg-muted/40 flex gap-3 rounded-xl border p-3 transition-colors"
     >
       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
@@ -570,7 +568,7 @@ function LiveEventCard({ event }: { event: LiveEventItem }) {
           {event.venueName ? ` · ${event.venueName}` : ""}
         </p>
       </div>
-    </a>
+    </Link>
   );
 }
 

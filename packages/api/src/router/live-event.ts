@@ -1,4 +1,5 @@
 import type { TRPCRouterRecord } from "@trpc/server";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod/v4";
 
 import { and, asc, eq, gte, ilike, isNull, or, sql } from "@acme/db";
@@ -58,6 +59,18 @@ function buildLiveEventWhere(
 }
 
 export const liveEventRouter = {
+  byId: publicProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const row = await ctx.db.query.LiveEvent.findFirst({
+        where: and(eq(LiveEvent.id, input.id), eq(LiveEvent.cancelled, false)),
+      });
+      if (!row) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+      }
+      return row;
+    }),
+
   /**
    * Paginated live venue feed. Use with `infiniteQueryOptions` on the client.
    * Ordering: dated events soonest-first, then rows with no parsed date (e.g. Met).
