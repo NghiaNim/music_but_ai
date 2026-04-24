@@ -437,18 +437,8 @@ export function EventFeed() {
   );
 }
 
-function formatFriendlyDate(date: Date): { badge: string; line: string } {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const eventDay = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  );
-  const diffDays = Math.round(
-    (eventDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
+/** e.g. "Sat, May 2 · 7:30 PM" */
+function formatFriendlyDate(date: Date): string {
   const time = date.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
@@ -458,17 +448,33 @@ function formatFriendlyDate(date: Date): { badge: string; line: string } {
     month: "short",
     day: "numeric",
   });
+  return `${weekday}, ${monthDay} · ${time}`;
+}
 
-  if (diffDays === 0) return { badge: "Today", line: `Today at ${time}` };
-  if (diffDays === 1) return { badge: "Tomorrow", line: `Tomorrow at ${time}` };
-  if (diffDays > 1 && diffDays <= 6)
-    return { badge: `This ${weekday}`, line: `This ${weekday} at ${time}` };
-  return { badge: monthDay, line: `${weekday}, ${monthDay} · ${time}` };
+/** Parsed instant for live cards (DB `date` or ISO / human `dateText`). */
+function parseLiveEventInstant(ev: LiveEventItem): Date | null {
+  if (ev.date) {
+    const d = new Date(ev.date);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  const raw = ev.dateText?.split(/\s*\|/)[0]?.trim() ?? ev.dateText?.trim();
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) return parsed;
+  return null;
+}
+
+/** Same date line as community `EventCard` (e.g. "Sat, May 2 · 7:30 PM"). */
+function liveEventCardWhenLine(ev: LiveEventItem): string {
+  const d = parseLiveEventInstant(ev);
+  if (d) return formatFriendlyDate(d);
+  const fallback = ev.dateText?.replace(/\s*\|.*$/, "").trim();
+  return fallback ?? "";
 }
 
 function EventCard({ event }: { event: EventItem }) {
   const date = new Date(event.date);
-  const { line } = formatFriendlyDate(date);
+  const line = formatFriendlyDate(date);
 
   return (
     <Link href={`/event/${event.id}`}>
@@ -533,40 +539,66 @@ function EventCard({ event }: { event: EventItem }) {
 
 function LiveEventCard({ event }: { event: LiveEventItem }) {
   const sourceLabel = LIVE_VENUE_LABELS[event.source] ?? event.source;
+  const when = liveEventCardWhenLine(event);
+  const venue = event.venueName?.trim() ?? "";
+  const thumbDate = parseLiveEventInstant(event);
+
   return (
-    <Link
-      href={`/live-event/${event.id}`}
-      className="bg-card hover:bg-muted/40 flex gap-3 rounded-xl border p-3 transition-colors"
-    >
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
-        {event.imageUrl ? (
-          <Image
-            src={event.imageUrl}
-            alt={event.title}
-            fill
-            className="object-cover"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-sky-200 to-indigo-100 text-xs font-semibold text-sky-700 dark:from-sky-900/50 dark:to-indigo-800/30 dark:text-sky-200">
-            Live
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex flex-wrap gap-1">
-          <span className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-200 rounded-full px-2 py-0.5 text-[10px] font-medium">
-            {sourceLabel}
-          </span>
-          <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium">
-            {GENRE_LABELS[event.genre] ?? event.genre}
-          </span>
+    <Link href={`/live-event/${event.id}`}>
+      <div className="bg-card active:bg-muted/50 flex gap-3 rounded-xl border p-3 transition-colors">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+          {event.imageUrl ? (
+            <Image
+              src={event.imageUrl}
+              alt={event.title}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : thumbDate ? (
+            <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
+              <span className="text-[10px] font-semibold text-orange-600 uppercase dark:text-orange-300">
+                {thumbDate.toLocaleDateString("en-US", { month: "short" })}
+              </span>
+              <span className="text-xl leading-none font-bold text-orange-700 dark:text-orange-200">
+                {thumbDate.getDate()}
+              </span>
+              <span className="mt-0.5 text-[9px] font-medium text-orange-500 dark:text-orange-400">
+                {thumbDate.toLocaleDateString("en-US", { weekday: "short" })}
+              </span>
+            </div>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
+              <span className="text-[10px] font-semibold text-orange-700 dark:text-orange-200">
+                Live
+              </span>
+            </div>
+          )}
         </div>
-        <h3 className="line-clamp-2 text-sm font-semibold">{event.title}</h3>
-        <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
-          {event.dateText ?? ""}
-          {event.venueName ? ` · ${event.venueName}` : ""}
-        </p>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap gap-1">
+            <span className="bg-muted text-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">
+              Concert
+            </span>
+            <span className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-200 rounded-full px-2 py-0.5 text-[10px] font-medium">
+              {sourceLabel}
+            </span>
+            <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium">
+              {GENRE_LABELS[event.genre] ?? event.genre}
+            </span>
+          </div>
+          <h3
+            className="line-clamp-1 text-sm font-semibold"
+            style={{ color: "#9C1738" }}
+          >
+            {event.title}
+          </h3>
+          <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
+            {when}
+            {when && venue ? " · " : ""}
+            {venue}
+          </p>
+        </div>
       </div>
     </Link>
   );
