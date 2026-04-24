@@ -61,6 +61,21 @@ function slugToTitle(slug: string): string {
     .join(" ");
 }
 
+function inferMsmVenueName(input: {
+  title: string;
+  imageUrl?: string;
+  fallback: string;
+}): string {
+  const hay = `${input.title} ${input.imageUrl ?? ""}`.toLowerCase();
+  if (hay.includes("miller")) return "Miller Recital Hall";
+  if (hay.includes("greenfield")) return "Greenfield Hall";
+  if (hay.includes("neidorff") || hay.includes("karpati"))
+    return "Neidorff-Karpati Hall";
+  if (hay.includes("borden")) return "Borden Auditorium";
+  if (hay.includes("myers")) return "Myers Recital Hall";
+  return input.fallback;
+}
+
 function valueToText(value: unknown): string | undefined {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") {
@@ -647,12 +662,17 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
         root.find(".newsBlock_info time").first().text().trim() || undefined;
       const imgHref = root.find(".newsBlock_image img").first().attr("src");
       const posterImageUrl = imgHref ? toAbsoluteUrl(imgHref, base) : undefined;
+      const venueName = inferMsmVenueName({
+        title,
+        imageUrl: posterImageUrl,
+        fallback: "Manhattan School of Music",
+      });
 
       addEvent({
         source: "msm",
         title,
         dateText,
-        venueName: "Manhattan School of Music",
+        venueName,
         location: "New York, NY",
         eventUrl,
         buyUrl: eventUrl,
@@ -695,13 +715,18 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
         const imgHref = root.find(".newsBlock_image img").first().attr("src");
         const posterImageUrl = imgHref ? toAbsoluteUrl(imgHref, base) : undefined;
         const isStudentRecital = /student recital/i.test(category);
+        const venueName = inferMsmVenueName({
+          title,
+          imageUrl: posterImageUrl,
+          fallback: "Manhattan School of Music",
+        });
 
         addEvent({
           source: "msm",
           title,
           genreHint: isStudentRecital ? "solo_recital" : undefined,
           dateText,
-          venueName: "Manhattan School of Music",
+          venueName,
           location: "New York, NY",
           eventUrl,
           buyUrl: eventUrl,

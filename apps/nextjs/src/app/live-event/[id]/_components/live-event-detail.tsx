@@ -49,13 +49,48 @@ function formatWhen(ev: {
 }
 
 function venueLine(ev: {
+  source: string;
   venueName: string | null;
   location: string | null;
 }): string {
+  if (ev.source === "msm") {
+    const hall = ev.venueName?.trim();
+    const msmAddress =
+      "Manhattan School of Music, 130 Claremont Ave, New York, NY 10027";
+    if (hall && hall !== "Manhattan School of Music") {
+      return `${hall} · ${msmAddress}`;
+    }
+    return msmAddress;
+  }
+  if (ev.source === "juilliard") {
+    const hall = ev.venueName?.trim();
+    const juilliardAddress =
+      "The Juilliard School, 155 W 65th St, New York, NY 10023";
+    if (hall && hall !== "The Juilliard School") {
+      return `${hall} · ${juilliardAddress}`;
+    }
+    return juilliardAddress;
+  }
   const v = ev.venueName?.trim();
   const loc = ev.location?.trim();
   if (v && loc) return `${v} · ${loc}`;
   return v ?? loc ?? "Venue TBA";
+}
+
+function directionsUrl(ev: {
+  source: string;
+  venueName: string | null;
+  location: string | null;
+}): string {
+  const destination =
+    ev.source === "msm"
+      ? "Manhattan School of Music, 130 Claremont Ave, New York, NY 10027"
+      : ev.source === "juilliard"
+        ? "The Juilliard School, 155 W 65th St, New York, NY 10023"
+        : [ev.venueName?.trim(), ev.location?.trim()].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    destination || "New York, NY",
+  )}`;
 }
 
 export function LiveEventDetail({
@@ -73,6 +108,11 @@ export function LiveEventDetail({
   const sourceLabel = SOURCE_LABELS[event.source] ?? event.source;
   const chatPrefill = `I'm interested in "${event.title}" — what should I know before I go?`;
   const chatHref = `/chat?mode=discovery&q=${encodeURIComponent(chatPrefill)}`;
+  const mapHref = directionsUrl({
+    source: event.source,
+    venueName: event.venueName,
+    location: event.location,
+  });
 
   return (
     <div className="relative mx-auto max-w-lg">
@@ -143,7 +183,14 @@ export function LiveEventDetail({
             </div>
             <div className="flex items-center gap-2">
               <MapPinIcon />
-              <span>{venueLine(event)}</span>
+              <a
+                href={mapHref}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2"
+              >
+                {venueLine(event)}
+              </a>
             </div>
           </div>
         </div>
@@ -220,6 +267,7 @@ function ArrowLeftIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className="size-3.5 shrink-0"
     >
       <path d="m12 19-7-7 7-7" />
       <path d="M19 12H5" />
@@ -231,14 +279,13 @@ function CalendarIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className="size-3.5 shrink-0"
     >
       <path d="M8 2v4" />
       <path d="M16 2v4" />
@@ -252,14 +299,13 @@ function MapPinIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className="size-3.5 shrink-0"
     >
       <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
       <circle cx="12" cy="10" r="3" />
