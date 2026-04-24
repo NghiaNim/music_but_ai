@@ -98,7 +98,7 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <header className="border-b px-4 py-3">
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export function ChatInterface() {
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-20 shrink-0 px-4 pt-2 pb-[env(safe-area-inset-bottom)]">
+      <div className="z-20 shrink-0 px-4 pt-2 pb-[env(safe-area-inset-bottom)]">
         <form
           onSubmit={handleSubmit}
           className="mx-auto flex max-w-lg items-end gap-2 rounded-xl border bg-[#ffffffff] px-2 py-2 dark:bg-[#ffffffff]"
@@ -412,7 +412,7 @@ function EmptyState({
               : "Ask me anything about the event, the music, or the composers."}
         </p>
       </div>
-      <div className="grid w-full gap-2">
+      <div className="grid w-full gap-2 rounded-xl bg-[#ffffffff] p-2 dark:bg-[#ffffffff]">
         {suggestions.map((s) => (
           <button
             key={s}
