@@ -1,7 +1,6 @@
+import type { db } from "@acme/db/client";
 import { and, eq, inArray } from "@acme/db";
-
-import { db } from "@acme/db/client";
-import { TicketOrder, UserEvent, user } from "@acme/db/schema";
+import { TicketOrder, user, UserEvent } from "@acme/db/schema";
 
 export async function emailsForEventInterest(
   database: typeof db,
@@ -10,9 +9,7 @@ export async function emailsForEventInterest(
   const saved = await database
     .select({ userId: UserEvent.userId })
     .from(UserEvent)
-    .where(
-      and(eq(UserEvent.eventId, eventId), eq(UserEvent.status, "saved")),
-    );
+    .where(and(eq(UserEvent.eventId, eventId), eq(UserEvent.status, "saved")));
 
   const purchased = await database
     .select({ userId: TicketOrder.userId })

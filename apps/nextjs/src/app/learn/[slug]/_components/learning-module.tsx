@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 import { cn } from "@acme/ui";
@@ -26,16 +26,19 @@ type Screen =
   | { type: "quiz"; unitId: string; index: number }
   | { type: "result"; unitId: string; score: number };
 
+function findUnitById(module: LearningModuleDef, unitId: string): Unit | null {
+  return module.units.find((u) => u.id === unitId) ?? null;
+}
+
 export function LearningModule({ module }: { module: LearningModuleDef }) {
   const [screen, setScreen] = useState<Screen>({ type: "overview" });
-  const [points, setPoints] = useState(0);
-  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [points, setPoints] = useState(() =>
+    typeof window === "undefined" ? 0 : getStoredNumber(POINTS_KEY),
+  );
+  const [completed, setCompleted] = useState<Set<string>>(() =>
+    typeof window === "undefined" ? new Set() : getCompletedSet(),
+  );
   const [answers, setAnswers] = useState<number[]>([]);
-
-  useEffect(() => {
-    setPoints(getStoredNumber(POINTS_KEY));
-    setCompleted(getCompletedSet());
-  }, []);
 
   function awardPoints(amount: number) {
     setPoints((prev) => {
@@ -61,7 +64,8 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
 
   function advance() {
     if (screen.type !== "lesson") return;
-    const unit = module.units.find((u) => u.id === screen.unitId)!;
+    const unit = findUnitById(module, screen.unitId);
+    if (!unit) return;
     if (screen.index + 1 < unit.lessons.length) {
       setScreen({
         type: "lesson",
@@ -83,8 +87,10 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
 
   function answerQuestion(choiceIndex: number) {
     if (screen.type !== "quiz") return;
-    const unit = module.units.find((u) => u.id === screen.unitId)!;
-    const question = unit.quiz[screen.index]!;
+    const unit = findUnitById(module, screen.unitId);
+    if (!unit) return;
+    const question = unit.quiz[screen.index];
+    if (!question) return;
     const isCorrect = choiceIndex === question.correctIndex;
     setAnswers([...answers, choiceIndex]);
     if (isCorrect) awardPoints(2);
@@ -92,12 +98,13 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
 
   function nextQuestion() {
     if (screen.type !== "quiz") return;
-    const unit = module.units.find((u) => u.id === screen.unitId)!;
+    const unit = findUnitById(module, screen.unitId);
+    if (!unit) return;
     if (screen.index + 1 < unit.quiz.length) {
       setScreen({ ...screen, index: screen.index + 1 });
     } else {
       const score = answers.filter(
-        (a, i) => a === unit.quiz[i]!.correctIndex,
+        (a, i) => a === unit.quiz[i]?.correctIndex,
       ).length;
       const isFirstTime = !completed.has(unitKey(module.slug, unit.id));
       if (isFirstTime && score === unit.quiz.length) {
@@ -119,10 +126,12 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
     );
   }
 
-  const unit = module.units.find((u) => u.id === screen.unitId)!;
+  const unit = findUnitById(module, screen.unitId);
+  if (!unit) return null;
 
   if (screen.type === "lesson") {
-    const lesson = unit.lessons[screen.index]!;
+    const lesson = unit.lessons[screen.index];
+    if (!lesson) return null;
     return (
       <LessonScreen
         unit={unit}
@@ -136,7 +145,8 @@ export function LearningModule({ module }: { module: LearningModuleDef }) {
   }
 
   if (screen.type === "quiz") {
-    const question = unit.quiz[screen.index]!;
+    const question = unit.quiz[screen.index];
+    if (!question) return null;
     const selected = answers[screen.index];
     return (
       <QuizScreen
@@ -202,7 +212,7 @@ function OverviewScreen({
             key={unit.id}
             onClick={() => onStart(unit.id)}
             className={cn(
-              "bg-linear-to-br relative overflow-hidden rounded-2xl border p-5 text-left transition-all active:scale-[0.99]",
+              "relative overflow-hidden rounded-2xl border bg-linear-to-br p-5 text-left transition-all active:scale-[0.99]",
               unit.gradient,
             )}
           >
@@ -211,7 +221,7 @@ function OverviewScreen({
                 {unit.emoji}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold tracking-wider uppercase text-zinc-700 dark:text-zinc-300">
+                <p className="text-xs font-semibold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
                   Unit {unit.number}
                 </p>
                 <h2 className="mt-0.5 text-lg font-bold text-zinc-900 dark:text-zinc-100">
@@ -284,7 +294,7 @@ function LessonScreen({
 
       <div
         className={cn(
-          "bg-linear-to-br mt-5 flex aspect-square w-full items-center justify-center rounded-2xl border",
+          "mt-5 flex aspect-square w-full items-center justify-center rounded-2xl border bg-linear-to-br",
           lesson.gradient,
         )}
       >
@@ -363,7 +373,7 @@ function QuizScreen({
         <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
           Question {index + 1}
         </p>
-        <h2 className="text-lg font-semibold leading-snug">
+        <h2 className="text-lg leading-snug font-semibold">
           {question.question}
         </h2>
       </div>
@@ -458,7 +468,7 @@ function ResultScreen({
     <div className="flex flex-col items-center text-center">
       <div
         className={cn(
-          "bg-linear-to-br mt-2 flex size-32 items-center justify-center rounded-full text-6xl",
+          "mt-2 flex size-32 items-center justify-center rounded-full bg-linear-to-br text-6xl",
           perfect
             ? "from-amber-200 to-yellow-100"
             : "from-violet-200 to-fuchsia-100",

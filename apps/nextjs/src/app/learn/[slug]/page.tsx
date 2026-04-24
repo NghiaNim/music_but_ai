@@ -13,12 +13,12 @@ export default async function ModulePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const module = getModule(slug);
-  if (!module) notFound();
+  const learningModule = getModule(slug);
+  if (!learningModule) notFound();
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6">
-      <LearningModule module={module} />
+      <LearningModule module={learningModule} />
     </div>
   );
 }

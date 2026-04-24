@@ -234,7 +234,8 @@ const BASICS_MODULE: LearningModuleDef = {
           question: "Which tradition is older?",
           options: ["Jazz", "Classical", "They're the same age"],
           correctIndex: 1,
-          explanation: "Classical has roots ~1,000 years back; jazz ~100 years.",
+          explanation:
+            "Classical has roots ~1,000 years back; jazz ~100 years.",
         },
         {
           question: "Jazz originated in which country?",
@@ -364,7 +365,11 @@ const ETIQUETTE_MODULE: LearningModuleDef = {
           emoji: "📖",
           gradient: "from-emerald-100 to-teal-50",
           body: "Grab a program (paper or digital). Reading the notes before each piece makes the music much more meaningful.",
-          examples: ["Free at the door", "Read before piece", "Keeps you engaged"],
+          examples: [
+            "Free at the door",
+            "Read before piece",
+            "Keeps you engaged",
+          ],
         },
       ],
       quiz: [
@@ -413,7 +418,11 @@ const ETIQUETTE_MODULE: LearningModuleDef = {
           emoji: "👏",
           gradient: "from-amber-100 to-yellow-50",
           body: "Wait until the END of the whole piece — not between movements. If unsure, follow the crowd. At opera/ballet you can clap after big arias and dances.",
-          examples: ["End of piece ✓", "Between movements ✗", "Follow the crowd"],
+          examples: [
+            "End of piece ✓",
+            "Between movements ✗",
+            "Follow the crowd",
+          ],
         },
         {
           title: "When to Clap (Jazz)",
@@ -608,7 +617,8 @@ const PERFORMANCES_MODULE: LearningModuleDef = {
   shortTitle: "Performances",
   description: "Orchestra, opera, chamber, ballet, and more",
   cardIcon: "🎭",
-  cardGradient: "from-sky-100 to-sky-50 dark:from-sky-950/40 dark:to-sky-900/20",
+  cardGradient:
+    "from-sky-100 to-sky-50 dark:from-sky-950/40 dark:to-sky-900/20",
   heroEmoji: "🎭",
   units: [
     {
@@ -804,11 +814,7 @@ const LISTENING_MODULE: LearningModuleDef = {
         },
         {
           question: "A good way to feel pulse at a concert is...",
-          options: [
-            "Stomp loudly",
-            "Tap foot gently in shoe",
-            "Count aloud",
-          ],
+          options: ["Stomp loudly", "Tap foot gently in shoe", "Count aloud"],
           correctIndex: 1,
           explanation:
             "A quiet tap keeps you anchored without disturbing others.",
@@ -857,7 +863,8 @@ const LISTENING_MODULE: LearningModuleDef = {
           question: "What's a 'crescendo'?",
           options: ["Getting louder", "Getting softer", "Stopping"],
           correctIndex: 0,
-          explanation: "Crescendo = getting louder. Diminuendo = getting softer.",
+          explanation:
+            "Crescendo = getting louder. Diminuendo = getting softer.",
         },
         {
           question: "After a piece, a good question to ask yourself is...",

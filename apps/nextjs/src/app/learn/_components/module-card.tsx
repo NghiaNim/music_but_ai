@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 import type { LearningModuleDef } from "../_lib/modules";
 import { countCompletedInModule, getCompletedSet } from "../_lib/progress";
 
 export function ModuleCard({ module }: { module: LearningModuleDef }) {
-  const [completedCount, setCompletedCount] = useState(0);
-
-  useEffect(() => {
-    const set = getCompletedSet();
-    setCompletedCount(countCompletedInModule(set, module.slug));
-  }, [module.slug]);
+  const [completedCount] = useState(() =>
+    typeof window === "undefined"
+      ? 0
+      : countCompletedInModule(getCompletedSet(), module.slug),
+  );
 
   const total = module.units.length;
   const progress = Math.min(1, completedCount / total);

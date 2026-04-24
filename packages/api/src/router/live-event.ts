@@ -1,4 +1,5 @@
 import type { TRPCRouterRecord } from "@trpc/server";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod/v4";
 
 import { and, asc, eq, gte, ilike, isNull, or, sql } from "@acme/db";
@@ -8,9 +9,7 @@ import { publicProcedure } from "../trpc";
 
 const LiveEventFilters = z.object({
   search: z.string().optional(),
-  source: z
-    .enum(["carnegie_hall", "met_opera", "juilliard", "msm"])
-    .optional(),
+  source: z.enum(["carnegie_hall", "met_opera", "juilliard", "msm"]).optional(),
   genre: z
     .enum([
       "orchestral",
@@ -58,29 +57,43 @@ function buildLiveEventWhere(
 }
 
 export const liveEventRouter = {
+  byId: publicProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const row = await ctx.db.query.LiveEvent.findFirst({
+        where: and(eq(LiveEvent.id, input.id), eq(LiveEvent.cancelled, false)),
+      });
+      if (!row) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+      }
+      return row;
+    }),
+
   /**
    * Paginated live venue feed. Use with `infiniteQueryOptions` on the client.
    * Ordering: dated events soonest-first, then rows with no parsed date (e.g. Met).
    */
-  page: publicProcedure.input(LiveEventPageInput).query(async ({ ctx, input }) => {
-    const where = buildLiveEventWhere(input);
-    const take = input.limit + 1;
+  page: publicProcedure
+    .input(LiveEventPageInput)
+    .query(async ({ ctx, input }) => {
+      const where = buildLiveEventWhere(input);
+      const take = input.limit + 1;
 
-    const rows = await ctx.db.query.LiveEvent.findMany({
-      where,
-      orderBy: [
-        asc(sql`${LiveEvent.date} IS NULL`),
-        asc(LiveEvent.date),
-        asc(LiveEvent.id),
-      ],
-      limit: take,
-      offset: input.cursor,
-    });
+      const rows = await ctx.db.query.LiveEvent.findMany({
+        where,
+        orderBy: [
+          asc(sql`${LiveEvent.date} IS NULL`),
+          asc(LiveEvent.date),
+          asc(LiveEvent.id),
+        ],
+        limit: take,
+        offset: input.cursor,
+      });
 
-    const hasMore = rows.length > input.limit;
-    const items = hasMore ? rows.slice(0, input.limit) : rows;
-    const nextCursor = hasMore ? input.cursor + input.limit : null;
+      const hasMore = rows.length > input.limit;
+      const items = hasMore ? rows.slice(0, input.limit) : rows;
+      const nextCursor = hasMore ? input.cursor + input.limit : null;
 
-    return { items, nextCursor };
-  }),
+      return { items, nextCursor };
+    }),
 } satisfies TRPCRouterRecord;

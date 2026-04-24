@@ -41,10 +41,9 @@ export const ALL_VENUE_SOURCES: ScrapedVenue[] = [
 function parseScrapedDate(dateText: string | undefined): Date | null {
   if (!dateText?.trim()) return null;
   // Many scraped feeds use "Mon, Jan 5, 2026 7:30 PM - 9:00 PM" or "… | …".
-  const cleaned = dateText
-    .split(/\s[-|]\s/)[0]!
-    .replace(/\s+/g, " ")
-    .trim();
+  const firstSegment = dateText.split(/\s[-|]\s/)[0];
+  if (!firstSegment) return null;
+  const cleaned = firstSegment.replace(/\s+/g, " ").trim();
   const parsed = new Date(cleaned);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
@@ -181,7 +180,10 @@ export async function syncAllVenuesToLiveEvents(
   );
 
   const results: VenueSyncResult[] = settled.map((r, i) => {
-    const source = ALL_VENUE_SOURCES[i]!;
+    const source = ALL_VENUE_SOURCES[i];
+    if (!source) {
+      throw new Error(`Unknown venue source index: ${i}`);
+    }
     if (r.status === "fulfilled") return r.value;
     return {
       source,

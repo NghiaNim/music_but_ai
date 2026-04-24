@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
-import {
-  getStoredNumber,
-  POINTS_KEY,
-} from "../../learn/_lib/progress";
+import { getStoredNumber, POINTS_KEY } from "../../learn/_lib/progress";
 
 // Level thresholds (in XP / points)
 const LEVELS = [
@@ -17,8 +14,10 @@ const LEVELS = [
   { min: 160, name: "Music Connoisseur", emoji: "🏆" },
 ] as const;
 
+type Level = (typeof LEVELS)[number];
+
 function getLevel(points: number) {
-  let current = LEVELS[0];
+  let current: Level = LEVELS[0];
   for (const level of LEVELS) {
     if (points >= level.min) current = level;
   }
@@ -28,15 +27,9 @@ function getLevel(points: number) {
 }
 
 export function LearningProgress() {
-  const [points, setPoints] = useState(0);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setPoints(getStoredNumber(POINTS_KEY));
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
+  const [points] = useState(() =>
+    typeof window === "undefined" ? 0 : getStoredNumber(POINTS_KEY),
+  );
 
   const { current, next, currentIndex } = getLevel(points);
   const levelStart = current.min;

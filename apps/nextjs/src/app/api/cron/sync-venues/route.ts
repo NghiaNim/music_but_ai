@@ -3,11 +3,13 @@ import { NextResponse } from "next/server";
 import { syncAllVenuesToLiveEvents } from "@acme/api";
 import { db } from "@acme/db/client";
 
+import { env } from "~/env";
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 function authorizeCron(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
+  const secret = env.CRON_SECRET;
   if (!secret) return false;
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }

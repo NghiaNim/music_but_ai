@@ -66,6 +66,12 @@ const BADGES = [
   },
 ] as const;
 
+type ComposerBadge = Extract<(typeof BADGES)[number], { composer: string }>;
+
+function isComposerBadge(b: (typeof BADGES)[number]): b is ComposerBadge {
+  return "composer" in b;
+}
+
 function BadgeCard({
   badge,
   isFlipped,
@@ -308,26 +314,31 @@ export function ProfileContent() {
   }
 
   const badgesWithState = BADGES.map((badge) => {
-    if (badge.composer) {
+    if (isComposerBadge(badge)) {
       const count = composerCounts.get(badge.composer) ?? 0;
-      return { ...badge, earned: count >= (badge.required ?? 3) };
+      return { ...badge, earned: count >= badge.required };
     }
     return { ...badge, earned: false };
   });
 
   // Days on app: from user profile createdAt if available, otherwise from first attended event
-  const profile = session?.user.profile as
-    | { createdAt?: string | Date }
+  const userWithProfile = session?.user as
+    | { profile?: { createdAt?: string | Date } }
     | undefined;
+  const createdAtFromProfile = userWithProfile?.profile?.createdAt
+    ? new Date(userWithProfile.profile.createdAt)
+    : undefined;
   const createdAt =
-    (profile?.createdAt && new Date(profile.createdAt)) ||
+    createdAtFromProfile ??
     (attended[0] ? new Date(attended[0].createdAt) : undefined);
+
+  const [asOf] = useState(() => new Date());
   const daysOnApp =
     createdAt != null
       ? Math.max(
           1,
           Math.floor(
-            (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24),
+            (asOf.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24),
           ),
         )
       : 0;

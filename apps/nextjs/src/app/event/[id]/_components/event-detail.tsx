@@ -256,10 +256,7 @@ export function EventDetail({
 
         {showHostView ? null : (
           <div className="flex gap-2 px-4 pb-4">
-            <EventActionButtons
-              eventId={eventId}
-              disabled={isHostPreviewing}
-            />
+            <EventActionButtons eventId={eventId} disabled={isHostPreviewing} />
           </div>
         )}
 
@@ -371,7 +368,7 @@ function EventActionButtons({
         size="sm"
         className="flex-1"
         onClick={() => toggleSave.mutate({ eventId, status: "saved" })}
-        disabled={disabled || toggleSave.isPending}
+        disabled={(disabled ?? false) || toggleSave.isPending}
       >
         <BookmarkIcon />
         Save
@@ -381,7 +378,7 @@ function EventActionButtons({
         size="sm"
         className="flex-1"
         onClick={() => toggleAttended.mutate({ eventId, status: "attended" })}
-        disabled={disabled || toggleAttended.isPending}
+        disabled={(disabled ?? false) || toggleAttended.isPending}
       >
         <CheckCircleIcon />I Went
       </Button>
@@ -429,7 +426,7 @@ function BuyTicketButton({
       className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
       size="lg"
       onClick={() => checkout.mutate({ eventId, quantity: 1 })}
-      disabled={disabled || checkout.isPending}
+      disabled={(disabled ?? false) || checkout.isPending}
     >
       {checkout.isPending ? (
         <span className="flex items-center gap-2">

@@ -9,9 +9,7 @@ import { useTRPC } from "~/trpc/react";
 
 export function MyHostedEvents() {
   const trpc = useTRPC();
-  const { data: hosted } = useSuspenseQuery(
-    trpc.event.myHosted.queryOptions(),
-  );
+  const { data: hosted } = useSuspenseQuery(trpc.event.myHosted.queryOptions());
 
   if (hosted.length === 0) {
     return (
