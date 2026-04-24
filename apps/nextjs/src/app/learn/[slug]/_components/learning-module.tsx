@@ -202,7 +202,7 @@ function OverviewScreen({
             key={unit.id}
             onClick={() => onStart(unit.id)}
             className={cn(
-              "bg-linear-to-br relative overflow-hidden rounded-2xl border p-5 text-left transition-all active:scale-[0.99]",
+              "relative overflow-hidden rounded-2xl border bg-linear-to-br p-5 text-left transition-all active:scale-[0.99]",
               unit.gradient,
             )}
           >
@@ -211,7 +211,7 @@ function OverviewScreen({
                 {unit.emoji}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold tracking-wider uppercase text-zinc-700 dark:text-zinc-300">
+                <p className="text-xs font-semibold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
                   Unit {unit.number}
                 </p>
                 <h2 className="mt-0.5 text-lg font-bold text-zinc-900 dark:text-zinc-100">
@@ -284,7 +284,7 @@ function LessonScreen({
 
       <div
         className={cn(
-          "bg-linear-to-br mt-5 flex aspect-square w-full items-center justify-center rounded-2xl border",
+          "mt-5 flex aspect-square w-full items-center justify-center rounded-2xl border bg-linear-to-br",
           lesson.gradient,
         )}
       >
@@ -363,7 +363,7 @@ function QuizScreen({
         <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
           Question {index + 1}
         </p>
-        <h2 className="text-lg font-semibold leading-snug">
+        <h2 className="text-lg leading-snug font-semibold">
           {question.question}
         </h2>
       </div>
@@ -458,7 +458,7 @@ function ResultScreen({
     <div className="flex flex-col items-center text-center">
       <div
         className={cn(
-          "bg-linear-to-br mt-2 flex size-32 items-center justify-center rounded-full text-6xl",
+          "mt-2 flex size-32 items-center justify-center rounded-full bg-linear-to-br text-6xl",
           perfect
             ? "from-amber-200 to-yellow-100"
             : "from-violet-200 to-fuchsia-100",

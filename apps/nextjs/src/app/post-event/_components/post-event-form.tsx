@@ -1,8 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 import type { RouterOutputs } from "@acme/api";
 import { Button } from "@acme/ui/button";
@@ -59,7 +63,11 @@ function localDateTimeParts(d: Date) {
 
 export function PostEventForm({ isSignedIn }: { isSignedIn: boolean }) {
   return (
-    <HostEventFormShell isSignedIn={isSignedIn} mode="create" event={undefined} />
+    <HostEventFormShell
+      isSignedIn={isSignedIn}
+      mode="create"
+      event={undefined}
+    />
   );
 }
 
@@ -135,9 +143,7 @@ function HostEventFormShell({
       imageUrl: event.imageUrl ?? "",
       ticketUrl: event.ticketUrl ?? "",
       isFree: event.isFree,
-      price: event.isFree
-        ? ""
-        : (event.discountedPriceCents / 100).toFixed(2),
+      price: event.isFree ? "" : (event.discountedPriceCents / 100).toFixed(2),
     };
   }, [event]);
 
@@ -529,9 +535,7 @@ function HostEventFormShell({
               disabled={cancelEvent.isPending}
               onClick={() => {
                 if (
-                  !confirm(
-                    "Cancel this event and notify subscribers by email?",
-                  )
+                  !confirm("Cancel this event and notify subscribers by email?")
                 )
                   return;
                 cancelEvent.mutate({ eventId: event.id });

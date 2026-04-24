@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { getSession } from "~/auth/server";
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { EventDetailSkeleton } from "../../event/[id]/_components/event-detail";
-
 import { LiveEventDetail } from "./_components/live-event-detail";
 
 export default async function LiveEventPage({

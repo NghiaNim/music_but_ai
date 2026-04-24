@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import {
-  getStoredNumber,
-  POINTS_KEY,
-} from "../../learn/_lib/progress";
+import { getStoredNumber, POINTS_KEY } from "../../learn/_lib/progress";
 
 // Level thresholds (in XP / points)
 const LEVELS = [
@@ -17,8 +14,10 @@ const LEVELS = [
   { min: 160, name: "Music Connoisseur", emoji: "🏆" },
 ] as const;
 
+type Level = (typeof LEVELS)[number];
+
 function getLevel(points: number) {
-  let current = LEVELS[0];
+  let current: Level = LEVELS[0];
   for (const level of LEVELS) {
     if (points >= level.min) current = level;
   }

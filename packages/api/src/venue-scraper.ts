@@ -345,12 +345,9 @@ export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
     const normalized = normalizeMetOperaSeasonPath(path);
     if (!normalized) return;
     const eventUrl = toAbsoluteUrl(normalized, base);
-    const slug =
-      normalized.replace(/\/$/, "").split("/").pop() ?? "";
+    const slug = normalized.replace(/\/$/, "").split("/").pop() ?? "";
     const fromSlug = slug ? slugToTitle(slug) : "";
-    let title =
-      titleHint?.replace(/\s+/g, " ").trim() ||
-      fromSlug;
+    let title = titleHint?.replace(/\s+/g, " ").trim() || fromSlug;
     if (!title) return;
     if (/^(buy tickets|more|read more)$/i.test(title)) title = fromSlug;
     if (!byUrl.has(eventUrl)) byUrl.set(eventUrl, title);
@@ -362,8 +359,7 @@ export async function scrapeMetOpera(): Promise<ScrapedEvent[]> {
     addFromPath(href, text || undefined);
   }
 
-  const embeddedPath =
-    /\/season\/\d{4}-\d{2}-[^/]+\/[^"'\\s<>?]+/g;
+  const embeddedPath = /\/season\/\d{4}-\d{2}-[^/]+\/[^"'\\s<>?]+/g;
   let m: RegExpExecArray | null;
   while ((m = embeddedPath.exec(html))) {
     addFromPath(m[0]);
@@ -402,9 +398,7 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
     },
   });
   if (!res.ok) {
-    throw new Error(
-      `Failed to fetch Juilliard calendar API: ${res.status}`,
-    );
+    throw new Error(`Failed to fetch Juilliard calendar API: ${res.status}`);
   }
 
   const data = (await res.json()) as JuilliardApiEvent[];
@@ -425,12 +419,12 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
 
     const purchase = e.purchase_url?.trim() ?? "";
     const video = e.video_url?.trim() ?? "";
-    const eventUrl = purchase || video || `https://calendar.juilliard.edu/#/events/${e.id}`;
+    const eventUrl =
+      purchase || video || `https://calendar.juilliard.edu/#/events/${e.id}`;
     const buyUrl = purchase || video || eventUrl;
 
     const venueName = e.venues?.name?.trim() || "The Juilliard School";
-    const location =
-      e.venues?.address?.trim() || "New York, NY";
+    const location = e.venues?.address?.trim() || "New York, NY";
     const posterImageUrl = e.image?.url?.trim()
       ? e.image.url.trim()
       : undefined;
@@ -482,9 +476,7 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
     seen.add(eventUrl);
 
     const imgHref = root.find(".newsBlock_image img").first().attr("src");
-    const posterImageUrl = imgHref
-      ? toAbsoluteUrl(imgHref, base)
-      : undefined;
+    const posterImageUrl = imgHref ? toAbsoluteUrl(imgHref, base) : undefined;
 
     events.push({
       source: "msm",

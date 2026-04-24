@@ -113,7 +113,8 @@ export function TicketConfirmation() {
             </div>
             <div>
               <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                {orderData.quantity}× Ticket{orderData.quantity > 1 ? "s" : ""}
+                {orderData.quantity ?? 0}× Ticket
+                {(orderData.quantity ?? 0) > 1 ? "s" : ""}
               </p>
               <p className="text-lg font-semibold">{orderData.event.title}</p>
             </div>
@@ -138,12 +139,12 @@ export function TicketConfirmation() {
             <div className="text-muted-foreground flex items-center gap-2">
               <DollarIcon />
               <span>
-                Total paid: ${(orderData.totalCents / 100).toFixed(2)}
+                Total paid: ${((orderData.totalCents ?? 0) / 100).toFixed(2)}
               </span>
             </div>
           </div>
 
-          {isCompleted && (
+          {isCompleted && orderData.id && (
             <div className="mt-4 rounded-lg bg-emerald-50 p-3 dark:bg-emerald-900/20">
               <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
                 Order #{orderData.id.slice(0, 8).toUpperCase()}

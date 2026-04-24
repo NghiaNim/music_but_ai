@@ -4,7 +4,11 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useInfiniteQuery, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 import type { RouterOutputs } from "@acme/api";
 import { cn } from "@acme/ui";
@@ -104,10 +108,7 @@ function liveSortTime(ev: LiveEventItem): number {
   return Number.MAX_SAFE_INTEGER;
 }
 
-function matchesCityFilter(
-  row: UnifiedRow,
-  city: string,
-): boolean {
+function matchesCityFilter(row: UnifiedRow, city: string): boolean {
   const q = city.toLowerCase();
   if (row.kind === "created") {
     const e = row.event;
@@ -298,9 +299,7 @@ export function EventFeed() {
           label={SOURCE_FILTER_LABELS.community}
           active={sourceFilter === "community"}
           onClick={() =>
-            setSourceFilter(
-              sourceFilter === "community" ? "all" : "community",
-            )
+            setSourceFilter(sourceFilter === "community" ? "all" : "community")
           }
         />
         {VENUE_SOURCES.map((s) => (
@@ -580,7 +579,7 @@ function LiveEventCard({ event }: { event: LiveEventItem }) {
             <span className="bg-muted text-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">
               Concert
             </span>
-            <span className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-200 rounded-full px-2 py-0.5 text-[10px] font-medium">
+            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-800 dark:bg-sky-900/30 dark:text-sky-200">
               {sourceLabel}
             </span>
             <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium">

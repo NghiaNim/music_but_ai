@@ -198,9 +198,9 @@ export function LiveEventDetail({
         <section className="px-4 pb-6">
           <h2 className="mb-2 text-base font-semibold">About</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            This performance is included in Classica from public venue calendars.
-            For accessibility, parking, and box office hours, refer to{" "}
-            {sourceLabel}.
+            This performance is included in Classica from public venue
+            calendars. For accessibility, parking, and box office hours, refer
+            to {sourceLabel}.
           </p>
         </section>
       </div>

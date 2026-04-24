@@ -209,10 +209,36 @@ function BeamedEighthNote() {
 
 function CalendarSparkle() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-amber-500 dark:text-amber-400">
-      <rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M15 15l1.5-3 1.5 3M12 14l-1 2h3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      className="text-amber-500 dark:text-amber-400"
+    >
+      <rect
+        x="3"
+        y="4"
+        width="18"
+        height="18"
+        rx="3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M8 2v4M16 2v4M3 10h18"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M15 15l1.5-3 1.5 3M12 14l-1 2h3"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.6"
+      />
     </svg>
   );
 }
@@ -228,8 +254,18 @@ function SpeechBubbleDecor() {
 function SeedlingIllustration() {
   return (
     <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="18" r="18" className="fill-emerald-100 dark:fill-emerald-900/40" />
-      <path d="M18 26V18" stroke="#059669" strokeWidth="2" strokeLinecap="round" />
+      <circle
+        cx="18"
+        cy="18"
+        r="18"
+        className="fill-emerald-100 dark:fill-emerald-900/40"
+      />
+      <path
+        d="M18 26V18"
+        stroke="#059669"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
       <path d="M18 18c0-4 3-6 6-6-1 4-3 6-6 6z" fill="#34d399" />
       <path d="M18 20c0-3-2.5-5-5-5 .8 3 2.5 5 5 5z" fill="#6ee7b7" />
       <ellipse cx="18" cy="27" rx="4" ry="1.5" fill="#a7f3d0" />
@@ -240,9 +276,17 @@ function SeedlingIllustration() {
 function SparkleIllustration() {
   return (
     <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="18" r="18" className="fill-violet-100 dark:fill-violet-900/40" />
+      <circle
+        cx="18"
+        cy="18"
+        r="18"
+        className="fill-violet-100 dark:fill-violet-900/40"
+      />
       <path d="M18 8l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="#a78bfa" />
-      <path d="M26 10l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5L22.5 13l2.5-1z" fill="#c4b5fd" />
+      <path
+        d="M26 10l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5L22.5 13l2.5-1z"
+        fill="#c4b5fd"
+      />
       <path d="M10 22l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="#ddd6fe" />
     </svg>
   );
@@ -251,10 +295,20 @@ function SparkleIllustration() {
 function BookIllustration() {
   return (
     <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="18" r="18" className="fill-amber-100 dark:fill-amber-900/40" />
+      <circle
+        cx="18"
+        cy="18"
+        r="18"
+        className="fill-amber-100 dark:fill-amber-900/40"
+      />
       <rect x="10" y="10" width="16" height="18" rx="2" fill="#fbbf24" />
       <rect x="12" y="10" width="14" height="18" rx="1" fill="#fde68a" />
-      <path d="M15 15h8M15 18h6M15 21h4" stroke="#b45309" strokeWidth="1.2" strokeLinecap="round" />
+      <path
+        d="M15 15h8M15 18h6M15 21h4"
+        stroke="#b45309"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
       <path d="M12 10v18" stroke="#f59e0b" strokeWidth="1.5" />
     </svg>
   );
@@ -263,13 +317,31 @@ function BookIllustration() {
 function TrophyIllustration() {
   return (
     <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="18" r="18" className="fill-sky-100 dark:fill-sky-900/40" />
+      <circle
+        cx="18"
+        cy="18"
+        r="18"
+        className="fill-sky-100 dark:fill-sky-900/40"
+      />
       <path d="M13 12h10v6c0 3-2 5-5 5s-5-2-5-5v-6z" fill="#38bdf8" />
-      <path d="M13 14h-2c-1 0-2 1-1.5 3s2 3 3.5 2" stroke="#7dd3fc" strokeWidth="1.2" fill="none" />
-      <path d="M23 14h2c1 0 2 1 1.5 3s-2 3-3.5 2" stroke="#7dd3fc" strokeWidth="1.2" fill="none" />
+      <path
+        d="M13 14h-2c-1 0-2 1-1.5 3s2 3 3.5 2"
+        stroke="#7dd3fc"
+        strokeWidth="1.2"
+        fill="none"
+      />
+      <path
+        d="M23 14h2c1 0 2 1 1.5 3s-2 3-3.5 2"
+        stroke="#7dd3fc"
+        strokeWidth="1.2"
+        fill="none"
+      />
       <rect x="16" y="23" width="4" height="2" rx="0.5" fill="#0ea5e9" />
       <rect x="14" y="25" width="8" height="2" rx="1" fill="#0ea5e9" />
-      <path d="M17 16l1-2 1 2 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L15 16.3z" fill="#fbbf24" />
+      <path
+        d="M17 16l1-2 1 2 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L15 16.3z"
+        fill="#fbbf24"
+      />
     </svg>
   );
 }

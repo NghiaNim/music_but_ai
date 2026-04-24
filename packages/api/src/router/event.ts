@@ -128,8 +128,7 @@ export const eventRouter = {
         });
       }
 
-      const { eventId, notifySubscribers, isFree, priceCents, ...rest } =
-        input;
+      const { eventId, notifySubscribers, isFree, priceCents, ...rest } = input;
       const pricing = resolvePricing({ isFree, priceCents });
 
       const [updated] = await ctx.db

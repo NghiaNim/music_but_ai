@@ -256,10 +256,7 @@ export function EventDetail({
 
         {showHostView ? null : (
           <div className="flex gap-2 px-4 pb-4">
-            <EventActionButtons
-              eventId={eventId}
-              disabled={isHostPreviewing}
-            />
+            <EventActionButtons eventId={eventId} disabled={isHostPreviewing} />
           </div>
         )}
 
