@@ -119,7 +119,7 @@ export async function syncVenueToLiveEvents(
       venueName: s.venueName ?? defaults.venueName,
       location: s.location ?? defaults.location,
       imageUrl: s.posterImageUrl,
-      genre: inferGenreFromTitle(source, s.title),
+      genre: s.genreHint ?? inferGenreFromTitle(source, s.title),
       eventUrl: s.eventUrl,
       buyUrl: s.buyUrl,
       raw: s,

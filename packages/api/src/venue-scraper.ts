@@ -5,6 +5,7 @@ export type ScrapedVenue = "carnegie_hall" | "met_opera" | "juilliard" | "msm";
 export interface ScrapedEvent {
   source: ScrapedVenue;
   title: string;
+  genreHint?: "orchestral" | "opera" | "chamber" | "solo_recital" | "choral" | "ballet" | "jazz";
   /** True when the venue feed marks the performance as cancelled (still stored for ops). */
   cancelled?: boolean;
   dateText?: string;
@@ -615,50 +616,104 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
 
 export async function scrapeMSM(): Promise<ScrapedEvent[]> {
   const base = "https://www.msmnyc.edu";
-  const html = await fetchHtml(`${base}/performances/`);
-  if (isBlockedHtml(html)) return [];
-  const $ = load(html);
-  const events: ScrapedEvent[] = [];
-  const seen = new Set<string>();
+  const byKey = new Map<string, ScrapedEvent>();
 
-  for (const el of $("#performances-list .newsBlock").toArray()) {
-    const root = $(el);
-    const link = root.find(".newsBlock_info h2 a").first();
-    const linkHref = link.attr("href")?.trim() ?? "";
-    if (!linkHref.includes("/performances/")) continue;
-
-    const eventUrl = toAbsoluteUrl(linkHref, base);
-    if (
-      eventUrl === `${base}/performances/` ||
-      eventUrl === `${base}/performances`
-    )
-      continue;
-
-    const title = link.text().replace(/\s+/g, " ").trim();
-    if (!title || title.length < 4) continue;
-
-    const dateText =
-      root.find(".newsBlock_info time").first().text().trim() || undefined;
-
-    if (seen.has(eventUrl)) continue;
-    seen.add(eventUrl);
-
-    const imgHref = root.find(".newsBlock_image img").first().attr("src");
-    const posterImageUrl = imgHref ? toAbsoluteUrl(imgHref, base) : undefined;
-
-    events.push({
-      source: "msm",
-      title,
-      dateText,
-      venueName: "Manhattan School of Music",
-      location: "New York, NY",
-      eventUrl,
-      buyUrl: eventUrl,
-      posterImageUrl,
-    });
+  function addEvent(ev: ScrapedEvent) {
+    const normalizedDate = (ev.dateText ?? "").toLowerCase().trim();
+    const key = `${ev.eventUrl}|${normalizedDate || ev.title.toLowerCase()}`;
+    if (!byKey.has(key)) byKey.set(key, ev);
   }
 
-  return events;
+  const perfHtml = await fetchHtml(`${base}/performances/`);
+  if (!isBlockedHtml(perfHtml)) {
+    const $ = load(perfHtml);
+    for (const el of $("#performances-list .newsBlock").toArray()) {
+      const root = $(el);
+      const link = root.find(".newsBlock_info h2 a").first();
+      const linkHref = link.attr("href")?.trim() ?? "";
+      if (!linkHref.includes("/performances/")) continue;
+
+      const eventUrl = toAbsoluteUrl(linkHref, base);
+      if (
+        eventUrl === `${base}/performances/` ||
+        eventUrl === `${base}/performances`
+      )
+        continue;
+
+      const title = link.text().replace(/\s+/g, " ").trim();
+      if (!title || title.length < 4) continue;
+
+      const dateText =
+        root.find(".newsBlock_info time").first().text().trim() || undefined;
+      const imgHref = root.find(".newsBlock_image img").first().attr("src");
+      const posterImageUrl = imgHref ? toAbsoluteUrl(imgHref, base) : undefined;
+
+      addEvent({
+        source: "msm",
+        title,
+        dateText,
+        venueName: "Manhattan School of Music",
+        location: "New York, NY",
+        eventUrl,
+        buyUrl: eventUrl,
+        posterImageUrl,
+      });
+    }
+  }
+
+  // Livestream listings include many student recitals absent from /performances.
+  const livestreamUrls = [
+    `${base}/livestreams/`,
+    `${base}/livestreams/page/2/`,
+    `${base}/livestreams/page/3/`,
+  ];
+  for (const url of livestreamUrls) {
+    try {
+      const html = await fetchHtml(url);
+      if (isBlockedHtml(html)) continue;
+      const $ = load(html);
+      for (const el of $(".newsBlock").toArray()) {
+        const root = $(el);
+        const link = root.find(".newsBlock_info h2 a").first();
+        const linkHref = link.attr("href")?.trim() ?? "";
+        if (!linkHref.includes("/livestream/")) continue;
+
+        const eventUrl = toAbsoluteUrl(linkHref, base);
+        const title = link.text().replace(/\s+/g, " ").trim();
+        if (!title || title.length < 4) continue;
+
+        const category = root.find(".newsBlock_info h3").first().text().trim();
+        const date = root.find(".newsBlock_info date").first().text().trim();
+        const time = root.find(".newsBlock_info time").first().text().trim();
+        const dateText =
+          [date, time]
+            .filter(Boolean)
+            .join(", ")
+            .replace(/\s+/g, " ")
+            .replace(/\bEST\b/i, "")
+            .trim() || undefined;
+        const imgHref = root.find(".newsBlock_image img").first().attr("src");
+        const posterImageUrl = imgHref ? toAbsoluteUrl(imgHref, base) : undefined;
+        const isStudentRecital = /student recital/i.test(category);
+
+        addEvent({
+          source: "msm",
+          title,
+          genreHint: isStudentRecital ? "solo_recital" : undefined,
+          dateText,
+          venueName: "Manhattan School of Music",
+          location: "New York, NY",
+          eventUrl,
+          buyUrl: eventUrl,
+          posterImageUrl,
+        });
+      }
+    } catch {
+      /* ignore failed page and continue */
+    }
+  }
+
+  return [...byKey.values()];
 }
 
 export async function scrapeAllVenues(): Promise<ScrapedEvent[]> {
