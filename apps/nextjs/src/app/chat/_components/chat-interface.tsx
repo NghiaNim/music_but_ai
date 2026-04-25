@@ -8,7 +8,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
-import { Input } from "@acme/ui/input";
 import { toast } from "@acme/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
@@ -34,6 +33,7 @@ export function ChatInterface() {
   const [inputValue, setInputValue] = useState(initialQuery);
   const [sessionId, setSessionId] = useState<string | undefined>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const trpc = useTRPC();
 
@@ -63,6 +63,14 @@ export function ChatInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    const next = Math.min(el.scrollHeight, 160);
+    el.style.height = `${next}px`;
+  }, [inputValue]);
+
   const announcedRef = useRef(false);
   useEffect(() => {
     if (contextEvent && !announcedRef.current) {
@@ -90,7 +98,7 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <header className="border-b px-4 py-3">
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <div className="flex items-center gap-2">
@@ -141,11 +149,12 @@ export function ChatInterface() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-lg px-4 pt-3 pb-6">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-lg px-4 pt-3 pb-3">
           <button
             onClick={() => router.back()}
             className="text-muted-foreground hover:text-foreground mb-3 inline-flex items-center gap-1 text-sm font-medium transition-colors"
+            aria-label="Back"
           >
             <BackIcon />
             Back
@@ -175,22 +184,37 @@ export function ChatInterface() {
         </div>
       </div>
 
-      <div className="border-t px-4 pt-3 pb-2">
-        <form onSubmit={handleSubmit} className="mx-auto flex max-w-lg gap-2">
-          <Input
+      <div className="z-20 shrink-0 px-4 pt-2 pb-[env(safe-area-inset-bottom)]">
+        <form
+          onSubmit={handleSubmit}
+          className="mx-auto flex max-w-lg items-end gap-2 rounded-xl border bg-[#ffffffff] px-2 py-2 dark:bg-[#ffffffff]"
+        >
+          <textarea
+            ref={composerRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (!sendMessage.isPending && inputValue.trim()) {
+                  const form = e.currentTarget.form;
+                  form?.requestSubmit();
+                }
+              }
+            }}
             placeholder={
               mode === "discovery"
                 ? "What kind of concert are you looking for?"
                 : "What would you like to know about this event?"
             }
             disabled={sendMessage.isPending}
-            className="flex-1"
+            rows={1}
+            className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-h-40 min-h-10 flex-1 resize-none overflow-y-auto rounded-md bg-[#ffffffff] px-3 py-2 text-sm leading-5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           />
           <Button
             type="submit"
             size="icon"
+            className="shrink-0"
             disabled={!inputValue.trim() || sendMessage.isPending}
           >
             <SendIcon />
@@ -207,7 +231,7 @@ function TypingIndicator() {
       <div className="bg-primary/10 flex size-8 shrink-0 items-center justify-center rounded-full">
         <MusicIcon />
       </div>
-      <div className="bg-muted max-w-[80%] rounded-2xl rounded-tl-sm px-4 py-3">
+      <div className="max-w-[80%] rounded-2xl rounded-tl-sm border bg-white px-4 py-3 dark:bg-white">
         <div className="flex gap-1">
           <span className="bg-foreground/20 size-2 animate-bounce rounded-full" />
           <span className="bg-foreground/20 size-2 animate-bounce rounded-full [animation-delay:150ms]" />
@@ -263,7 +287,7 @@ function ChatBubble({ message }: { message: Message }) {
             "rounded-2xl px-4 py-3",
             isUser
               ? "bg-primary text-primary-foreground rounded-tr-sm"
-              : "bg-muted rounded-tl-sm",
+              : "rounded-tl-sm border bg-white dark:bg-white",
           )}
         >
           <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -388,12 +412,12 @@ function EmptyState({
               : "Ask me anything about the event, the music, or the composers."}
         </p>
       </div>
-      <div className="grid w-full gap-2">
+      <div className="grid w-full gap-2 rounded-xl bg-[#ffffffff] p-2 dark:bg-[#ffffffff]">
         {suggestions.map((s) => (
           <button
             key={s}
             onClick={() => onSuggestionClick(s)}
-            className="rounded-lg border bg-white px-4 py-3 text-left text-sm transition-colors hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+            className="rounded-lg border bg-[#ffffffff] px-4 py-3 text-left text-sm transition-colors hover:bg-zinc-50 dark:bg-[#ffffffff] dark:hover:bg-zinc-100"
           >
             {s}
           </button>
