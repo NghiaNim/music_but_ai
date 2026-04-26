@@ -1,6 +1,12 @@
 import { load } from "cheerio";
 
-export type ScrapedVenue = "carnegie_hall" | "met_opera" | "juilliard" | "msm";
+export type ScrapedVenue =
+  | "carnegie_hall"
+  | "met_opera"
+  | "juilliard"
+  | "msm"
+  | "ny_phil"
+  | "nycballet";
 
 export interface ScrapedEvent {
   source: ScrapedVenue;
@@ -136,6 +142,49 @@ interface CarnegieSparqlBinding {
   label?: { value: string };
   startDate?: { value: string };
   venueName?: { value: string };
+}
+
+function collectJsonLdEvents(node: unknown, out: Record<string, unknown>[]) {
+  if (!node) return;
+  if (Array.isArray(node)) {
+    for (const item of node) collectJsonLdEvents(item, out);
+    return;
+  }
+  if (typeof node !== "object") return;
+  const obj = node as Record<string, unknown>;
+  const type = obj["@type"];
+  const isEvent =
+    type === "Event" ||
+    (Array.isArray(type) && type.some((v) => String(v) === "Event"));
+  if (isEvent) out.push(obj);
+  for (const value of Object.values(obj)) {
+    collectJsonLdEvents(value, out);
+  }
+}
+
+function absoluteImageUrl(candidate: unknown, base: string): string | undefined {
+  const raw = valueToText(candidate)?.trim();
+  if (!raw) return undefined;
+  if (raw.startsWith("http")) return raw;
+  if (raw.startsWith("//")) return `https:${raw}`;
+  if (raw.startsWith("/")) return `${base}${raw}`;
+  return undefined;
+}
+
+function imageUrlFromJsonLdRecord(
+  record: Record<string, unknown>,
+  base: string,
+): string | undefined {
+  const direct = absoluteImageUrl(record.image, base);
+  if (direct) return direct;
+  const nested =
+    record.image && typeof record.image === "object"
+      ? absoluteImageUrl(
+          (record.image as Record<string, unknown>).url,
+          base,
+        )
+      : undefined;
+  return nested;
 }
 
 /** Comparable `YYYY-MM-DDTHH:mm:ss` string in America/New_York (LOD uses NY wall times). */
@@ -442,9 +491,9 @@ async function scrapeMetProductionPerformances(input: {
   const ogImage = $('meta[property="og:image"]').attr("content")?.trim();
   const twitterImage = $('meta[name="twitter:image"]').attr("content")?.trim();
   const heroImage =
-    $(".hero-image img").first().attr("src")?.trim() ||
-    $(".hero-image source").first().attr("srcset")?.split(",")[0]?.trim() ||
-    $(".hero-image").first().attr("data-src")?.trim() ||
+    $(".hero-image img").first().attr("src")?.trim() ??
+    $(".hero-image source").first().attr("srcset")?.split(",")[0]?.trim() ??
+    $(".hero-image").first().attr("data-src")?.trim() ??
     undefined;
   const embeddedGlobalAsset = (() => {
     const m = /\/globalassets\/[^"'()\s>]+\.(?:png|jpe?g|webp)/i.exec(html);
@@ -463,7 +512,6 @@ async function scrapeMetProductionPerformances(input: {
   const rows: ScrapedEvent[] = [];
   for (const item of $(".upcomingperfs-item").toArray()) {
     const root = $(item);
-    const day = root.find(".upcomingperfs-item-time").first().text().trim();
     const atLine = root.find(".upcomingperfs-item-title").first().text().trim();
     const perfId =
       root
@@ -741,12 +789,146 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
   return [...byKey.values()];
 }
 
+export async function scrapeNyPhil(): Promise<ScrapedEvent[]> {
+  const base = "https://www.nyphil.org";
+  const html = await fetchHtml(`${base}/concerts-tickets/`);
+  if (isBlockedHtml(html)) return [];
+  const $ = load(html);
+  const byUrl = new Map<string, ScrapedEvent>();
+
+  for (const script of $('script[type="application/ld+json"]').toArray()) {
+    const json = $(script).contents().text().trim();
+    if (!json) continue;
+    try {
+      const parsed = JSON.parse(json) as unknown;
+      const events: Record<string, unknown>[] = [];
+      collectJsonLdEvents(parsed, events);
+      for (const ev of events) {
+        const title = pickText(ev, "name", "title")?.trim();
+        const rawUrl = pickText(ev, "url");
+        if (!title || !rawUrl) continue;
+        const eventUrl = rawUrl.startsWith("http")
+          ? rawUrl
+          : toAbsoluteUrl(rawUrl, base);
+        const startDate = pickText(ev, "startDate");
+        const image = imageUrlFromJsonLdRecord(ev, base);
+        byUrl.set(eventUrl, {
+          source: "ny_phil",
+          title,
+          dateText: startDate,
+          venueName: "New York Philharmonic",
+          location: "New York, NY",
+          eventUrl,
+          buyUrl: eventUrl,
+          posterImageUrl: image,
+          genreHint: "orchestral",
+        });
+      }
+    } catch {
+      /* ignore malformed JSON-LD blocks */
+    }
+  }
+
+  for (const link of $('a[href*="/concerts-tickets/"]').toArray()) {
+    const root = $(link);
+    const href = root.attr("href")?.trim() ?? "";
+    if (!href || href.endsWith("/concerts-tickets/")) continue;
+    const title =
+      root.find("h2, h3, h4").first().text().trim() ||
+      root.text().replace(/\s+/g, " ").trim();
+    if (!title || /^view calendar$/i.test(title)) continue;
+    const eventUrl = href.startsWith("http") ? href : toAbsoluteUrl(href, base);
+    if (!byUrl.has(eventUrl)) {
+      byUrl.set(eventUrl, {
+        source: "ny_phil",
+        title,
+        venueName: "New York Philharmonic",
+        location: "David Geffen Hall, New York, NY",
+        eventUrl,
+        buyUrl: eventUrl,
+        genreHint: "orchestral",
+      });
+    }
+  }
+
+  return [...byUrl.values()];
+}
+
+export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
+  const base = "https://www.nycballet.com";
+  const html = await fetchHtml(`${base}/season-and-tickets/seasons`);
+  if (isBlockedHtml(html)) return [];
+  const $ = load(html);
+  const byUrl = new Map<string, ScrapedEvent>();
+
+  for (const script of $('script[type="application/ld+json"]').toArray()) {
+    const json = $(script).contents().text().trim();
+    if (!json) continue;
+    try {
+      const parsed = JSON.parse(json) as unknown;
+      const events: Record<string, unknown>[] = [];
+      collectJsonLdEvents(parsed, events);
+      for (const ev of events) {
+        const title = pickText(ev, "name", "title")?.trim();
+        const rawUrl = pickText(ev, "url");
+        if (!title || !rawUrl) continue;
+        const eventUrl = rawUrl.startsWith("http")
+          ? rawUrl
+          : toAbsoluteUrl(rawUrl, base);
+        const startDate = pickText(ev, "startDate");
+        const image = imageUrlFromJsonLdRecord(ev, base);
+        byUrl.set(eventUrl, {
+          source: "nycballet",
+          title,
+          dateText: startDate,
+          venueName: "New York City Ballet",
+          location: "David H. Koch Theater, New York, NY",
+          eventUrl,
+          buyUrl: eventUrl,
+          posterImageUrl: image,
+          genreHint: "ballet",
+        });
+      }
+    } catch {
+      /* ignore malformed JSON-LD blocks */
+    }
+  }
+
+  for (const link of $('a[href*="/season-and-tickets/"]').toArray()) {
+    const root = $(link);
+    const href = root.attr("href")?.trim() ?? "";
+    if (!href) continue;
+    if (/\/season-and-tickets\/seasons\/?$/i.test(href)) continue;
+    const title =
+      root.find("h2, h3, h4").first().text().trim() ||
+      root.text().replace(/\s+/g, " ").trim();
+    if (!title || /^view season$/i.test(title)) continue;
+    const eventUrl = href.startsWith("http") ? href : toAbsoluteUrl(href, base);
+    if (!byUrl.has(eventUrl)) {
+      byUrl.set(eventUrl, {
+        source: "nycballet",
+        title,
+        venueName: "New York City Ballet",
+        location: "David H. Koch Theater, New York, NY",
+        eventUrl,
+        buyUrl: eventUrl,
+        genreHint: "ballet",
+      });
+    }
+  }
+
+  return [...byUrl.values()];
+}
+
 export async function scrapeAllVenues(): Promise<ScrapedEvent[]> {
-  const [carnegie, met, juilliard, msm] = await Promise.allSettled([
+  const [carnegie, met, juilliard, msm, nyPhil, nycBallet] =
+    await Promise.allSettled([
     scrapeCarnegieHall(),
     scrapeMetOpera(),
     scrapeJuilliard(),
     scrapeMSM(),
+    scrapeNyPhil(),
+    scrapeNycBallet(),
   ]);
 
   const collect = (r: PromiseSettledResult<ScrapedEvent[]>) =>
@@ -757,5 +939,7 @@ export async function scrapeAllVenues(): Promise<ScrapedEvent[]> {
     ...collect(met),
     ...collect(juilliard),
     ...collect(msm),
+    ...collect(nyPhil),
+    ...collect(nycBallet),
   ];
 }

@@ -47,6 +47,8 @@ export const liveEventSourceEnum = pgEnum("live_event_source", [
   "met_opera",
   "juilliard",
   "msm",
+  "ny_phil",
+  "nycballet",
 ]);
 
 /** Distinguishes informal community listings from formal concerts. */

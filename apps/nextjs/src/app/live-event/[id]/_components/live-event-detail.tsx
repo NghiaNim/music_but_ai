@@ -24,6 +24,8 @@ const SOURCE_LABELS: Record<string, string> = {
   juilliard: "Juilliard",
   met_opera: "Metropolitan Opera",
   carnegie_hall: "Carnegie Hall",
+  ny_phil: "New York Philharmonic",
+  nycballet: "New York City Ballet",
 };
 
 function formatWhen(ev: {

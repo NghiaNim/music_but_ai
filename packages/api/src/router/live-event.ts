@@ -9,7 +9,16 @@ import { publicProcedure } from "../trpc";
 
 const LiveEventFilters = z.object({
   search: z.string().optional(),
-  source: z.enum(["carnegie_hall", "met_opera", "juilliard", "msm"]).optional(),
+  source: z
+    .enum([
+      "carnegie_hall",
+      "met_opera",
+      "juilliard",
+      "msm",
+      "ny_phil",
+      "nycballet",
+    ])
+    .optional(),
   genre: z
     .enum([
       "orchestral",

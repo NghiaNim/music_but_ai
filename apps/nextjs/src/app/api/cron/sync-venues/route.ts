@@ -16,7 +16,22 @@ function authorizeCron(request: Request): boolean {
 
 async function runSync() {
   const result = await syncAllVenuesToLiveEvents(db);
-  return NextResponse.json(result);
+  const sourceHealth = result.results.reduce<
+    Record<string, { upserted: number; removed: number; skipped: boolean; error: string | null }>
+  >((acc, row) => {
+    acc[row.source] = {
+      upserted: row.upserted,
+      removed: row.removed,
+      skipped: !!row.skipped,
+      error: row.error ?? null,
+    };
+    return acc;
+  }, {});
+
+  return NextResponse.json({
+    ...result,
+    sourceHealth,
+  });
 }
 
 export async function GET(request: Request) {

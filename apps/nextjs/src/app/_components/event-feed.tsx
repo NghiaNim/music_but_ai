@@ -70,6 +70,8 @@ const VENUE_SOURCES = [
   "juilliard",
   "met_opera",
   "carnegie_hall",
+  "ny_phil",
+  "nycballet",
 ] as const;
 
 type VenueSource = (typeof VENUE_SOURCES)[number];
@@ -82,6 +84,8 @@ const SOURCE_FILTER_LABELS: Record<SourceFilter, string> = {
   juilliard: "Juilliard",
   met_opera: "Met Opera",
   carnegie_hall: "Carnegie Hall",
+  ny_phil: "NY Philharmonic",
+  nycballet: "NYC Ballet",
 };
 
 const LIVE_VENUE_LABELS: Record<VenueSource, string> = {
@@ -89,6 +93,8 @@ const LIVE_VENUE_LABELS: Record<VenueSource, string> = {
   juilliard: "Juilliard",
   met_opera: "Metropolitan Opera",
   carnegie_hall: "Carnegie Hall",
+  ny_phil: "New York Philharmonic",
+  nycballet: "New York City Ballet",
 };
 
 const LIVE_PAGE_SIZE = 15;

@@ -8,6 +8,8 @@ import {
   scrapeJuilliard,
   scrapeMetOpera,
   scrapeMSM,
+  scrapeNycBallet,
+  scrapeNyPhil,
 } from "./venue-scraper";
 
 type Database = typeof db;
@@ -22,6 +24,8 @@ const VENUE_DEFAULTS: Record<ScrapedVenue, VenueDefaults> = {
   met_opera: { venueName: "Metropolitan Opera", location: "New York, NY" },
   juilliard: { venueName: "The Juilliard School", location: "New York, NY" },
   msm: { venueName: "Manhattan School of Music", location: "New York, NY" },
+  ny_phil: { venueName: "New York Philharmonic", location: "New York, NY" },
+  nycballet: { venueName: "New York City Ballet", location: "New York, NY" },
 };
 
 const SCRAPERS: Record<ScrapedVenue, () => Promise<ScrapedEvent[]>> = {
@@ -29,6 +33,8 @@ const SCRAPERS: Record<ScrapedVenue, () => Promise<ScrapedEvent[]>> = {
   met_opera: scrapeMetOpera,
   juilliard: scrapeJuilliard,
   msm: scrapeMSM,
+  ny_phil: scrapeNyPhil,
+  nycballet: scrapeNycBallet,
 };
 
 export const ALL_VENUE_SOURCES: ScrapedVenue[] = [
@@ -36,6 +42,8 @@ export const ALL_VENUE_SOURCES: ScrapedVenue[] = [
   "met_opera",
   "juilliard",
   "msm",
+  "ny_phil",
+  "nycballet",
 ];
 
 function parseScrapedDate(dateText: string | undefined): Date | null {
@@ -110,7 +118,7 @@ export async function syncVenueToLiveEvents(
   const urls = scraped.map((s) => s.eventUrl);
 
   for (const s of scraped) {
-    const values: typeof LiveEvent.$inferInsert = {
+    const values = {
       source,
       title: s.title.slice(0, 512),
       cancelled: s.cancelled ?? false,
