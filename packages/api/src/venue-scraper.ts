@@ -11,7 +11,14 @@ export type ScrapedVenue =
 export interface ScrapedEvent {
   source: ScrapedVenue;
   title: string;
-  genreHint?: "orchestral" | "opera" | "chamber" | "solo_recital" | "choral" | "ballet" | "jazz";
+  genreHint?:
+    | "orchestral"
+    | "opera"
+    | "chamber"
+    | "solo_recital"
+    | "choral"
+    | "ballet"
+    | "jazz";
   /** True when the venue feed marks the performance as cancelled (still stored for ops). */
   cancelled?: boolean;
   dateText?: string;
@@ -162,7 +169,10 @@ function collectJsonLdEvents(node: unknown, out: Record<string, unknown>[]) {
   }
 }
 
-function absoluteImageUrl(candidate: unknown, base: string): string | undefined {
+function absoluteImageUrl(
+  candidate: unknown,
+  base: string,
+): string | undefined {
   const raw = valueToText(candidate)?.trim();
   if (!raw) return undefined;
   if (raw.startsWith("http")) return raw;
@@ -179,10 +189,7 @@ function imageUrlFromJsonLdRecord(
   if (direct) return direct;
   const nested =
     record.image && typeof record.image === "object"
-      ? absoluteImageUrl(
-          (record.image as Record<string, unknown>).url,
-          base,
-        )
+      ? absoluteImageUrl((record.image as Record<string, unknown>).url, base)
       : undefined;
   return nested;
 }
@@ -469,8 +476,7 @@ function withMetSeasonYear(input: {
     : -1;
 
   // Met seasons cross years (fall -> spring): Jul-Dec => startYear, Jan-Jun => endYear.
-  const year =
-    monthIndex >= 6 ? seasonYears.startYear : seasonYears.endYear;
+  const year = monthIndex >= 6 ? seasonYears.startYear : seasonYears.endYear;
   const m = /^([A-Za-z]{3,9}\s+\d{1,2}),\s*(.+)$/.exec(input.monthDayTime);
   if (!m) {
     return `${input.monthDayTime}, ${year}`;
@@ -761,7 +767,9 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
             .replace(/\bEST\b/i, "")
             .trim() || undefined;
         const imgHref = root.find(".newsBlock_image img").first().attr("src");
-        const posterImageUrl = imgHref ? toAbsoluteUrl(imgHref, base) : undefined;
+        const posterImageUrl = imgHref
+          ? toAbsoluteUrl(imgHref, base)
+          : undefined;
         const isStudentRecital = /student recital/i.test(category);
         const venueName = inferMsmVenueName({
           title,
@@ -923,13 +931,13 @@ export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
 export async function scrapeAllVenues(): Promise<ScrapedEvent[]> {
   const [carnegie, met, juilliard, msm, nyPhil, nycBallet] =
     await Promise.allSettled([
-    scrapeCarnegieHall(),
-    scrapeMetOpera(),
-    scrapeJuilliard(),
-    scrapeMSM(),
-    scrapeNyPhil(),
-    scrapeNycBallet(),
-  ]);
+      scrapeCarnegieHall(),
+      scrapeMetOpera(),
+      scrapeJuilliard(),
+      scrapeMSM(),
+      scrapeNyPhil(),
+      scrapeNycBallet(),
+    ]);
 
   const collect = (r: PromiseSettledResult<ScrapedEvent[]>) =>
     r.status === "fulfilled" ? r.value : [];

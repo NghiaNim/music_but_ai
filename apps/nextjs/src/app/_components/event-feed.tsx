@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -177,6 +177,7 @@ export function EventFeed() {
   const [sortBy, setSortBy] = useState<"day_asc" | "day_desc">("day_asc");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [visibleCount, setVisibleCount] = useState(LIVE_PAGE_SIZE);
+  const resetVisibleCount = () => setVisibleCount(LIVE_PAGE_SIZE);
 
   const showUser = sourceFilter === "all" || sourceFilter === "community";
   const liveSource: VenueSource | undefined =
@@ -254,18 +255,6 @@ export function EventFeed() {
   });
   const visibleEvents = filteredEvents.slice(0, visibleCount);
 
-  useEffect(() => {
-    setVisibleCount(LIVE_PAGE_SIZE);
-  }, [
-    search,
-    genreFilter,
-    difficultyFilter,
-    cityFilter,
-    ticketedFilter,
-    sortBy,
-    sourceFilter,
-  ]);
-
   return (
     <div>
       <div className="mb-4 flex gap-2">
@@ -274,13 +263,19 @@ export function EventFeed() {
           <Input
             placeholder="Search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              resetVisibleCount();
+            }}
             className="w-full border-zinc-300 bg-white pl-9 text-sm text-zinc-900 placeholder:text-zinc-900 md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-100"
           />
         </div>
         <select
           value={cityFilter ?? ""}
-          onChange={(e) => setCityFilter(e.target.value || undefined)}
+          onChange={(e) => {
+            setCityFilter(e.target.value || undefined);
+            resetVisibleCount();
+          }}
           className="h-9 w-[88px] rounded-md border border-zinc-300 bg-white px-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <option value="">All Cities</option>
@@ -292,7 +287,10 @@ export function EventFeed() {
         </select>
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as "day_asc" | "day_desc")}
+          onChange={(e) => {
+            setSortBy(e.target.value as "day_asc" | "day_desc");
+            resetVisibleCount();
+          }}
           className="h-9 w-[80px] rounded-md border border-zinc-300 bg-white px-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <option value="day_asc">By Date</option>
@@ -304,21 +302,28 @@ export function EventFeed() {
         <FilterChip
           label={SOURCE_FILTER_LABELS.all}
           active={sourceFilter === "all"}
-          onClick={() => setSourceFilter("all")}
+          onClick={() => {
+            setSourceFilter("all");
+            resetVisibleCount();
+          }}
         />
         <FilterChip
           label={SOURCE_FILTER_LABELS.community}
           active={sourceFilter === "community"}
-          onClick={() =>
-            setSourceFilter(sourceFilter === "community" ? "all" : "community")
-          }
+          onClick={() => {
+            setSourceFilter(sourceFilter === "community" ? "all" : "community");
+            resetVisibleCount();
+          }}
         />
         {VENUE_SOURCES.map((s) => (
           <FilterChip
             key={s}
             label={SOURCE_FILTER_LABELS[s]}
             active={sourceFilter === s}
-            onClick={() => setSourceFilter(sourceFilter === s ? "all" : s)}
+            onClick={() => {
+              setSourceFilter(sourceFilter === s ? "all" : s);
+              resetVisibleCount();
+            }}
           />
         ))}
       </div>
@@ -327,14 +332,20 @@ export function EventFeed() {
         <FilterChip
           label="All"
           active={!genreFilter}
-          onClick={() => setGenreFilter(undefined)}
+          onClick={() => {
+            setGenreFilter(undefined);
+            resetVisibleCount();
+          }}
         />
         {GENRE_OPTIONS.map((g) => (
           <FilterChip
             key={g}
             label={GENRE_LABELS[g] ?? g}
             active={genreFilter === g}
-            onClick={() => setGenreFilter(genreFilter === g ? undefined : g)}
+            onClick={() => {
+              setGenreFilter(genreFilter === g ? undefined : g);
+              resetVisibleCount();
+            }}
           />
         ))}
       </div>
@@ -343,16 +354,20 @@ export function EventFeed() {
         <FilterChip
           label="All Levels"
           active={!difficultyFilter}
-          onClick={() => setDifficultyFilter(undefined)}
+          onClick={() => {
+            setDifficultyFilter(undefined);
+            resetVisibleCount();
+          }}
         />
         {(["beginner", "intermediate", "advanced"] as const).map((d) => (
           <FilterChip
             key={d}
             label={d.charAt(0).toUpperCase() + d.slice(1)}
             active={difficultyFilter === d}
-            onClick={() =>
-              setDifficultyFilter(difficultyFilter === d ? undefined : d)
-            }
+            onClick={() => {
+              setDifficultyFilter(difficultyFilter === d ? undefined : d);
+              resetVisibleCount();
+            }}
           />
         ))}
       </div>
@@ -361,25 +376,30 @@ export function EventFeed() {
         <FilterChip
           label="All Ticketing Types"
           active={!ticketedFilter}
-          onClick={() => setTicketedFilter(undefined)}
+          onClick={() => {
+            setTicketedFilter(undefined);
+            resetVisibleCount();
+          }}
         />
         <FilterChip
           label="Ticketed"
           active={ticketedFilter === "ticketed"}
-          onClick={() =>
+          onClick={() => {
             setTicketedFilter(
               ticketedFilter === "ticketed" ? undefined : "ticketed",
-            )
-          }
+            );
+            resetVisibleCount();
+          }}
         />
         <FilterChip
           label="Non-Ticketed"
           active={ticketedFilter === "non_ticketed"}
-          onClick={() =>
+          onClick={() => {
             setTicketedFilter(
               ticketedFilter === "non_ticketed" ? undefined : "non_ticketed",
-            )
-          }
+            );
+            resetVisibleCount();
+          }}
         />
       </div>
 
@@ -403,7 +423,8 @@ export function EventFeed() {
               ),
             )}
           </div>
-          {filteredEvents.length > visibleCount || (showLive && liveQuery.hasNextPage) ? (
+          {filteredEvents.length > visibleCount ||
+          (showLive && liveQuery.hasNextPage) ? (
             <div className="mt-4 flex justify-center">
               <Button
                 type="button"

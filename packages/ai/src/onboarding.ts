@@ -28,7 +28,7 @@ export async function generateOnboardingReply(
 
   messages.push({
     role: "assistant",
-    content: ONBOARDING_QUESTIONS[0]!,
+    content: ONBOARDING_QUESTIONS[0],
   });
   messages.push({ role: "user", content: input.userAnswer });
 
@@ -45,7 +45,9 @@ export async function generateOnboardingReply(
     messages,
   });
 
-  return response.choices[0]?.message?.content ?? "";
+  const firstChoice = response.choices[0];
+  if (!firstChoice) return "";
+  return firstChoice.message.content ?? "";
 }
 
 export function computeExperienceLevel(

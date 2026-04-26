@@ -17,7 +17,15 @@ function authorizeCron(request: Request): boolean {
 async function runSync() {
   const result = await syncAllVenuesToLiveEvents(db);
   const sourceHealth = result.results.reduce<
-    Record<string, { upserted: number; removed: number; skipped: boolean; error: string | null }>
+    Record<
+      string,
+      {
+        upserted: number;
+        removed: number;
+        skipped: boolean;
+        error: string | null;
+      }
+    >
   >((acc, row) => {
     acc[row.source] = {
       upserted: row.upserted,

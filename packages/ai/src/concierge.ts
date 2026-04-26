@@ -45,14 +45,16 @@ export async function* streamDiscoveryResponse(
     messages: [
       { role: "system", content: systemPrompt },
       ...input.messages.map((m) => ({
-        role: m.role as "user" | "assistant",
+        role: m.role,
         content: m.content,
       })),
     ],
   });
 
   for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta?.content;
+    const firstChoice = chunk.choices[0];
+    if (!firstChoice) continue;
+    const delta = firstChoice.delta.content;
     if (delta) {
       yield delta;
     }
@@ -75,14 +77,16 @@ export async function* streamLearningResponse(
     messages: [
       { role: "system", content: systemPrompt },
       ...input.messages.map((m) => ({
-        role: m.role as "user" | "assistant",
+        role: m.role,
         content: m.content,
       })),
     ],
   });
 
   for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta?.content;
+    const firstChoice = chunk.choices[0];
+    if (!firstChoice) continue;
+    const delta = firstChoice.delta.content;
     if (delta) {
       yield delta;
     }
@@ -119,5 +123,7 @@ Genre: ${event.genre}`,
     ],
   });
 
-  return response.choices[0]?.message?.content ?? "";
+  const firstChoice = response.choices[0];
+  if (!firstChoice) return "";
+  return firstChoice.message.content ?? "";
 }

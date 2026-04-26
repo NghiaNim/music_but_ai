@@ -89,7 +89,9 @@ function directionsUrl(ev: {
       ? "Manhattan School of Music, 130 Claremont Ave, New York, NY 10027"
       : ev.source === "juilliard"
         ? "The Juilliard School, 155 W 65th St, New York, NY 10023"
-        : [ev.venueName?.trim(), ev.location?.trim()].filter(Boolean).join(", ");
+        : [ev.venueName?.trim(), ev.location?.trim()]
+            .filter(Boolean)
+            .join(", ");
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     destination || "New York, NY",
   )}`;

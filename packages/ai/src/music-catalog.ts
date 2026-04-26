@@ -237,10 +237,13 @@ export function getRandomTracksPerTier(): [MusicTrack, MusicTrack, MusicTrack] {
   const easy = MUSIC_CATALOG.filter((t) => t.tier === "easy");
   const medium = MUSIC_CATALOG.filter((t) => t.tier === "medium");
   const hard = MUSIC_CATALOG.filter((t) => t.tier === "hard");
+  const easyTrack = easy[Math.floor(Math.random() * easy.length)];
+  const mediumTrack = medium[Math.floor(Math.random() * medium.length)];
+  const hardTrack = hard[Math.floor(Math.random() * hard.length)];
 
-  return [
-    easy[Math.floor(Math.random() * easy.length)]!,
-    medium[Math.floor(Math.random() * medium.length)]!,
-    hard[Math.floor(Math.random() * hard.length)]!,
-  ];
+  if (!easyTrack || !mediumTrack || !hardTrack) {
+    throw new Error("Music catalog is missing one or more tiers");
+  }
+
+  return [easyTrack, mediumTrack, hardTrack];
 }

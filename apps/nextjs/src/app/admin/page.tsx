@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { asc, eq } from "@acme/db";
 import { db } from "@acme/db/client";
 import { Event } from "@acme/db/schema";
 
 import { env } from "~/env";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 const ADMIN_COOKIE = "admin_auth";
 
@@ -274,4 +274,3 @@ export default async function AdminPage(props: {
     </main>
   );
 }
-
