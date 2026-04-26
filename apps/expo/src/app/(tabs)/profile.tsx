@@ -1,3 +1,4 @@
+import type { Href } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Dimensions,
@@ -14,6 +15,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 
 import { authClient } from "~/utils/auth";
 import bachBadgeImage from "../../../assets/badges/badge_bach_v2.png";
@@ -290,6 +292,7 @@ function BadgeCard({
 }
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { data: session } = authClient.useSession();
   const name = session?.user.name ?? "Guest";
   const [flippedIds, setFlippedIds] = useState<Set<string>>(new Set());
@@ -354,6 +357,16 @@ export default function ProfileScreen() {
         <Text className="text-foreground mt-8 px-5 text-xl font-bold">
           Badges
         </Text>
+        <View className="px-5 pt-4">
+          <Pressable
+            className="items-center rounded-xl bg-[#9C1738] px-4 py-3"
+            onPress={() => router.push("/waitlist" as Href)}
+          >
+            <Text className="text-base font-semibold text-white">
+              Join Waitlist
+            </Text>
+          </Pressable>
+        </View>
         <Text className="text-muted-foreground mb-4 px-5 text-xs">
           Tap a badge to flip it
         </Text>

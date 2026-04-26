@@ -32,15 +32,15 @@ tooling/
 
 **Key dependencies (actual):**
 
-| Layer       | Tech                              |
-| ----------- | --------------------------------- |
-| Framework   | Next.js 16 (web) + Expo (mobile)  |
-| API         | tRPC v11                          |
-| Database    | Drizzle ORM + Postgres (Vercel)   |
-| AI          | OpenAI API (gpt-4o-mini, streaming) |
-| Auth        | Better Auth (Discord OAuth)       |
-| Styling     | Tailwind CSS v4 + shadcn/ui      |
-| UI          | @acme/ui (shared component lib)   |
+| Layer     | Tech                                |
+| --------- | ----------------------------------- |
+| Framework | Next.js 16 (web) + Expo (mobile)    |
+| API       | tRPC v11                            |
+| Database  | Drizzle ORM + Postgres (Vercel)     |
+| AI        | OpenAI API (gpt-4o-mini, streaming) |
+| Auth      | Better Auth (Discord OAuth)         |
+| Styling   | Tailwind CSS v4 + shadcn/ui         |
+| UI        | @acme/ui (shared component lib)     |
 
 ---
 
@@ -69,17 +69,19 @@ These three features together tell the full story: discover → learn → attend
 The centerpiece. A single chat interface with two distinct modes:
 
 **Discovery Mode** — "Help me find a concert"
+
 - User describes what they're looking for (mood, date, experience level)
 - AI recommends events from our catalog with personalized reasoning
 - AI answering logistics questions about the venue like parking
-- Example: *"I've never been to a classical concert, what's good this weekend?"* → AI suggests a beginner-friendly orchestral program, explains why
+- Example: _"I've never been to a classical concert, what's good this weekend?"_ → AI suggests a beginner-friendly orchestral program, explains why
 
 **Learning Mode** — "Help me understand this"
+
 - Contextual questions about any event, composer, piece, or musical term
 - Grounded in the specific event the user is looking at
-- Example: *"Who is Beethoven?"* → concise, beginner-friendly answer
-- Example: *"What should I listen for in this concerto?"* → 3 things to notice
-- Example: *"Tips for my first opera?"* → practical + musical advice
+- Example: _"Who is Beethoven?"_ → concise, beginner-friendly answer
+- Example: _"What should I listen for in this concerto?"_ → 3 things to notice
+- Example: _"Tips for my first opera?"_ → practical + musical advice
 
 **Architecture:**
 
@@ -203,6 +205,7 @@ ChatMessage {
 Users can purchase tickets directly through us at a **discounted price** compared to the original listing. The primary purchase flow is through the AI concierge — when the AI recommends an event and the user expresses intent to buy, a checkout button appears inline. Users can also buy directly from event detail pages.
 
 **Flow:**
+
 1. User asks the AI concierge for recommendations, or browses events directly
 2. AI includes pricing info (original vs discounted) and detects purchase intent
 3. Frontend renders a "Buy Tickets" button when `[BUY_TICKET:<eventId>]` tag is detected in AI response
@@ -211,6 +214,7 @@ Users can purchase tickets directly through us at a **discounted price** compare
 6. Order history accessible via Profile → My Tickets (`/tickets`)
 
 **Schema additions:**
+
 - `Event` now has `original_price_cents`, `discounted_price_cents`, `tickets_available`
 - New `TicketOrder` table: `id`, `userId`, `eventId`, `quantity`, `totalCents`, `status` (pending/completed/failed/refunded), `stripeSessionId`, `stripePaymentIntentId`
 
@@ -221,21 +225,30 @@ Users can purchase tickets directly through us at a **discounted price** compare
 ## Post-Onboarding UX (Implemented)
 
 After completing the voice onboarding quiz:
+
 - The "Take the Music Quiz" CTA on the home page **disappears** and is replaced by a personalized welcome card showing the user's experience level and music taste ratings
 - Navigating to `/onboarding` when already completed **redirects to home**
 - The onboarding `complete` mutation sets `onboardingCompleted: true` on the user profile
 
 ---
 
+## Waitlist Capture (Implemented)
+
+- Added a `waitlist_signup` table via Drizzle with unique email deduplication.
+- Added a shared tRPC mutation (`waitlist.join`) so clients can submit waitlist entries.
+- Added a mobile `Join Waitlist` screen in Expo, linked from Profile, storing signups with `source = "mobile"`.
+
+---
+
 ## Hackathon Day Plan
 
-| Block          | Focus                                              |
-| -------------- | -------------------------------------------------- |
-| Hour 0–1       | Scaffold t3-turbo, set up DB, seed 15–20 events    |
-| Hour 1–3       | Home Feed + Event Detail screens (both platforms)   |
-| Hour 3–5       | AI Concierge — Discovery Mode + Learning Mode      |
-| Hour 5–7       | Polish UI, Concert Journal if time, demo prep       |
-| Hour 7–8       | Final demo run-through, pitch prep                  |
+| Block    | Focus                                             |
+| -------- | ------------------------------------------------- |
+| Hour 0–1 | Scaffold t3-turbo, set up DB, seed 15–20 events   |
+| Hour 1–3 | Home Feed + Event Detail screens (both platforms) |
+| Hour 3–5 | AI Concierge — Discovery Mode + Learning Mode     |
+| Hour 5–7 | Polish UI, Concert Journal if time, demo prep     |
+| Hour 7–8 | Final demo run-through, pitch prep                |
 
 ---
 

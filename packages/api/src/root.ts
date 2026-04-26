@@ -7,6 +7,7 @@ import { postRouter } from "./router/post";
 import { ticketRouter } from "./router/ticket";
 import { userEventRouter } from "./router/user-event";
 import { userProfileRouter } from "./router/user-profile";
+import { waitlistRouter } from "./router/waitlist";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
@@ -17,6 +18,7 @@ export const appRouter = createTRPCRouter({
   onboarding: onboardingRouter,
   post: postRouter,
   ticket: ticketRouter,
+  waitlist: waitlistRouter,
   userEvent: userEventRouter,
   userProfile: userProfileRouter,
 });
