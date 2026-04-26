@@ -344,4 +344,23 @@ export const CreateLiveEventSchema = createInsertSchema(LiveEvent).omit({
   updatedAt: true,
 });
 
+// ─── Waitlist Signup ────────────────────────────────────
+
+export const WaitlistSignup = pgTable("waitlist_signup", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  name: t.varchar({ length: 128 }).notNull(),
+  email: t.varchar({ length: 320 }).notNull().unique(),
+  source: t.varchar({ length: 32 }).notNull().default("web"),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
+}));
+
+export const CreateWaitlistSignupSchema = createInsertSchema(WaitlistSignup, {
+  name: z.string().min(1).max(128),
+  email: z.email().max(320),
+  source: z.enum(["web", "mobile"]).default("web"),
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
 export * from "./auth-schema";
