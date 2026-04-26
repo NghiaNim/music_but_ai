@@ -22,6 +22,7 @@ export const env = createEnv({
     VERCEL_URL: z.string().optional(),
     VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
     CRON_SECRET: z.string().optional(),
+    ADMIN_PASSWORD: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
