@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -65,6 +65,17 @@ const BADGES = [
     achievement: "Listened to 10 pieces written in the Classical era",
   },
 ] as const;
+
+function lockedRequirementText(input: { achievement: string }): string {
+  const text = input.achievement.trim();
+  if (text.startsWith("Attended ")) {
+    return `Attend ${text.slice("Attended ".length)} to unlock this badge.`;
+  }
+  if (text.startsWith("Listened to ")) {
+    return `Listen to ${text.slice("Listened to ".length)} to unlock this badge.`;
+  }
+  return "Complete requirements to unlock this badge.";
+}
 
 type ComposerBadge = Extract<(typeof BADGES)[number], { composer: string }>;
 
@@ -314,6 +325,9 @@ export function ProfileContent() {
   }
 
   const badgesWithState = BADGES.map((badge) => {
+    if (badge.id === "bach") {
+      return { ...badge, earned: true };
+    }
     if (isComposerBadge(badge)) {
       const count = composerCounts.get(badge.composer) ?? 0;
       return { ...badge, earned: count >= badge.required };
@@ -344,6 +358,48 @@ export function ProfileContent() {
       : 0;
 
   const [flippedIds, setFlippedIds] = useState<Set<string>>(new Set());
+  const [newlyEarnedBadgeId, setNewlyEarnedBadgeId] = useState<string | null>(
+    null,
+  );
+  const [previewBadgeId, setPreviewBadgeId] = useState<string | null>(null);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [overlayFlipped, setOverlayFlipped] = useState(false);
+  const overlayBadgeId = newlyEarnedBadgeId ?? previewBadgeId;
+
+  const newlyEarnedBadge = useMemo(
+    () => badgesWithState.find((b) => b.id === overlayBadgeId) ?? null,
+    [badgesWithState, overlayBadgeId],
+  );
+  const overlayBadgeIsUnlocked = newlyEarnedBadge?.earned ?? false;
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const userId = session?.user.id;
+    if (!userId) return;
+
+    const storageKey = `classica-earned-badges:${userId}`;
+    const prevRaw = window.localStorage.getItem(storageKey);
+    const prev = prevRaw ? (JSON.parse(prevRaw) as string[]) : [];
+    const earnedNow = badgesWithState.filter((b) => b.earned).map((b) => b.id);
+    const newlyEarned = earnedNow.find((id) => !prev.includes(id));
+
+    if (newlyEarned && newlyEarned !== newlyEarnedBadgeId) {
+      setNewlyEarnedBadgeId(newlyEarned);
+      setOverlayFlipped(false);
+      setShareFeedback(null);
+    }
+
+    window.localStorage.setItem(storageKey, JSON.stringify(earnedNow));
+  }, [badgesWithState, isSignedIn, newlyEarnedBadgeId, session?.user.id]);
+
+  useEffect(() => {
+    if (!overlayBadgeId) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [overlayBadgeId]);
 
   const toggleFlip = (id: string) => {
     setFlippedIds((prev) => {
@@ -355,6 +411,41 @@ export function ProfileContent() {
       }
       return next;
     });
+  };
+
+  async function handleShareBadge() {
+    if (!newlyEarnedBadge) return;
+    const shareText = `I just earned the "${newlyEarnedBadge.label}" badge on Classica!`;
+    const shareUrl =
+      typeof window !== "undefined" ? window.location.origin : "";
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "New Classica badge unlocked",
+          text: shareText,
+          url: shareUrl,
+        });
+        setShareFeedback("Shared!");
+        return;
+      }
+
+      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`.trim());
+      setShareFeedback("Copied share text to clipboard.");
+    } catch {
+      setShareFeedback("Could not share right now.");
+    }
+  }
+
+  const openBadgeOverlay = (badgeId: string) => {
+    setPreviewBadgeId(badgeId);
+    setOverlayFlipped(false);
+    setShareFeedback(null);
+  };
+  const closeBadgeOverlay = () => {
+    setNewlyEarnedBadgeId(null);
+    setPreviewBadgeId(null);
+    setOverlayFlipped(false);
   };
 
   return (
@@ -437,16 +528,13 @@ export function ProfileContent() {
         Tap a badge to flip it{isSignedIn ? "" : " — sign in to start earning"}
       </p>
       <div className="grid grid-cols-2 gap-3.5">
-        {(isSignedIn
-          ? badgesWithState
-          : BADGES.map((b) => ({ ...b, earned: false }))
-        ).map((badge) => (
+        {badgesWithState.map((badge) => (
           <BadgeCard
             key={badge.id}
             badge={badge}
             isFlipped={flippedIds.has(badge.id)}
             earned={badge.earned}
-            onFlip={() => toggleFlip(badge.id)}
+            onFlip={() => openBadgeOverlay(badge.id)}
           />
         ))}
       </div>
@@ -456,6 +544,110 @@ export function ProfileContent() {
         Learning Progress
       </h2>
       <LearningProgress />
+
+      {newlyEarnedBadge && (
+        <div className="fixed inset-0 z-[60] backdrop-blur-md">
+          <div className="absolute inset-0 bg-black/55" />
+          <div className="relative mx-auto flex h-full w-full max-w-[430px] flex-col items-center justify-center px-6 text-center text-white">
+            <button
+              type="button"
+              onClick={closeBadgeOverlay}
+              className="absolute top-40 right-4 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/25 text-xl leading-none text-white transition-colors hover:bg-white/15"
+              aria-label="Close badge overlay"
+            >
+              ×
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!overlayBadgeIsUnlocked) return;
+                setOverlayFlipped((v) => !v);
+              }}
+              className="relative mb-4"
+              style={
+                overlayBadgeIsUnlocked
+                  ? { animation: "badgeTurnAround 1.2s ease-in-out" }
+                  : undefined
+              }
+            >
+              <div
+                className="relative size-36"
+                style={{
+                  transformStyle: "preserve-3d",
+                  transform: overlayFlipped
+                    ? "rotateY(180deg)"
+                    : "rotateY(0deg)",
+                  transition: "transform 0.7s cubic-bezier(0.4, 0, 0.2, 1)",
+                }}
+              >
+                <div
+                  className="absolute inset-0 overflow-hidden rounded-full border-4 border-amber-300 bg-zinc-900 shadow-[0_0_40px_rgba(245,158,11,0.45)]"
+                  style={{ backfaceVisibility: "hidden" }}
+                >
+                  <Image
+                    src={newlyEarnedBadge.image}
+                    alt={newlyEarnedBadge.label}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+                <div
+                  className="absolute inset-0 flex items-center justify-center rounded-full border-4 border-amber-300 bg-[#DCBB7D] p-6"
+                  style={{
+                    transform: "rotateY(180deg)",
+                    backfaceVisibility: "hidden",
+                  }}
+                >
+                  <p className="text-center text-xs leading-5 font-semibold text-[#4A3820]">
+                    {overlayBadgeIsUnlocked
+                      ? newlyEarnedBadge.achievement
+                      : lockedRequirementText(newlyEarnedBadge)}
+                  </p>
+                </div>
+              </div>
+            </button>
+            <p className="text-xs font-semibold tracking-[0.2em] text-amber-300 uppercase">
+              {overlayBadgeIsUnlocked ? "New Badge Unlocked" : "Badge Locked"}
+            </p>
+            <h3 className="mt-2 text-3xl font-bold">
+              {newlyEarnedBadge.label}
+            </h3>
+            <p className="mt-2 max-w-sm text-sm text-zinc-200">
+              {overlayBadgeIsUnlocked
+                ? newlyEarnedBadge.achievement
+                : lockedRequirementText(newlyEarnedBadge)}
+            </p>
+            {overlayBadgeIsUnlocked ? (
+              <p className="mt-2 text-xs text-zinc-300">Tap badge to flip</p>
+            ) : null}
+
+            <div className="mt-8 w-full max-w-sm space-y-2">
+              {overlayBadgeIsUnlocked ? (
+                <button
+                  onClick={handleShareBadge}
+                  className="w-full rounded-xl bg-[#9C1738] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#7c1030]"
+                >
+                  Share Badge
+                </button>
+              ) : null}
+            </div>
+            {shareFeedback && (
+              <p className="mt-3 text-xs text-zinc-300">{shareFeedback}</p>
+            )}
+          </div>
+        </div>
+      )}
+      <style jsx global>{`
+        @keyframes badgeTurnAround {
+          0% {
+            transform: rotateY(0deg);
+          }
+          100% {
+            transform: rotateY(360deg);
+          }
+        }
+      `}</style>
     </>
   );
 }

@@ -3,19 +3,25 @@ import { useEffect, useState } from "react";
 import {
   Dimensions,
   Image,
+  Modal,
   Pressable,
   ScrollView,
+  Share,
   Text,
+  useColorScheme,
   View,
 } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { BlurView } from "expo-blur";
+import { useNavigation, useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 
 import { authClient } from "~/utils/auth";
 import bachBadgeImage from "../../../assets/badges/badge_bach_v2.png";
@@ -102,6 +108,17 @@ const BADGES: BadgeData[] = [
   },
 ];
 
+function lockedRequirementText(input: { achievement: string }): string {
+  const text = input.achievement.trim();
+  if (text.startsWith("Attended ")) {
+    return `Attend ${text.slice("Attended ".length)} to unlock this badge.`;
+  }
+  if (text.startsWith("Listened to ")) {
+    return `Listen to ${text.slice("Listened to ".length)} to unlock this badge.`;
+  }
+  return "Complete requirements to unlock this badge.";
+}
+
 const cardShadow = {
   shadowColor: "#000",
   shadowOffset: { width: 0, height: 2 },
@@ -115,10 +132,12 @@ const badgeCardWidth = (screenWidth - 20 * 2 - 14) / 2;
 
 function BadgeCard({
   badge,
+  earned,
   isFlipped,
   onFlip,
 }: {
   badge: BadgeData;
+  earned: boolean;
   isFlipped: boolean;
   onFlip: () => void;
 }) {
@@ -287,15 +306,32 @@ function BadgeCard({
       <Text className="text-foreground mt-3 text-center text-sm font-semibold">
         {badge.label}
       </Text>
+      {!earned && (
+        <Text className="text-muted-foreground mt-1 text-center text-[10px] uppercase">
+          Locked
+        </Text>
+      )}
     </Pressable>
   );
 }
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const colorScheme = useColorScheme();
   const { data: session } = authClient.useSession();
   const name = session?.user.name ?? "Guest";
   const [flippedIds, setFlippedIds] = useState<Set<string>>(new Set());
+  const [newlyEarnedBadgeId, setNewlyEarnedBadgeId] = useState<string | null>(
+    null,
+  );
+  const [previewBadgeId, setPreviewBadgeId] = useState<string | null>(null);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [overlayFlipped, setOverlayFlipped] = useState(false);
+  const popupScale = useSharedValue(0.92);
+  const popupOpacity = useSharedValue(0);
+  const badgeRotation = useSharedValue(0);
+  const overlayFlipRotation = useSharedValue(0);
 
   const toggleFlip = (id: string) => {
     setFlippedIds((prev) => {
@@ -309,12 +345,154 @@ export default function ProfileScreen() {
     });
   };
 
+  useEffect(() => {
+    const userId = session?.user.id;
+    if (!userId) return;
+
+    let cancelled = false;
+    const storageKey = `classica-earned-badges:${userId}`;
+    const earnedNow = BADGES.filter((b) => b.id === "bach").map((b) => b.id);
+
+    const checkNewlyEarned = async () => {
+      const prevRaw = await SecureStore.getItemAsync(storageKey);
+      const prev = prevRaw ? (JSON.parse(prevRaw) as string[]) : [];
+      const newlyEarned = earnedNow.find((id) => !prev.includes(id));
+
+      if (!cancelled && newlyEarned) {
+        setNewlyEarnedBadgeId(newlyEarned);
+        setShareFeedback(null);
+      }
+
+      await SecureStore.setItemAsync(storageKey, JSON.stringify(earnedNow));
+    };
+
+    void checkNewlyEarned();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user.id]);
+
+  const overlayBadgeId = newlyEarnedBadgeId ?? previewBadgeId;
+  const isUnlockOverlay = newlyEarnedBadgeId != null;
+  const overlayBadge =
+    BADGES.find((badge) => badge.id === overlayBadgeId) ?? null;
+  const overlayBadgeIsUnlocked = overlayBadge?.id === "bach";
+
+  useEffect(() => {
+    if (!overlayBadgeId) return;
+    popupScale.value = 0.92;
+    popupOpacity.value = 0;
+    popupScale.value = withSpring(1, { damping: 15, stiffness: 180 });
+    popupOpacity.value = withTiming(1, { duration: 220 });
+    overlayFlipRotation.value = 0;
+  }, [overlayBadgeId, popupOpacity, popupScale]);
+
+  useEffect(() => {
+    if (!overlayBadgeId) return;
+    const base = isUnlockOverlay ? 360 : 0;
+    const target = base + (overlayBadgeIsUnlocked && overlayFlipped ? 180 : 0);
+    badgeRotation.value = withTiming(target, {
+      duration: isUnlockOverlay && !overlayFlipped ? 1200 : 700,
+    });
+  }, [
+    badgeRotation,
+    isUnlockOverlay,
+    overlayBadgeId,
+    overlayBadgeIsUnlocked,
+    overlayFlipped,
+  ]);
+
+  useEffect(() => {
+    if (!overlayBadgeId) return;
+    overlayFlipRotation.value = withTiming(
+      overlayBadgeIsUnlocked && overlayFlipped ? 180 : 0,
+      {
+        duration: 700,
+      },
+    );
+  }, [
+    overlayBadgeId,
+    overlayBadgeIsUnlocked,
+    overlayFlipRotation,
+    overlayFlipped,
+  ]);
+  const popupStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: popupScale.value }],
+    opacity: popupOpacity.value,
+  }));
+  const badgeSpinStyle = useAnimatedStyle(() => ({
+    transform: [{ perspective: 900 }, { rotateY: `${badgeRotation.value}deg` }],
+  }));
+  const overlayFrontStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 900 },
+      {
+        rotateY: `${interpolate(overlayFlipRotation.value, [0, 180], [0, 180])}deg`,
+      },
+    ],
+    backfaceVisibility: "hidden" as const,
+  }));
+  const overlayBackStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 900 },
+      {
+        rotateY: `${interpolate(overlayFlipRotation.value, [0, 180], [180, 360])}deg`,
+      },
+    ],
+    backfaceVisibility: "hidden" as const,
+  }));
+
+  const handleShareBadge = async () => {
+    if (!overlayBadge) return;
+    const message = `I just earned the "${overlayBadge.label.replace("\n", " ")}" badge on Classica! https://www.getclassica.com`;
+
+    try {
+      await Share.share({
+        message,
+      });
+      setShareFeedback("Shared!");
+    } catch {
+      setShareFeedback("Could not share right now.");
+    }
+  };
+
+  const openBadgeOverlay = (badgeId: string) => {
+    setPreviewBadgeId(badgeId);
+    setOverlayFlipped(false);
+    setShareFeedback(null);
+  };
+
+  const closeBadgeOverlay = () => {
+    setNewlyEarnedBadgeId(null);
+    setPreviewBadgeId(null);
+    setOverlayFlipped(false);
+  };
+
+  useEffect(() => {
+    const parent = navigation.getParent();
+    if (!parent) return;
+    const isDark = colorScheme === "dark";
+
+    parent.setOptions({
+      tabBarStyle: overlayBadgeId
+        ? { display: "none" }
+        : {
+            backgroundColor: isDark ? "#111" : "#FFFFFF",
+            borderTopColor: isDark ? "#222" : "#F0F0F0",
+            height: 88,
+            paddingBottom: 28,
+            paddingTop: 8,
+          },
+    });
+  }, [colorScheme, navigation, overlayBadgeId]);
+
   return (
     <SafeAreaView className="bg-background flex-1">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!overlayBadge}
       >
         <Text className="text-foreground mt-4 px-5 text-3xl font-bold">
           Profile
@@ -375,12 +553,120 @@ export default function ProfileScreen() {
             <BadgeCard
               key={badge.id}
               badge={badge}
+              earned={badge.id === "bach"}
               isFlipped={flippedIds.has(badge.id)}
-              onFlip={() => toggleFlip(badge.id)}
+              onFlip={() => openBadgeOverlay(badge.id)}
             />
           ))}
         </View>
       </ScrollView>
+
+      <Modal
+        visible={!!overlayBadge}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        presentationStyle="overFullScreen"
+      >
+        <View className="flex-1">
+          <BlurView
+            intensity={40}
+            tint="dark"
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+            }}
+          />
+          <View className="absolute inset-0 bg-black/45" />
+          {overlayBadge ? (
+            <Animated.View
+              style={[popupStyle, { flex: 1 }]}
+              className="items-center justify-center px-6"
+            >
+              <Pressable
+                className="absolute top-44 right-6 z-10 h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/25"
+                onPress={closeBadgeOverlay}
+              >
+                <Text className="text-center text-2xl leading-7 text-white">
+                  ×
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  if (!overlayBadgeIsUnlocked) return;
+                  setOverlayFlipped((v) => !v);
+                }}
+                className="relative mb-4 h-36 w-36"
+              >
+                <Animated.View
+                  style={badgeSpinStyle}
+                  className="h-36 w-36 items-center justify-center"
+                >
+                  <Animated.View
+                    style={overlayFrontStyle}
+                    className="absolute h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-amber-300 bg-zinc-900"
+                  >
+                    <Image
+                      source={overlayBadge.image}
+                      style={{ width: 128, height: 128, borderRadius: 64 }}
+                      resizeMode="cover"
+                    />
+                  </Animated.View>
+                  <Animated.View
+                    style={overlayBackStyle}
+                    className="absolute h-32 w-32 items-center justify-center rounded-full border-4 border-amber-300 bg-[#DCBB7D] px-4"
+                  >
+                    <Text className="text-center text-[11px] leading-4 font-semibold text-[#4A3820]">
+                      {overlayBadgeIsUnlocked
+                        ? overlayBadge.achievement
+                        : lockedRequirementText(overlayBadge)}
+                    </Text>
+                  </Animated.View>
+                </Animated.View>
+              </Pressable>
+
+              <Text className="text-xs font-semibold tracking-[2px] text-amber-300 uppercase">
+                {overlayBadgeIsUnlocked ? "New Badge Unlocked" : "Badge Locked"}
+              </Text>
+              <Text className="mt-2 text-center text-3xl font-bold text-white">
+                {overlayBadge.label}
+              </Text>
+              <Text className="mt-2 max-w-sm text-center text-sm text-zinc-200">
+                {overlayBadgeIsUnlocked
+                  ? overlayBadge.achievement
+                  : lockedRequirementText(overlayBadge)}
+              </Text>
+              {overlayBadgeIsUnlocked ? (
+                <Text className="mt-2 text-xs text-zinc-300">
+                  Tap badge to flip
+                </Text>
+              ) : null}
+
+              <View className="mt-8 w-full max-w-sm">
+                {overlayBadgeIsUnlocked ? (
+                  <Pressable
+                    className="w-full items-center rounded-xl bg-[#9C1738] px-4 py-3"
+                    onPress={handleShareBadge}
+                  >
+                    <Text className="text-sm font-semibold text-white">
+                      Share Badge
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+
+              {shareFeedback && (
+                <Text className="mt-3 text-xs text-zinc-300">
+                  {shareFeedback}
+                </Text>
+              )}
+            </Animated.View>
+          ) : null}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
