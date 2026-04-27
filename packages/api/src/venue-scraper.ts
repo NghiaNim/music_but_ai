@@ -56,9 +56,22 @@ function toAbsoluteUrl(href: string, base: string): string {
 }
 
 function isBlockedHtml(html: string): boolean {
-  return /incapsula|just a moment|attention required|noindex,\s*nofollow/i.test(
-    html,
-  );
+  return /incapsula|just a moment|attention required/i.test(html);
+}
+
+async function fetchPageImage(url: string): Promise<string | undefined> {
+  try {
+    const html = await fetchHtml(url);
+    if (isBlockedHtml(html)) return undefined;
+    const $ = load(html);
+    const og = $('meta[property="og:image"]').attr("content")?.trim();
+    if (og) return og.startsWith("http") ? og : undefined;
+    const tw = $('meta[name="twitter:image"]').attr("content")?.trim();
+    if (tw) return tw.startsWith("http") ? tw : undefined;
+    return undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function slugToTitle(slug: string): string {
@@ -194,6 +207,77 @@ function imageUrlFromJsonLdRecord(
   return nested;
 }
 
+async function enrichEventsWithPageImages(
+  events: ScrapedEvent[],
+): Promise<ScrapedEvent[]> {
+  const enriched: ScrapedEvent[] = [];
+  for (const ev of events) {
+    if (ev.posterImageUrl) {
+      enriched.push(ev);
+      continue;
+    }
+    const pageImage = await fetchPageImage(ev.eventUrl);
+    enriched.push({
+      ...ev,
+      posterImageUrl: pageImage ?? ev.posterImageUrl,
+    });
+  }
+  return enriched;
+}
+
+function normalizeInlineText(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+async function fetchNycBalletPageMeta(input: {
+  eventUrl: string;
+}): Promise<{ imageUrl?: string; dateText?: string }> {
+  try {
+    const html = await fetchHtml(input.eventUrl);
+    if (isBlockedHtml(html)) return {};
+    const $ = load(html);
+
+    const og = $('meta[property="og:image"]').attr("content")?.trim();
+    const tw = $('meta[name="twitter:image"]').attr("content")?.trim();
+    const imageUrl =
+      (og && og.startsWith("http") ? og : undefined) ??
+      (tw && tw.startsWith("http") ? tw : undefined);
+
+    const start = normalizeInlineText(
+      $(".program-slide__dates .program-slide__start-date").first().text(),
+    );
+    const end = normalizeInlineText(
+      $(".program-slide__dates .program-slide__end-date").first().text(),
+    );
+    const yearMatch =
+      /\/season-and-tickets\/(?:spring|fall|winter)-(\d{4})\//i.exec(
+        input.eventUrl,
+      );
+    const year = yearMatch?.[1];
+    const dateText =
+      start && end
+        ? `${start} - ${end}${year ? `, ${year}` : ""}`
+        : undefined;
+
+    return { imageUrl, dateText };
+  } catch {
+    return {};
+  }
+}
+
+async function enrichNycBalletEvents(events: ScrapedEvent[]): Promise<ScrapedEvent[]> {
+  const enriched: ScrapedEvent[] = [];
+  for (const ev of events) {
+    const meta = await fetchNycBalletPageMeta({ eventUrl: ev.eventUrl });
+    enriched.push({
+      ...ev,
+      posterImageUrl: ev.posterImageUrl?.trim() || meta.imageUrl,
+      dateText: ev.dateText?.trim() || meta.dateText,
+    });
+  }
+  return enriched;
+}
+
 /** Comparable `YYYY-MM-DDTHH:mm:ss` string in America/New_York (LOD uses NY wall times). */
 function carnegieNyWallComparable(d: Date): string {
   return new Intl.DateTimeFormat("sv-SE", {
@@ -298,18 +382,11 @@ LIMIT 500`;
     });
   }
 
-  const nowNy = carnegieNyWallComparable(new Date());
-  const twoWeeksAgoNy = carnegieNyWallComparable(
-    new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-  );
-
+  const nowDay = new Date();
+  nowDay.setHours(0, 0, 0, 0);
+  const nowNy = carnegieNyWallComparable(nowDay);
   let chosen = rows.filter((r) => r.startComparable >= nowNy);
-  if (chosen.length === 0) {
-    chosen = rows.filter((r) => r.startComparable >= twoWeeksAgoNy);
-  }
-  if (chosen.length === 0) {
-    chosen = rows;
-  }
+  if (chosen.length === 0) return [];
 
   chosen.sort((a, b) => b.startComparable.localeCompare(a.startComparable));
 
@@ -345,33 +422,42 @@ LIMIT 500`;
 export async function scrapeCarnegieHall(): Promise<ScrapedEvent[]> {
   try {
     const fromLod = await scrapeCarnegieHallFromLinkedData();
-    if (fromLod.length > 0) return fromLod;
+    return fromLod;
   } catch {
     /* fall through to legacy */
   }
 
   const base = "https://www.carnegiehall.org";
 
-  const jsonAttempt = await fetch(`${base}/api/events/upcoming`, {
-    headers: {
-      ...BROWSER_FETCH_HEADERS,
-      Accept: "application/json, text/plain, */*",
-    },
-  });
-  if (jsonAttempt.ok) {
-    const ct = jsonAttempt.headers.get("content-type") ?? "";
-    if (ct.includes("json")) {
-      try {
-        const data: unknown = await jsonAttempt.json();
-        const mapped = mapCarnegieApiPayload(data);
-        if (mapped.length > 0) return mapped;
-      } catch {
-        /* fall through */
+  try {
+    const jsonAttempt = await fetch(`${base}/api/events/upcoming`, {
+      headers: {
+        ...BROWSER_FETCH_HEADERS,
+        Accept: "application/json, text/plain, */*",
+      },
+    });
+    if (jsonAttempt.ok) {
+      const ct = jsonAttempt.headers.get("content-type") ?? "";
+      if (ct.includes("json")) {
+        try {
+          const data: unknown = await jsonAttempt.json();
+          const mapped = mapCarnegieApiPayload(data);
+          if (mapped.length > 0) return mapped;
+        } catch {
+          /* fall through */
+        }
       }
     }
+  } catch {
+    /* fall through */
   }
 
-  const html = await fetchHtml(`${base}/Events`);
+  let html = "";
+  try {
+    html = await fetchHtml(`${base}/Events`);
+  } catch {
+    return [];
+  }
   if (isBlockedHtml(html)) return [];
   const $ = load(html);
   const events: ScrapedEvent[] = [];
@@ -838,29 +924,10 @@ export async function scrapeNyPhil(): Promise<ScrapedEvent[]> {
     }
   }
 
-  for (const link of $('a[href*="/concerts-tickets/"]').toArray()) {
-    const root = $(link);
-    const href = root.attr("href")?.trim() ?? "";
-    if (!href || href.endsWith("/concerts-tickets/")) continue;
-    const title =
-      root.find("h2, h3, h4").first().text().trim() ||
-      root.text().replace(/\s+/g, " ").trim();
-    if (!title || /^view calendar$/i.test(title)) continue;
-    const eventUrl = href.startsWith("http") ? href : toAbsoluteUrl(href, base);
-    if (!byUrl.has(eventUrl)) {
-      byUrl.set(eventUrl, {
-        source: "ny_phil",
-        title,
-        venueName: "New York Philharmonic",
-        location: "David Geffen Hall, New York, NY",
-        eventUrl,
-        buyUrl: eventUrl,
-        genreHint: "orchestral",
-      });
-    }
-  }
-
-  return [...byUrl.values()];
+  // Keep only explicit JSON-LD event rows.
+  // The NY Phil page is heavily client-rendered and generic nav/explore links
+  // can otherwise be misclassified as performances.
+  return enrichEventsWithPageImages([...byUrl.values()]);
 }
 
 export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
@@ -942,7 +1009,7 @@ export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
     }
   }
 
-  return [...byUrl.values()];
+  return enrichNycBalletEvents([...byUrl.values()]);
 }
 
 export async function scrapeAllVenues(): Promise<ScrapedEvent[]> {
