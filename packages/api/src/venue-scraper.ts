@@ -240,8 +240,8 @@ async function fetchNycBalletPageMeta(input: {
     const og = $('meta[property="og:image"]').attr("content")?.trim();
     const tw = $('meta[name="twitter:image"]').attr("content")?.trim();
     const imageUrl =
-      (og && og.startsWith("http") ? og : undefined) ??
-      (tw && tw.startsWith("http") ? tw : undefined);
+      (og?.startsWith("http") ? og : undefined) ??
+      (tw?.startsWith("http") ? tw : undefined);
 
     const start = normalizeInlineText(
       $(".program-slide__dates .program-slide__start-date").first().text(),
@@ -255,9 +255,7 @@ async function fetchNycBalletPageMeta(input: {
       );
     const year = yearMatch?.[1];
     const dateText =
-      start && end
-        ? `${start} - ${end}${year ? `, ${year}` : ""}`
-        : undefined;
+      start && end ? `${start} - ${end}${year ? `, ${year}` : ""}` : undefined;
 
     return { imageUrl, dateText };
   } catch {
@@ -265,14 +263,16 @@ async function fetchNycBalletPageMeta(input: {
   }
 }
 
-async function enrichNycBalletEvents(events: ScrapedEvent[]): Promise<ScrapedEvent[]> {
+async function enrichNycBalletEvents(
+  events: ScrapedEvent[],
+): Promise<ScrapedEvent[]> {
   const enriched: ScrapedEvent[] = [];
   for (const ev of events) {
     const meta = await fetchNycBalletPageMeta({ eventUrl: ev.eventUrl });
     enriched.push({
       ...ev,
-      posterImageUrl: ev.posterImageUrl?.trim() || meta.imageUrl,
-      dateText: ev.dateText?.trim() || meta.dateText,
+      posterImageUrl: ev.posterImageUrl?.trim() ?? meta.imageUrl,
+      dateText: ev.dateText?.trim() ?? meta.dateText,
     });
   }
   return enriched;
@@ -385,7 +385,7 @@ LIMIT 500`;
   const nowDay = new Date();
   nowDay.setHours(0, 0, 0, 0);
   const nowNy = carnegieNyWallComparable(nowDay);
-  let chosen = rows.filter((r) => r.startComparable >= nowNy);
+  const chosen = rows.filter((r) => r.startComparable >= nowNy);
   if (chosen.length === 0) return [];
 
   chosen.sort((a, b) => b.startComparable.localeCompare(a.startComparable));
