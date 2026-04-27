@@ -39,6 +39,8 @@ tooling/
 | Database  | Drizzle ORM + Postgres (Vercel)     |
 | AI        | OpenAI API (gpt-4o-mini, streaming) |
 | Auth      | Better Auth (Discord OAuth)         |
+
+**Production:** set `AUTH_URL=https://getclassica.com` (or your canonical web origin) on Vercel so OAuth `redirect_uri` matches the URLs registered with Discord/Google. If unset, Vercel may use the `*.vercel.app` hostname, which will not match a custom-domain-only OAuth config.
 | Styling   | Tailwind CSS v4 + shadcn/ui         |
 | UI        | @acme/ui (shared component lib)     |
 

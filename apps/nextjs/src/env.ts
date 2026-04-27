@@ -9,6 +9,8 @@ export const env = createEnv({
   },
   server: {
     POSTGRES_URL: z.string().optional(),
+    /** Public origin for Better Auth (e.g. https://getclassica.com). Required for Discord OAuth when the canonical URL is a custom domain; Vercel’s default `*.vercel.app` redirect_uri will not match Discord if you only registered the custom domain. */
+    AUTH_URL: z.string().url().optional(),
     AUTH_SECRET: z.string().optional(),
     AUTH_DISCORD_ID: z.string().optional(),
     AUTH_DISCORD_SECRET: z.string().optional(),
