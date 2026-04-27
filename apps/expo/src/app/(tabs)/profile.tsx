@@ -321,7 +321,6 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const { data: session } = authClient.useSession();
   const name = session?.user.name ?? "Guest";
-  const [flippedIds, setFlippedIds] = useState<Set<string>>(new Set());
   const [newlyEarnedBadgeId, setNewlyEarnedBadgeId] = useState<string | null>(
     null,
   );
@@ -332,18 +331,6 @@ export default function ProfileScreen() {
   const popupOpacity = useSharedValue(0);
   const badgeRotation = useSharedValue(0);
   const overlayFlipRotation = useSharedValue(0);
-
-  const toggleFlip = (id: string) => {
-    setFlippedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
 
   useEffect(() => {
     const userId = session?.user.id;
@@ -384,7 +371,6 @@ export default function ProfileScreen() {
     popupOpacity.value = 0;
     popupScale.value = withSpring(1, { damping: 15, stiffness: 180 });
     popupOpacity.value = withTiming(1, { duration: 220 });
-    overlayFlipRotation.value = 0;
   }, [overlayBadgeId, popupOpacity, popupScale]);
 
   useEffect(() => {
@@ -402,20 +388,6 @@ export default function ProfileScreen() {
     overlayFlipped,
   ]);
 
-  useEffect(() => {
-    if (!overlayBadgeId) return;
-    overlayFlipRotation.value = withTiming(
-      overlayBadgeIsUnlocked && overlayFlipped ? 180 : 0,
-      {
-        duration: 700,
-      },
-    );
-  }, [
-    overlayBadgeId,
-    overlayBadgeIsUnlocked,
-    overlayFlipRotation,
-    overlayFlipped,
-  ]);
   const popupStyle = useAnimatedStyle(() => ({
     transform: [{ scale: popupScale.value }],
     opacity: popupOpacity.value,
@@ -466,6 +438,17 @@ export default function ProfileScreen() {
     setNewlyEarnedBadgeId(null);
     setPreviewBadgeId(null);
     setOverlayFlipped(false);
+  };
+
+  const handleOverlayBadgePress = () => {
+    if (!overlayBadgeIsUnlocked) return;
+    setOverlayFlipped((prev) => {
+      const next = !prev;
+      overlayFlipRotation.value = withTiming(next ? 180 : 0, {
+        duration: 700,
+      });
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -554,7 +537,7 @@ export default function ProfileScreen() {
               key={badge.id}
               badge={badge}
               earned={badge.id === "bach"}
-              isFlipped={flippedIds.has(badge.id)}
+              isFlipped={false}
               onFlip={() => openBadgeOverlay(badge.id)}
             />
           ))}
@@ -595,10 +578,7 @@ export default function ProfileScreen() {
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => {
-                  if (!overlayBadgeIsUnlocked) return;
-                  setOverlayFlipped((v) => !v);
-                }}
+                onPress={handleOverlayBadgePress}
                 className="relative mb-4 h-36 w-36"
               >
                 <Animated.View

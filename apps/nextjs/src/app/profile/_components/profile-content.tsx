@@ -357,7 +357,6 @@ export function ProfileContent() {
         )
       : 0;
 
-  const [flippedIds, setFlippedIds] = useState<Set<string>>(new Set());
   const [newlyEarnedBadgeId, setNewlyEarnedBadgeId] = useState<string | null>(
     null,
   );
@@ -373,24 +372,13 @@ export function ProfileContent() {
   const overlayBadgeIsUnlocked = newlyEarnedBadge?.earned ?? false;
 
   useEffect(() => {
-    if (!isSignedIn) return;
-    const userId = session?.user.id;
-    if (!userId) return;
+    if (session === null) return;
+    const userId = session.user.id;
 
     const storageKey = `classica-earned-badges:${userId}`;
-    const prevRaw = window.localStorage.getItem(storageKey);
-    const prev = prevRaw ? (JSON.parse(prevRaw) as string[]) : [];
     const earnedNow = badgesWithState.filter((b) => b.earned).map((b) => b.id);
-    const newlyEarned = earnedNow.find((id) => !prev.includes(id));
-
-    if (newlyEarned && newlyEarned !== newlyEarnedBadgeId) {
-      setNewlyEarnedBadgeId(newlyEarned);
-      setOverlayFlipped(false);
-      setShareFeedback(null);
-    }
-
     window.localStorage.setItem(storageKey, JSON.stringify(earnedNow));
-  }, [badgesWithState, isSignedIn, newlyEarnedBadgeId, session?.user.id]);
+  }, [badgesWithState, session]);
 
   useEffect(() => {
     if (!overlayBadgeId) return;
@@ -401,18 +389,6 @@ export function ProfileContent() {
     };
   }, [overlayBadgeId]);
 
-  const toggleFlip = (id: string) => {
-    setFlippedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
   async function handleShareBadge() {
     if (!newlyEarnedBadge) return;
     const shareText = `I just earned the "${newlyEarnedBadge.label}" badge on Classica!`;
@@ -420,7 +396,7 @@ export function ProfileContent() {
       typeof window !== "undefined" ? window.location.origin : "";
 
     try {
-      if (navigator.share) {
+      if (typeof navigator.share === "function") {
         await navigator.share({
           title: "New Classica badge unlocked",
           text: shareText,
@@ -429,7 +405,6 @@ export function ProfileContent() {
         setShareFeedback("Shared!");
         return;
       }
-
       await navigator.clipboard.writeText(`${shareText} ${shareUrl}`.trim());
       setShareFeedback("Copied share text to clipboard.");
     } catch {
@@ -532,7 +507,7 @@ export function ProfileContent() {
           <BadgeCard
             key={badge.id}
             badge={badge}
-            isFlipped={flippedIds.has(badge.id)}
+            isFlipped={false}
             earned={badge.earned}
             onFlip={() => openBadgeOverlay(badge.id)}
           />
