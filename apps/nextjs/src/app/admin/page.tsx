@@ -26,6 +26,14 @@ function getFormString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function isDifficulty(value: string): value is (typeof DIFFICULTIES)[number] {
+  return DIFFICULTIES.includes(value as (typeof DIFFICULTIES)[number]);
+}
+
+function isGenre(value: string): value is (typeof GENRES)[number] {
+  return GENRES.includes(value as (typeof GENRES)[number]);
+}
+
 function adminToken(password: string) {
   return createHash("sha256").update(password).digest("hex");
 }
@@ -80,10 +88,8 @@ async function updateEvent(formData: FormData) {
   const dateRaw = getFormString(formData, "date");
 
   if (!eventId || !title || !venue || !dateRaw) return;
-  if (!DIFFICULTIES.includes(difficulty as (typeof DIFFICULTIES)[number])) {
-    return;
-  }
-  if (!GENRES.includes(genre as (typeof GENRES)[number])) return;
+  if (!isDifficulty(difficulty)) return;
+  if (!isGenre(genre)) return;
 
   const parsedDate = new Date(dateRaw);
   if (Number.isNaN(parsedDate.getTime())) return;
@@ -93,8 +99,8 @@ async function updateEvent(formData: FormData) {
     .set({
       title,
       venue,
-      difficulty,
-      genre,
+      difficulty: difficulty,
+      genre: genre,
       date: parsedDate,
     })
     .where(eq(Event.id, eventId));
