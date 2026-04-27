@@ -48,12 +48,31 @@ export const ALL_VENUE_SOURCES: ScrapedVenue[] = [
 
 function parseScrapedDate(dateText: string | undefined): Date | null {
   if (!dateText?.trim()) return null;
-  // Many scraped feeds use "Mon, Jan 5, 2026 7:30 PM - 9:00 PM" or "… | …".
-  const firstSegment = dateText.split(/\s[-|]\s/)[0];
+
+  const raw = dateText.replace(/\s+/g, " ").trim();
+  const direct = new Date(raw);
+  if (!Number.isNaN(direct.getTime())) return direct;
+
+  // NYCB often returns ranges like:
+  // "Wed Apr 22 - Fri May 8, 2026"
+  // Parse first day and carry over year from the right side.
+  const rangeWithYear =
+    /^([A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2})\s*-\s*[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2},\s*(\d{4})$/.exec(
+      raw,
+    );
+  if (rangeWithYear) {
+    const left = `${rangeWithYear[1]}, ${rangeWithYear[2]}`;
+    const parsedLeft = new Date(left);
+    if (!Number.isNaN(parsedLeft.getTime())) return parsedLeft;
+  }
+
+  // Common feeds append details after a separator:
+  // "Apr 27, 2026 12:00 pm - Apr 30, 2026 12:00 pm"
+  // "May 10, 2026 | Alice Tully Hall"
+  const firstSegment = raw.split(/\s[-|]\s/)[0]?.trim();
   if (!firstSegment) return null;
-  const cleaned = firstSegment.replace(/\s+/g, " ").trim();
-  const parsed = new Date(cleaned);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  const parsedFirst = new Date(firstSegment);
+  return Number.isNaN(parsedFirst.getTime()) ? null : parsedFirst;
 }
 
 function stripCancellationTitlePrefix(title: string): string {
