@@ -1,6 +1,8 @@
 -- Supabase pg_cron job: refresh all scraped venue events daily.
--- Hits /api/cron/sync-venues which runs every venue scraper concurrently
--- (Carnegie Hall, Met Opera, Juilliard, MSM) and upserts into LiveEvent.
+-- Hits /api/cron/sync-venues. Each venue scraper runs concurrently (Promise.allSettled);
+-- one venue failing does not block the others. Add ?async=1 to return 202 immediately and
+-- run the sync in the background (short pg_net timeout is enough); full JSON is logged as
+-- one JSON line per run (search logs for venue-sync-complete).
 --
 -- Run this once in the Supabase SQL editor; keep in source control.
 -- Dependencies: pg_cron (scheduling) + pg_net (HTTP calls).
@@ -54,12 +56,12 @@ select
     $cron$
     select
       net.http_get(
-        url     := current_setting('app.settings.cron_target_url'),
+        url     := current_setting('app.settings.cron_target_url') || '?async=1',
         headers := jsonb_build_object(
           'Authorization',  'Bearer ' || current_setting('app.settings.cron_secret'),
           'x-supabase-cron', '1'
         ),
-        timeout_milliseconds := 120000
+        timeout_milliseconds := 30000
       );
     $cron$
   );
@@ -86,7 +88,7 @@ select
 
 -- Trigger a test run right now (doesn't wait for 14:00 UTC):
 --   select net.http_get(
---     url     := current_setting('app.settings.cron_target_url'),
+--     url     := current_setting('app.settings.cron_target_url') || '?async=1',
 --     headers := jsonb_build_object(
 --       'Authorization',  'Bearer ' || current_setting('app.settings.cron_secret'),
 --       'x-supabase-cron', '1'

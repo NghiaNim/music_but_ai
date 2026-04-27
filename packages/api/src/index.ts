@@ -25,6 +25,8 @@ export {
   syncAllVenuesToLiveEvents,
   syncMsmPerformancesToLiveEvents,
   syncVenueToLiveEvents,
+  type SyncAllVenuesSummary,
   type VenueSyncResult,
+  type VenueSyncStatus,
 } from "./live-event-sync";
 export type { RouterInputs, RouterOutputs };

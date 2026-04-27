@@ -101,12 +101,26 @@ function inferGenreFromTitle(
   return "solo_recital";
 }
 
+export type VenueSyncStatus = "success" | "skipped" | "failed";
+
 export interface VenueSyncResult {
   source: ScrapedVenue;
+  /** `success` = rows persisted; `skipped` = scraper returned 0 rows (no DB wipe); `failed` = scraper threw. */
+  status: VenueSyncStatus;
   upserted: number;
   removed: number;
+  /** @deprecated use `status === "skipped"` */
   skipped?: boolean;
   error?: string;
+  durationMs: number;
+}
+
+export interface SyncAllVenuesSummary {
+  venueCount: number;
+  succeeded: number;
+  skipped: number;
+  failed: number;
+  failures: { source: ScrapedVenue; error: string }[];
 }
 
 /**
@@ -121,21 +135,32 @@ export async function syncVenueToLiveEvents(
 ): Promise<VenueSyncResult> {
   const scraper = SCRAPERS[source];
   const defaults = VENUE_DEFAULTS[source];
+  const started = Date.now();
 
   let scraped: ScrapedEvent[];
   try {
     scraped = await scraper();
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     return {
       source,
+      status: "failed",
       upserted: 0,
       removed: 0,
-      error: err instanceof Error ? err.message : String(err),
+      error: message,
+      durationMs: Date.now() - started,
     };
   }
 
   if (scraped.length === 0) {
-    return { source, upserted: 0, removed: 0, skipped: true };
+    return {
+      source,
+      status: "skipped",
+      upserted: 0,
+      removed: 0,
+      skipped: true,
+      durationMs: Date.now() - started,
+    };
   }
 
   const now = new Date();
@@ -187,19 +212,41 @@ export async function syncVenueToLiveEvents(
     )
     .returning({ id: LiveEvent.id });
 
-  return { source, upserted: scraped.length, removed: removedRows.length };
+  return {
+    source,
+    status: "success",
+    upserted: scraped.length,
+    removed: removedRows.length,
+    durationMs: Date.now() - started,
+  };
 }
 
 /**
- * Run every venue scraper concurrently and persist results. Failures in one
- * venue never block the others.
+ * Run every venue scraper **in parallel** (`Promise.allSettled`) and persist
+ * each source independently. NY Phil, NYCB, etc. do not await each other;
+ * a slow or failing scraper only affects its own `VenueSyncResult` row.
  */
+function buildSyncSummary(results: VenueSyncResult[]): SyncAllVenuesSummary {
+  const failures = results
+    .filter((r) => r.status === "failed" && r.error)
+    .map((r) => ({ source: r.source, error: r.error ?? "unknown error" }));
+  return {
+    venueCount: results.length,
+    succeeded: results.filter((r) => r.status === "success").length,
+    skipped: results.filter((r) => r.status === "skipped").length,
+    failed: results.filter((r) => r.status === "failed").length,
+    failures,
+  };
+}
+
 export async function syncAllVenuesToLiveEvents(
   database: Database = db,
 ): Promise<{
   totalUpserted: number;
   totalRemoved: number;
   results: VenueSyncResult[];
+  summary: SyncAllVenuesSummary;
+  allSucceeded: boolean;
 }> {
   await database
     .update(LiveEvent)
@@ -223,16 +270,22 @@ export async function syncAllVenuesToLiveEvents(
     if (r.status === "fulfilled") return r.value;
     return {
       source,
+      status: "failed" as const,
       upserted: 0,
       removed: 0,
       error: r.reason instanceof Error ? r.reason.message : String(r.reason),
+      durationMs: 0,
     };
   });
+
+  const summary = buildSyncSummary(results);
 
   return {
     totalUpserted: results.reduce((sum, r) => sum + r.upserted, 0),
     totalRemoved: results.reduce((sum, r) => sum + r.removed, 0),
     results,
+    summary,
+    allSucceeded: summary.failed === 0,
   };
 }
 

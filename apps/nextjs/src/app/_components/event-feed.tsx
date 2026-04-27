@@ -153,9 +153,32 @@ function matchesTicketedFilter(
 
 export function FeaturedEvents() {
   const trpc = useTRPC();
-  const { data: events } = useSuspenseQuery(trpc.event.all.queryOptions({}));
+  const { data: community } = useSuspenseQuery(trpc.event.all.queryOptions({}));
+  const { data: livePage } = useSuspenseQuery(
+    trpc.liveEvent.page.queryOptions({
+      upcomingOnly: true,
+      limit: 50,
+      cursor: 0,
+    }),
+  );
 
-  const featured = events.slice(0, 4);
+  const liveEvents = livePage?.items ?? [];
+  const merged: UnifiedRow[] = [
+    ...community.map((event) => ({ kind: "created" as const, event })),
+    ...liveEvents.map((event) => ({ kind: "live" as const, event })),
+  ];
+  merged.sort((a, b) => {
+    const ta =
+      a.kind === "created"
+        ? new Date(a.event.date).getTime()
+        : liveSortTime(a.event);
+    const tb =
+      b.kind === "created"
+        ? new Date(b.event.date).getTime()
+        : liveSortTime(b.event);
+    return ta - tb;
+  });
+  const featured = merged.slice(0, 4);
 
   if (featured.length === 0) {
     return (
@@ -167,9 +190,13 @@ export function FeaturedEvents() {
 
   return (
     <div className="flex flex-col gap-3">
-      {featured.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
+      {featured.map((row) =>
+        row.kind === "created" ? (
+          <EventCard key={row.event.id} event={row.event} />
+        ) : (
+          <LiveEventCard key={row.event.id} event={row.event} />
+        ),
+      )}
     </div>
   );
 }
@@ -467,18 +494,19 @@ export function EventFeed() {
   );
 }
 
-/** e.g. "Sat, May 2 · 7:30 PM" */
+/** e.g. "Sat, May 2, 2026 · 7:30 PM" */
 function formatFriendlyDate(date: Date): string {
   const time = date.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
   });
   const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
-  const monthDay = date.toLocaleDateString("en-US", {
+  const monthDayYear = date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    year: "numeric",
   });
-  return `${weekday}, ${monthDay} · ${time}`;
+  return `${weekday}, ${monthDayYear} · ${time}`;
 }
 
 /** Parsed instant for live cards (DB `date` or ISO / human `dateText`). */
@@ -494,7 +522,7 @@ function parseLiveEventInstant(ev: LiveEventItem): Date | null {
   return null;
 }
 
-/** Same date line as community `EventCard` (e.g. "Sat, May 2 · 7:30 PM"). */
+/** Same date line as community `EventCard` (e.g. "Sat, May 2, 2026 · 7:30 PM"). */
 function liveEventCardWhenLine(ev: LiveEventItem): string {
   const d = parseLiveEventInstant(ev);
   if (d) return formatFriendlyDate(d);

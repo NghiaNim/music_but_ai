@@ -831,50 +831,152 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
   return [...byKey.values()];
 }
 
+/**
+ * NY Phil dropped JSON-LD from SSR; `/concerts-tickets/` is mostly a client app shell.
+ * Production pages `/concerts-tickets/{seasonYYZZ}/{slug}/` are linked from explore hubs
+ * and expose `og:title`, `og:description` (with real dates), and `og:image` server-side.
+ */
+const NY_PHIL_EXPLORE_SEED_PATHS = [
+  "/concerts-tickets/explore/",
+  "/concerts-tickets/explore/dudamel-inaugural-season/",
+  "/concerts-tickets/explore/one-night/",
+  "/concerts-tickets/explore/virtuoso-violinists/",
+  "/concerts-tickets/explore/films",
+  "/concerts-tickets/explore/star-pianists/",
+  "/concerts-tickets/explore/symphonies/",
+  "/concerts-tickets/explore/beethoven-in-new-york/",
+  "/concerts-tickets/explore/variations-on-america/",
+  "/concerts-tickets/explore/us-at-250/",
+  "/concerts-tickets/explore/holidays/",
+  "/concerts-tickets/explore/merkin/",
+  "/concerts-tickets/explore/artist-spotlight/",
+  "/concerts-tickets/explore/artists-in-residence-2026/",
+  "/concerts-tickets/explore/parks/",
+  "/concerts-tickets/explore/vail/",
+  "/concerts-tickets/explore/sound-on/",
+  "/concerts-tickets/explore/nightcap/",
+  "/concerts-tickets/explore/project-19/",
+] as const;
+
+const NY_PHIL_PRODUCTION_HREF = /\/concerts-tickets\/\d{4}\/[a-z0-9-]+\/?/gi;
+
+function discoverNyPhilProductionUrls(html: string, base: string): string[] {
+  const out = new Set<string>();
+  for (const m of html.matchAll(NY_PHIL_PRODUCTION_HREF)) {
+    let path = m[0];
+    if (!path.startsWith("/")) continue;
+    if (!path.endsWith("/")) path = `${path}/`;
+    out.add(toAbsoluteUrl(path, base));
+  }
+  return [...out];
+}
+
+/** Pull a machine-parseable first date from NY Phil marketing copy (og:description). */
+function nyPhilDateHintFromDescription(desc: string): string | undefined {
+  const d = desc.replace(/\s+/g, " ").trim();
+  if (!d) return undefined;
+
+  const rangeMonth = /([A-Z][a-z]+ \d{1,2})[–-](\d{1,2}), (\d{4})/.exec(d);
+  if (rangeMonth) {
+    return `${rangeMonth[1]}, ${rangeMonth[3]}`;
+  }
+  const monthDayYear = /([A-Z][a-z]+ \d{1,2}, \d{4})/.exec(d);
+  if (monthDayYear) return monthDayYear[1];
+  const iso = /\b(\d{4}-\d{2}-\d{2})\b/.exec(d);
+  if (iso) return iso[1];
+  return undefined;
+}
+
+function nyPhilSortTime(ev: ScrapedEvent): number {
+  if (!ev.dateText?.trim()) return Number.MAX_SAFE_INTEGER;
+  const hint = nyPhilDateHintFromDescription(ev.dateText) ?? ev.dateText;
+  const t = new Date(hint).getTime();
+  return Number.isNaN(t) ? Number.MAX_SAFE_INTEGER : t;
+}
+
+async function scrapeNyPhilProductionPage(
+  eventUrl: string,
+): Promise<ScrapedEvent | null> {
+  try {
+    const html = await fetchHtml(eventUrl);
+    if (isBlockedHtml(html)) return null;
+    const $ = load(html);
+    const ogTitle = $('meta[property="og:title"]').attr("content")?.trim();
+    const description = $('meta[property="og:description"]')
+      .attr("content")
+      ?.trim();
+    const ogImage = $('meta[property="og:image"]').attr("content")?.trim();
+    const ogUrl = $('meta[property="og:url"]').attr("content")?.trim();
+
+    if (!ogTitle) return null;
+    const title = ogTitle.replace(/\s*[-–]\s*NY Phil\s*$/i, "").trim();
+    if (!title || title.length < 4) return null;
+
+    const dateHint = description
+      ? nyPhilDateHintFromDescription(description)
+      : undefined;
+    const dateText =
+      dateHint ??
+      (description && description.length > 0
+        ? description.slice(0, 240)
+        : undefined);
+
+    const canonical = (ogUrl || eventUrl).split("?")[0] ?? eventUrl;
+    const posterImageUrl =
+      ogImage && ogImage.startsWith("http") ? ogImage : undefined;
+
+    return {
+      source: "ny_phil",
+      title,
+      dateText,
+      venueName: "New York Philharmonic",
+      location: "New York, NY",
+      eventUrl: canonical,
+      buyUrl: canonical,
+      posterImageUrl,
+      genreHint: "orchestral",
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function scrapeNyPhil(): Promise<ScrapedEvent[]> {
   const base = "https://www.nyphil.org";
-  const html = await fetchHtml(`${base}/concerts-tickets/`);
-  if (isBlockedHtml(html)) return [];
-  const $ = load(html);
-  const byUrl = new Map<string, ScrapedEvent>();
+  const found = new Set<string>();
 
-  for (const script of $('script[type="application/ld+json"]').toArray()) {
-    const json = $(script).contents().text().trim();
-    if (!json) continue;
+  for (const path of NY_PHIL_EXPLORE_SEED_PATHS) {
     try {
-      const parsed = JSON.parse(json) as unknown;
-      const events: Record<string, unknown>[] = [];
-      collectJsonLdEvents(parsed, events);
-      for (const ev of events) {
-        const title = pickText(ev, "name", "title")?.trim();
-        const rawUrl = pickText(ev, "url");
-        if (!title || !rawUrl) continue;
-        const eventUrl = rawUrl.startsWith("http")
-          ? rawUrl
-          : toAbsoluteUrl(rawUrl, base);
-        const startDate = pickText(ev, "startDate");
-        const image = imageUrlFromJsonLdRecord(ev, base);
-        byUrl.set(eventUrl, {
-          source: "ny_phil",
-          title,
-          dateText: startDate,
-          venueName: "New York Philharmonic",
-          location: "New York, NY",
-          eventUrl,
-          buyUrl: eventUrl,
-          posterImageUrl: image,
-          genreHint: "orchestral",
-        });
-      }
+      const html = await fetchHtml(`${base}${path}`);
+      if (isBlockedHtml(html)) continue;
+      for (const url of discoverNyPhilProductionUrls(html, base)) found.add(url);
     } catch {
-      /* ignore malformed JSON-LD blocks */
+      /* ignore failed seed */
     }
   }
 
-  // Keep only explicit JSON-LD event rows.
-  // The NY Phil page is heavily client-rendered and generic nav/explore links
-  // can otherwise be misclassified as performances.
-  return enrichEventsWithPageImages([...byUrl.values()]);
+  const urls = [...found].slice(0, 120);
+  const scraped: ScrapedEvent[] = [];
+  const batchSize = 6;
+  for (let i = 0; i < urls.length; i += batchSize) {
+    const chunk = urls.slice(i, i + batchSize);
+    const batch = await Promise.all(
+      chunk.map((u) => scrapeNyPhilProductionPage(u)),
+    );
+    for (const ev of batch) {
+      if (ev) scraped.push(ev);
+    }
+  }
+
+  const byUrl = new Map<string, ScrapedEvent>();
+  for (const ev of scraped) {
+    byUrl.set(ev.eventUrl, ev);
+  }
+  const unique = [...byUrl.values()].sort(
+    (a, b) => nyPhilSortTime(a) - nyPhilSortTime(b) || a.title.localeCompare(b.title),
+  );
+
+  return enrichEventsWithPageImages(unique);
 }
 
 export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {

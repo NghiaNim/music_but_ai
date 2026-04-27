@@ -11,6 +11,13 @@ import { OnboardingCTA } from "./_components/onboarding-cta";
 
 export default async function HomePage() {
   prefetch(trpc.event.all.queryOptions({}));
+  prefetch(
+    trpc.liveEvent.page.queryOptions({
+      upcomingOnly: true,
+      limit: 50,
+      cursor: 0,
+    }),
+  );
   const session = await getSession();
   const firstName = session?.user.name.split(" ")[0] ?? "friend";
 
