@@ -1,5 +1,4 @@
-import { after } from "next/server";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import { syncAllVenuesToLiveEvents } from "@acme/api";
 import { db } from "@acme/db/client";
@@ -15,7 +14,9 @@ function authorizeCron(request: Request): boolean {
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 
-function venuePayload(result: Awaited<ReturnType<typeof syncAllVenuesToLiveEvents>>) {
+function venuePayload(
+  result: Awaited<ReturnType<typeof syncAllVenuesToLiveEvents>>,
+) {
   const sourceHealth = result.results.reduce<
     Record<
       string,

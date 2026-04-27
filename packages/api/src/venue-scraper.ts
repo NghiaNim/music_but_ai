@@ -164,49 +164,6 @@ interface CarnegieSparqlBinding {
   venueName?: { value: string };
 }
 
-function collectJsonLdEvents(node: unknown, out: Record<string, unknown>[]) {
-  if (!node) return;
-  if (Array.isArray(node)) {
-    for (const item of node) collectJsonLdEvents(item, out);
-    return;
-  }
-  if (typeof node !== "object") return;
-  const obj = node as Record<string, unknown>;
-  const type = obj["@type"];
-  const isEvent =
-    type === "Event" ||
-    (Array.isArray(type) && type.some((v) => String(v) === "Event"));
-  if (isEvent) out.push(obj);
-  for (const value of Object.values(obj)) {
-    collectJsonLdEvents(value, out);
-  }
-}
-
-function absoluteImageUrl(
-  candidate: unknown,
-  base: string,
-): string | undefined {
-  const raw = valueToText(candidate)?.trim();
-  if (!raw) return undefined;
-  if (raw.startsWith("http")) return raw;
-  if (raw.startsWith("//")) return `https:${raw}`;
-  if (raw.startsWith("/")) return `${base}${raw}`;
-  return undefined;
-}
-
-function imageUrlFromJsonLdRecord(
-  record: Record<string, unknown>,
-  base: string,
-): string | undefined {
-  const direct = absoluteImageUrl(record.image, base);
-  if (direct) return direct;
-  const nested =
-    record.image && typeof record.image === "object"
-      ? absoluteImageUrl((record.image as Record<string, unknown>).url, base)
-      : undefined;
-  return nested;
-}
-
 async function enrichEventsWithPageImages(
   events: ScrapedEvent[],
 ): Promise<ScrapedEvent[]> {
@@ -921,9 +878,8 @@ async function scrapeNyPhilProductionPage(
         ? description.slice(0, 240)
         : undefined);
 
-    const canonical = (ogUrl || eventUrl).split("?")[0] ?? eventUrl;
-    const posterImageUrl =
-      ogImage && ogImage.startsWith("http") ? ogImage : undefined;
+    const canonical = (ogUrl ?? eventUrl).split("?")[0] ?? eventUrl;
+    const posterImageUrl = ogImage?.startsWith("http") ? ogImage : undefined;
 
     return {
       source: "ny_phil",
@@ -949,7 +905,8 @@ export async function scrapeNyPhil(): Promise<ScrapedEvent[]> {
     try {
       const html = await fetchHtml(`${base}${path}`);
       if (isBlockedHtml(html)) continue;
-      for (const url of discoverNyPhilProductionUrls(html, base)) found.add(url);
+      for (const url of discoverNyPhilProductionUrls(html, base))
+        found.add(url);
     } catch {
       /* ignore failed seed */
     }
@@ -973,7 +930,8 @@ export async function scrapeNyPhil(): Promise<ScrapedEvent[]> {
     byUrl.set(ev.eventUrl, ev);
   }
   const unique = [...byUrl.values()].sort(
-    (a, b) => nyPhilSortTime(a) - nyPhilSortTime(b) || a.title.localeCompare(b.title),
+    (a, b) =>
+      nyPhilSortTime(a) - nyPhilSortTime(b) || a.title.localeCompare(b.title),
   );
 
   return enrichEventsWithPageImages(unique);

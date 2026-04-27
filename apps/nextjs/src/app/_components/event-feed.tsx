@@ -162,7 +162,7 @@ export function FeaturedEvents() {
     }),
   );
 
-  const liveEvents = livePage?.items ?? [];
+  const liveEvents = livePage.items;
   const merged: UnifiedRow[] = [
     ...community.map((event) => ({ kind: "created" as const, event })),
     ...liveEvents.map((event) => ({ kind: "live" as const, event })),
