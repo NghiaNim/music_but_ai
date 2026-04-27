@@ -322,6 +322,7 @@ LIMIT 500`;
           weekday: "short",
           month: "short",
           day: "numeric",
+          year: "numeric",
           hour: "numeric",
           minute: "2-digit",
           timeZone: "America/New_York",
@@ -907,6 +908,22 @@ export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
     const href = root.attr("href")?.trim() ?? "";
     if (!href) continue;
     if (/\/season-and-tickets\/seasons\/?$/i.test(href)) continue;
+    const normalizedPath = (() => {
+      try {
+        return href.startsWith("http") ? new URL(href).pathname : href;
+      } catch {
+        return href;
+      }
+    })();
+    // Keep only true production detail pages:
+    // /season-and-tickets/{spring|fall|winter}-{year}/{production-slug}
+    if (
+      !/^\/season-and-tickets\/(?:spring|fall|winter)-\d{4}\/[^/]+\/?$/i.test(
+        normalizedPath,
+      )
+    ) {
+      continue;
+    }
     const title =
       root.find("h2, h3, h4").first().text().trim() ||
       root.text().replace(/\s+/g, " ").trim();
