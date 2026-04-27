@@ -225,59 +225,6 @@ async function enrichEventsWithPageImages(
   return enriched;
 }
 
-function normalizeInlineText(text: string): string {
-  return text.replace(/\s+/g, " ").trim();
-}
-
-async function fetchNycBalletPageMeta(input: {
-  eventUrl: string;
-}): Promise<{ imageUrl?: string; dateText?: string }> {
-  try {
-    const html = await fetchHtml(input.eventUrl);
-    if (isBlockedHtml(html)) return {};
-    const $ = load(html);
-
-    const og = $('meta[property="og:image"]').attr("content")?.trim();
-    const tw = $('meta[name="twitter:image"]').attr("content")?.trim();
-    const imageUrl =
-      (og?.startsWith("http") ? og : undefined) ??
-      (tw?.startsWith("http") ? tw : undefined);
-
-    const start = normalizeInlineText(
-      $(".program-slide__dates .program-slide__start-date").first().text(),
-    );
-    const end = normalizeInlineText(
-      $(".program-slide__dates .program-slide__end-date").first().text(),
-    );
-    const yearMatch =
-      /\/season-and-tickets\/(?:spring|fall|winter)-(\d{4})\//i.exec(
-        input.eventUrl,
-      );
-    const year = yearMatch?.[1];
-    const dateText =
-      start && end ? `${start} - ${end}${year ? `, ${year}` : ""}` : undefined;
-
-    return { imageUrl, dateText };
-  } catch {
-    return {};
-  }
-}
-
-async function enrichNycBalletEvents(
-  events: ScrapedEvent[],
-): Promise<ScrapedEvent[]> {
-  const enriched: ScrapedEvent[] = [];
-  for (const ev of events) {
-    const meta = await fetchNycBalletPageMeta({ eventUrl: ev.eventUrl });
-    enriched.push({
-      ...ev,
-      posterImageUrl: ev.posterImageUrl?.trim() ?? meta.imageUrl,
-      dateText: ev.dateText?.trim() ?? meta.dateText,
-    });
-  }
-  return enriched;
-}
-
 /** Comparable `YYYY-MM-DDTHH:mm:ss` string in America/New_York (LOD uses NY wall times). */
 function carnegieNyWallComparable(d: Date): string {
   return new Intl.DateTimeFormat("sv-SE", {
@@ -932,84 +879,79 @@ export async function scrapeNyPhil(): Promise<ScrapedEvent[]> {
 
 export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
   const base = "https://www.nycballet.com";
-  const html = await fetchHtml(`${base}/season-and-tickets/seasons`);
-  if (isBlockedHtml(html)) return [];
-  const $ = load(html);
-  const byUrl = new Map<string, ScrapedEvent>();
-
-  for (const script of $('script[type="application/ld+json"]').toArray()) {
-    const json = $(script).contents().text().trim();
-    if (!json) continue;
-    try {
-      const parsed = JSON.parse(json) as unknown;
-      const events: Record<string, unknown>[] = [];
-      collectJsonLdEvents(parsed, events);
-      for (const ev of events) {
-        const title = pickText(ev, "name", "title")?.trim();
-        const rawUrl = pickText(ev, "url");
-        if (!title || !rawUrl) continue;
-        const eventUrl = rawUrl.startsWith("http")
-          ? rawUrl
-          : toAbsoluteUrl(rawUrl, base);
-        const startDate = pickText(ev, "startDate");
-        const image = imageUrlFromJsonLdRecord(ev, base);
-        byUrl.set(eventUrl, {
-          source: "nycballet",
-          title,
-          dateText: startDate,
-          venueName: "New York City Ballet",
-          location: "David H. Koch Theater, New York, NY",
-          eventUrl,
-          buyUrl: eventUrl,
-          posterImageUrl: image,
-          genreHint: "ballet",
-        });
-      }
-    } catch {
-      /* ignore malformed JSON-LD blocks */
-    }
+  const res = await fetch(`${base}/season-and-tickets/events/16`, {
+    headers: {
+      ...BROWSER_FETCH_HEADERS,
+      Accept: "application/json",
+      Referer: `${base}/season-and-tickets/calendar`,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch NYCB calendar API: ${res.status}`);
   }
 
-  for (const link of $('a[href*="/season-and-tickets/"]').toArray()) {
-    const root = $(link);
-    const href = root.attr("href")?.trim() ?? "";
-    if (!href) continue;
-    if (/\/season-and-tickets\/seasons\/?$/i.test(href)) continue;
-    const normalizedPath = (() => {
-      try {
-        return href.startsWith("http") ? new URL(href).pathname : href;
-      } catch {
-        return href;
-      }
-    })();
-    // Keep only true production detail pages:
-    // /season-and-tickets/{spring|fall|winter}-{year}/{production-slug}
-    if (
-      !/^\/season-and-tickets\/(?:spring|fall|winter)-\d{4}\/[^/]+\/?$/i.test(
-        normalizedPath,
-      )
-    ) {
-      continue;
-    }
-    const title =
-      root.find("h2, h3, h4").first().text().trim() ||
-      root.text().replace(/\s+/g, " ").trim();
-    if (!title || /^view season$/i.test(title)) continue;
-    const eventUrl = href.startsWith("http") ? href : toAbsoluteUrl(href, base);
-    if (!byUrl.has(eventUrl)) {
-      byUrl.set(eventUrl, {
-        source: "nycballet",
-        title,
-        venueName: "New York City Ballet",
-        location: "David H. Koch Theater, New York, NY",
-        eventUrl,
-        buyUrl: eventUrl,
-        genreHint: "ballet",
-      });
-    }
+  const data: unknown = await res.json();
+  if (!Array.isArray(data)) return [];
+
+  const startOfYesterday = new Date();
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+  startOfYesterday.setHours(0, 0, 0, 0);
+
+  const events: ScrapedEvent[] = [];
+
+  for (const row of data) {
+    if (!row || typeof row !== "object") continue;
+
+    const record = row as Record<string, unknown>;
+
+    // Only include actual performances — skip family events, workshops,
+    // talks/demos, digital events, and any other non-performance listings.
+    const keywords = Array.isArray(record.keywords) ? record.keywords : [];
+    const isPerformance = keywords.some(
+      (k) =>
+        k !== null &&
+        typeof k === "object" &&
+        pickText(k as Record<string, unknown>, "keyword") === "Performances",
+    );
+    if (!isPerformance) continue;
+
+    const title = pickText(record, "title")?.replace(/\s+/g, " ").trim();
+    const perfDate = pickText(record, "perf_date");
+    const perfNo = pickText(record, "perf_no");
+    const rawEventLink = pickText(record, "event_link");
+    if (!title || !perfDate || !perfNo || !rawEventLink) continue;
+
+    const start = new Date(perfDate);
+    if (Number.isNaN(start.getTime()) || start < startOfYesterday) continue;
+
+    const eventPage = rawEventLink.startsWith("http")
+      ? rawEventLink
+      : toAbsoluteUrl(rawEventLink, base);
+    const bookingLink = pickText(record, "booking_link");
+    const eventUrl = `${eventPage}#performance-${perfNo}`;
+    const image =
+      pickText(record, "listing_image") ??
+      pickText(record, "related_listing_image");
+    const prefix = pickText(record, "prefix");
+
+    events.push({
+      source: "nycballet",
+      title: prefix ? `${prefix}: ${title}` : title,
+      dateText: perfDate,
+      venueName: "New York City Ballet",
+      location: "David H. Koch Theater, New York, NY",
+      eventUrl,
+      buyUrl: bookingLink ?? eventPage,
+      posterImageUrl: image,
+      genreHint: "ballet",
+    });
   }
 
-  return enrichNycBalletEvents([...byUrl.values()]);
+  return events.sort((a, b) => {
+    const ta = a.dateText ? new Date(a.dateText).getTime() : 0;
+    const tb = b.dateText ? new Date(b.dateText).getTime() : 0;
+    return ta - tb;
+  });
 }
 
 export async function scrapeAllVenues(): Promise<ScrapedEvent[]> {

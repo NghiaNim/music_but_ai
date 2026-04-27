@@ -65,6 +65,31 @@ function buildLiveEventWhere(
   return conditions.length > 0 ? and(...conditions) : undefined;
 }
 
+type LiveEventRow = typeof LiveEvent.$inferSelect;
+
+function dateTextSortTime(dateText: string | null | undefined): number {
+  if (!dateText?.trim()) return Number.MAX_SAFE_INTEGER;
+
+  const raw = dateText.replace(/\s+/g, " ").trim();
+  const direct = new Date(raw).getTime();
+  if (!Number.isNaN(direct)) return direct;
+
+  const firstSegment = raw.split(/\s[-|]\s/)[0]?.trim();
+  if (!firstSegment) return Number.MAX_SAFE_INTEGER;
+
+  const year = /\b((?:19|20)\d{2})\b/.exec(raw)?.[1];
+  const firstWithYear =
+    year && !/\b(?:19|20)\d{2}\b/.test(firstSegment)
+      ? `${firstSegment}, ${year}`
+      : firstSegment;
+  const parsedFirst = new Date(firstWithYear).getTime();
+  return Number.isNaN(parsedFirst) ? Number.MAX_SAFE_INTEGER : parsedFirst;
+}
+
+function liveEventSortTime(row: LiveEventRow): number {
+  return row.date?.getTime() ?? dateTextSortTime(row.dateText);
+}
+
 export const liveEventRouter = {
   byId: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
@@ -87,6 +112,21 @@ export const liveEventRouter = {
     .query(async ({ ctx, input }) => {
       const where = buildLiveEventWhere(input);
       const take = input.limit + 1;
+
+      if (input.source === "nycballet") {
+        const rows = await ctx.db.query.LiveEvent.findMany({ where });
+        const sorted = rows.sort((a, b) => {
+          const diff = liveEventSortTime(a) - liveEventSortTime(b);
+          return diff || a.id.localeCompare(b.id);
+        });
+        const items = sorted.slice(input.cursor, input.cursor + input.limit);
+        const nextCursor =
+          input.cursor + input.limit < sorted.length
+            ? input.cursor + input.limit
+            : null;
+
+        return { items, nextCursor };
+      }
 
       const rows = await ctx.db.query.LiveEvent.findMany({
         where,

@@ -71,7 +71,12 @@ function parseScrapedDate(dateText: string | undefined): Date | null {
   // "May 10, 2026 | Alice Tully Hall"
   const firstSegment = raw.split(/\s[-|]\s/)[0]?.trim();
   if (!firstSegment) return null;
-  const parsedFirst = new Date(firstSegment);
+  const year = /\b((?:19|20)\d{2})\b/.exec(raw)?.[1];
+  const firstWithYear =
+    year && !/\b(?:19|20)\d{2}\b/.test(firstSegment)
+      ? `${firstSegment}, ${year}`
+      : firstSegment;
+  const parsedFirst = new Date(firstWithYear);
   return Number.isNaN(parsedFirst.getTime()) ? null : parsedFirst;
 }
 

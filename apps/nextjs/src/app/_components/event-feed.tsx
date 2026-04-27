@@ -99,14 +99,28 @@ const LIVE_VENUE_LABELS: Record<VenueSource, string> = {
 
 const LIVE_PAGE_SIZE = 15;
 
+function dateTextSortTime(dateText: string | null | undefined): number {
+  if (!dateText?.trim()) return Number.MAX_SAFE_INTEGER;
+
+  const raw = dateText.replace(/\s+/g, " ").trim();
+  const direct = new Date(raw).getTime();
+  if (!Number.isNaN(direct)) return direct;
+
+  const firstSegment = raw.split(/\s[-|]\s/)[0]?.trim();
+  if (!firstSegment) return Number.MAX_SAFE_INTEGER;
+
+  const year = /\b((?:19|20)\d{2})\b/.exec(raw)?.[1];
+  const firstWithYear =
+    year && !/\b(?:19|20)\d{2}\b/.test(firstSegment)
+      ? `${firstSegment}, ${year}`
+      : firstSegment;
+  const parsedFirst = new Date(firstWithYear).getTime();
+  return Number.isNaN(parsedFirst) ? Number.MAX_SAFE_INTEGER : parsedFirst;
+}
+
 function liveSortTime(ev: LiveEventItem): number {
   if (ev.date) return new Date(ev.date).getTime();
-  const raw = ev.dateText?.split(/\s*\|/)[0]?.trim();
-  if (raw) {
-    const t = Date.parse(raw);
-    if (!Number.isNaN(t)) return t;
-  }
-  return Number.MAX_SAFE_INTEGER;
+  return dateTextSortTime(ev.dateText);
 }
 
 function matchesCityFilter(row: UnifiedRow, city: string): boolean {
