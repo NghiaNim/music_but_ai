@@ -1,6 +1,6 @@
 import { after, NextResponse } from "next/server";
 
-import { syncAllVenuesToLiveEvents, tagUntaggedLiveEvents } from "@acme/api";
+import { syncAllVenuesToLiveEvents, tagUntaggedCatalog } from "@acme/api";
 import { db } from "@acme/db/client";
 
 import { env } from "~/env";
@@ -75,7 +75,7 @@ async function runSyncAndRespond() {
   // Tag any newly-upserted rows. Best-effort, non-blocking: we still
   // return the venue sync payload immediately and let tagging run in
   // the background.
-  after(() => tagUntaggedLiveEvents(db));
+  after(() => tagUntaggedCatalog(db));
   return NextResponse.json(venuePayload(result));
 }
 
@@ -93,7 +93,7 @@ export async function GET(request: Request) {
       try {
         const result = await syncAllVenuesToLiveEvents(db);
         logVenueSyncComplete(result);
-        await tagUntaggedLiveEvents(db);
+        await tagUntaggedCatalog(db);
       } catch (err) {
         console.error(
           JSON.stringify({

@@ -31,6 +31,17 @@ export type {
   TaggerInput,
 } from "./taste-tagger";
 
+export { deriveTasteProfile, heuristicTasteProfile } from "./taste-profile";
+export type {
+  ClipReactionForDerivation,
+  ConcertMotivation,
+  CrossGenreBridge,
+  DeriveOptions,
+  DeriveTasteProfileInput,
+  TasteProfile,
+  VisualAnswers,
+} from "./taste-profile";
+
 export {
   computeExperienceLevel,
   generateOnboardingReply,

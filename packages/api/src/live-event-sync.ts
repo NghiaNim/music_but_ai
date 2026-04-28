@@ -1,6 +1,6 @@
 import { and, eq, isNull, notInArray, sql } from "@acme/db";
 import { db } from "@acme/db/client";
-import { LiveEvent } from "@acme/db/schema";
+import { Event, LiveEvent } from "@acme/db/schema";
 
 import type { ScrapedEvent, ScrapedVenue } from "./venue-scraper";
 import { tagCatalog } from "./catalog-tagger";
@@ -291,14 +291,20 @@ export async function syncAllVenuesToLiveEvents(
 }
 
 /**
- * Run the catalog tagger over any rows still missing taste annotations.
- * Best-effort: any error here is logged but never thrown — taste tags
- * are useful but never block listing the event.
+ * Run the catalog tagger over any rows still missing taste annotations
+ * across BOTH `Event` (community-posted) and `LiveEvent` (scraped).
+ *
+ * Defensive design notes:
+ *   - The pre-check intentionally covers both tables. Earlier we only
+ *     checked `LiveEvent`, which short-circuited and silently left
+ *     untagged community Events behind once all LiveEvents were tagged.
+ *   - Best-effort throughout: errors are logged but never thrown.
+ *     Taste tags are useful but must never block listing an event.
  *
  * Caller decides whether to await: cron routes typically `void`-call
  * this inside `after()` so the HTTP response returns fast.
  */
-export async function tagUntaggedLiveEvents(
+export async function tagUntaggedCatalog(
   database: Database = db,
 ): Promise<void> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -309,12 +315,16 @@ export async function tagUntaggedLiveEvents(
     return;
   }
 
-  // Quick pre-check so we don't spin up the tagger when nothing's stale.
-  const rows = await database
+  const [liveRow] = await database
     .select({ count: sql<number>`count(*)::int` })
     .from(LiveEvent)
     .where(isNull(LiveEvent.taste));
-  const untagged = rows[0]?.count ?? 0;
+  const [eventRow] = await database
+    .select({ count: sql<number>`count(*)::int` })
+    .from(Event)
+    .where(isNull(Event.taste));
+
+  const untagged = (liveRow?.count ?? 0) + (eventRow?.count ?? 0);
   if (untagged === 0) return;
 
   try {
@@ -327,6 +337,9 @@ export async function tagUntaggedLiveEvents(
     console.warn(`[live-event-sync] taste tagging failed: ${message}`);
   }
 }
+
+/** @deprecated use `tagUntaggedCatalog` — same behavior, accurate name. */
+export const tagUntaggedLiveEvents = tagUntaggedCatalog;
 
 /** Backward-compat: previous public name. */
 export async function syncMsmPerformancesToLiveEvents(

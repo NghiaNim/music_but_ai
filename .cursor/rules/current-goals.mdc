@@ -15,8 +15,8 @@ We are adapting the original spec (kept verbatim at the bottom as **Appendix A**
 |---|------|--------|
 | 1 | Schema foundation (UserProfile taste cols + UserMusicEvent + OnboardingSession + EventTaste JSONB) | ✅ DONE |
 | 2 | Tag the catalog (enrich MUSIC_CATALOG; batch-tag Event + LiveEvent) | ✅ DONE |
-| 3 | Profile derivation (`deriveTasteProfile()` + tRPC `tasteProfile` router) | ⏭️ NEXT |
-| 4 | Recommender (content scoring + editorial rules + diversity, blends Event + LiveEvent) | pending |
+| 3 | Profile derivation (`deriveTasteProfile()` + tRPC `tasteProfile` router) | ✅ DONE |
+| 4 | Recommender (content scoring + editorial rules + diversity, blends Event + LiveEvent) | ⏭️ NEXT |
 | 5 | Visual cards onboarding (5 questions, resume via OnboardingSession) | pending |
 | 6 | Clips phase (auto-play, skip-ms capture, optional voice reaction) | pending |
 | 7 | Reveal animation + `/profile/taste` page | pending |
@@ -66,15 +66,24 @@ Deliberate adjustments mid-step: the first-pass prompt was too conservative (68%
 
 ---
 
-## Step 3 — NEXT: Profile derivation
+## Step 3 — DONE: Profile derivation
 
-- `packages/ai/src/taste-profile.ts` exports `deriveTasteProfile({ session, history? })` returning the full profile JSON. Uses OpenAI `response_format: { type: "json_schema", schema }` so we never hand-parse markdown fences.
-- `packages/api/src/router/taste-profile.ts`: `get`, `derive` (mutation, called at end of Step 6), `update` (manual corrections, preserves `lastDerivedAt`).
-- Falls back to a heuristic profile (built from visual answers only) if OpenAI is unavailable, so onboarding always completes.
+What landed:
+
+- **`packages/ai/src/taste-profile.ts`** — `deriveTasteProfile()` calls OpenAI with `response_format: { type: "json_schema", strict: true }`. Never hand-parses markdown. Always returns *something*: if OpenAI errors or there's no API key, falls back to `heuristicTasteProfile()` built from visual answers alone so the reveal screen never deadlocks.
+- **`heuristicTasteProfile()`** — pure function, also exported for the reveal animation's instant preview.
+- **Prompt design** — explicit signal weighting (clip replays > voice transcript > visual cards); explicit "evocative phrase, not raw enum" rule on `profileCards` (verified: "Grand orchestral sweep" instead of "grand").
+- **`packages/api/src/router/taste-profile.ts`** with three procedures:
+  - `get` — returns the user's profile or `null` if they haven't onboarded yet.
+  - `derive({ sessionId })` — reads `OnboardingSession`, hydrates clip reactions with `era`/`mood`/`label` from `MUSIC_CATALOG` (drops unknown clipIds defensively), runs derivation, upserts `UserProfile`, marks the session complete. **Idempotent** — re-running on a complete session returns the cached profile without spending tokens.
+  - `update` — partial-update validator, preserves `lastDerivedAt` so manual edits don't get clobbered by the next re-derivation.
+- Wired into `appRouter` as `tasteProfile`.
+
+Validation: end-to-end smoke test with synthetic Mahler-leaning user produced `Cathartic Symphony Enthusiast` archetype, surfaced Mahler/Tchaikovsky in the summary, and captured the film-score bridge from voice. Heuristic fallback also produced a coherent `Romantic Emotional Voyager` profile.
 
 ---
 
-## Step 4 — Recommender
+## Step 4 — NEXT: Recommender
 
 - `packages/api/src/recommendations/`:
   - `score.ts` — pure scoring function over a candidate `{ id, source: "event" | "live_event", taste }`.

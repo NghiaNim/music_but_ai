@@ -2,6 +2,8 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod/v4";
 
+import type { EventTasteAnnotation } from "@acme/db/schema";
+import { inferEventTaste } from "@acme/ai";
 import { and, asc, eq, gte, ilike, lte, or } from "@acme/db";
 import { Event } from "@acme/db/schema";
 import { EventFiltersSchema } from "@acme/validators";
@@ -9,6 +11,37 @@ import { EventFiltersSchema } from "@acme/validators";
 import { emailsForEventInterest } from "../event-subscribers";
 import { sendHostBroadcastEmails } from "../host-email";
 import { protectedProcedure, publicProcedure } from "../trpc";
+
+type Database = Parameters<typeof emailsForEventInterest>[0];
+
+/**
+ * Best-effort taste tagger for a single user-posted event. Runs out
+ * of band so the create/update mutation responds immediately.
+ *
+ * Defensive: any error here is logged and swallowed. Untagged events
+ * still surface in feeds and recommendations (they just don't get
+ * content-based score boosts) — and the catalog cron will pick them
+ * up on its next run as a safety net.
+ */
+async function tagEventInBackground(
+  database: Database,
+  eventId: string,
+  input: Parameters<typeof inferEventTaste>[0],
+): Promise<void> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return;
+  try {
+    const taste: EventTasteAnnotation = await inferEventTaste(input, {
+      apiKey,
+    });
+    await database.update(Event).set({ taste }).where(eq(Event.id, eventId));
+  } catch (err) {
+    console.warn(
+      `[event.tag] failed for ${eventId}:`,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+}
 
 const createFields = z.object({
   title: z.string().min(1).max(512),
@@ -90,18 +123,34 @@ export const eventRouter = {
     });
   }),
 
-  create: protectedProcedure.input(createFields).mutation(({ ctx, input }) => {
-    const { isFree, priceCents, ...rest } = input;
-    const pricing = resolvePricing({ isFree, priceCents });
-    return ctx.db
-      .insert(Event)
-      .values({
-        ...rest,
-        ...pricing,
-        createdBy: ctx.session.user.id,
-      })
-      .returning();
-  }),
+  create: protectedProcedure
+    .input(createFields)
+    .mutation(async ({ ctx, input }) => {
+      const { isFree, priceCents, ...rest } = input;
+      const pricing = resolvePricing({ isFree, priceCents });
+      const inserted = await ctx.db
+        .insert(Event)
+        .values({
+          ...rest,
+          ...pricing,
+          createdBy: ctx.session.user.id,
+        })
+        .returning();
+
+      const newRow = inserted[0];
+      if (newRow) {
+        // Fire-and-forget — never block the create response on AI.
+        void tagEventInBackground(ctx.db, newRow.id, {
+          title: newRow.title,
+          program: newRow.program,
+          description: newRow.description,
+          genre: newRow.genre,
+          venueName: newRow.venue,
+        });
+      }
+
+      return inserted;
+    }),
 
   update: protectedProcedure
     .input(
@@ -136,6 +185,25 @@ export const eventRouter = {
         .set({ ...rest, ...pricing })
         .where(eq(Event.id, eventId))
         .returning();
+
+      // Re-tag only if a field that influences the taste annotation
+      // actually changed. Cheap textual diff — avoids spending tokens
+      // on a date/image/price-only edit.
+      const tasteFieldsChanged =
+        existing.title !== rest.title ||
+        existing.program !== rest.program ||
+        existing.description !== rest.description ||
+        existing.genre !== rest.genre ||
+        existing.venue !== rest.venue;
+      if (updated && tasteFieldsChanged) {
+        void tagEventInBackground(ctx.db, updated.id, {
+          title: updated.title,
+          program: updated.program,
+          description: updated.description,
+          genre: updated.genre,
+          venueName: updated.venue,
+        });
+      }
 
       if (notifySubscribers && updated) {
         const recipients = await emailsForEventInterest(ctx.db, eventId);

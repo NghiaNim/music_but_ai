@@ -25,6 +25,7 @@ export {
   syncAllVenuesToLiveEvents,
   syncMsmPerformancesToLiveEvents,
   syncVenueToLiveEvents,
+  tagUntaggedCatalog,
   tagUntaggedLiveEvents,
   type SyncAllVenuesSummary,
   type VenueSyncResult,
