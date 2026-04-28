@@ -406,10 +406,12 @@ export function OnboardingFlow() {
         <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Track {musicIndex + 1} of 3
         </p>
-        <h2 className="text-center text-lg font-semibold">How did you like it?</h2>
+        <h2 className="text-center text-lg font-semibold">
+          How did you like it?
+        </h2>
         <div className="mx-auto w-full max-w-xs">
           <div className="mb-2 flex items-center justify-center">
-            <span className="text-foreground/80 tabular-nums rounded-full bg-[#ffffff] px-2.5 py-0.5 text-xs font-medium shadow-xs">
+            <span className="text-foreground/80 rounded-full bg-[#ffffff] px-2.5 py-0.5 text-xs font-medium tabular-nums shadow-xs">
               {currentRating} / 10
             </span>
           </div>

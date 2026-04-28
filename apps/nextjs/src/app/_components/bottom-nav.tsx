@@ -16,7 +16,8 @@ const NAV_ITEMS = [
 export function BottomNav() {
   const pathname = usePathname();
   const isChatPage = pathname === "/chat";
-  const isOnboarding = pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+  const isOnboarding =
+    pathname === "/onboarding" || pathname.startsWith("/onboarding/");
 
   if (isChatPage || isOnboarding) return null;
 
