@@ -15,7 +15,7 @@ export default async function ChatPage({
 
   return (
     <HydrateClient>
-      <div className="flex h-full flex-col">
+      <div className="flex h-dvh min-h-0 flex-col">
         <Suspense>
           <ChatInterface />
         </Suspense>
