@@ -58,6 +58,7 @@ export function OnboardingFlow() {
     medium: number;
     hard: number;
   }>({ easy: 5, medium: 5, hard: 5 });
+  const [musicSliderValue, setMusicSliderValue] = useState(5);
   const [statusText, setStatusText] = useState("");
   const [callDuration, setCallDuration] = useState(0);
   const [saved, setSaved] = useState(false);
@@ -262,8 +263,16 @@ export function OnboardingFlow() {
   const handleMusicRate = (value: number) => {
     const tier =
       musicIndex === 0 ? "easy" : musicIndex === 1 ? "medium" : "hard";
-    setRatings((prev) => ({ ...prev, [tier]: value }));
+    const nextValue = Math.max(1, Math.min(10, Math.round(value)));
+    setRatings((prev) => ({ ...prev, [tier]: nextValue }));
   };
+
+  useEffect(() => {
+    if (phase !== "music-rating") return;
+    const tier =
+      musicIndex === 0 ? "easy" : musicIndex === 1 ? "medium" : "hard";
+    setMusicSliderValue(ratings[tier]);
+  }, [phase, musicIndex]);
 
   const handleNextTrack = () => {
     if (musicAudioRef.current) musicAudioRef.current.pause();
@@ -393,26 +402,35 @@ export function OnboardingFlow() {
     const currentRating = ratings[tier];
 
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col items-center justify-center gap-6 overflow-x-hidden px-3 sm:px-4">
         <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Track {musicIndex + 1} of 3
         </p>
-        <h2 className="text-lg font-semibold">How did you like it?</h2>
-        <div className="flex gap-1.5">
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((v) => (
-            <button
-              key={v}
-              onClick={() => handleMusicRate(v)}
-              className={cn(
-                "flex size-10 items-center justify-center rounded-full text-sm font-medium transition-all",
-                v <= currentRating
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted hover:bg-muted/80",
-              )}
-            >
-              {v}
-            </button>
-          ))}
+        <h2 className="text-center text-lg font-semibold">How did you like it?</h2>
+        <div className="mx-auto w-full max-w-xs">
+          <div className="mb-2 flex items-center justify-center">
+            <span className="text-foreground/80 tabular-nums rounded-full bg-[#ffffff] px-2.5 py-0.5 text-xs font-medium shadow-xs">
+              {currentRating} / 10
+            </span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            step="any"
+            value={musicSliderValue}
+            onChange={(e) => {
+              const next = Number(e.target.value);
+              setMusicSliderValue(next);
+              handleMusicRate(next);
+            }}
+            className="accent-primary h-10 w-full cursor-ew-resize touch-manipulation"
+            aria-label="Rate this track from 1 to 10"
+          />
+          <div className="text-muted-foreground mt-1 flex items-center justify-between text-[11px]">
+            <span>Not for me</span>
+            <span>Absolutely astounding</span>
+          </div>
         </div>
         <Button
           size="lg"
@@ -457,23 +475,33 @@ export function OnboardingFlow() {
               <div className="absolute -inset-8 animate-pulse rounded-full bg-violet-500/5 [animation-delay:300ms]" />
             </>
           )}
-          <div
-            className={cn(
-              "relative flex size-32 items-center justify-center rounded-full transition-colors",
-              isAISpeaking && "bg-primary/15",
-              isUserSpeaking && "bg-emerald-500/15",
-              isMusicPlaying && "bg-violet-500/15",
-              phase === "connecting" && "bg-muted animate-pulse",
-            )}
-          >
-            {isMusicPlaying ? (
+          {isMusicPlaying ? (
+            <button
+              type="button"
+              onClick={handleStopMusic}
+              className={cn(
+                "relative flex size-32 items-center justify-center rounded-full bg-violet-500/15 transition-colors active:scale-95",
+              )}
+              aria-label="Stop music"
+            >
               <WaveformIcon size={56} />
-            ) : isUserSpeaking ? (
-              <MicIcon size={56} />
-            ) : (
-              <AIMentorAvatar size={56} />
-            )}
-          </div>
+            </button>
+          ) : (
+            <div
+              className={cn(
+                "relative flex size-32 items-center justify-center rounded-full transition-colors",
+                isAISpeaking && "bg-primary/15",
+                isUserSpeaking && "bg-emerald-500/15",
+                phase === "connecting" && "bg-muted animate-pulse",
+              )}
+            >
+              {isUserSpeaking ? (
+                <MicIcon size={56} />
+              ) : (
+                <AIMentorAvatar size={56} />
+              )}
+            </div>
+          )}
         </div>
 
         <div className="text-center">
