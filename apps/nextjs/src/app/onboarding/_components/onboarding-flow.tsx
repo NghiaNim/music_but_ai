@@ -136,7 +136,7 @@ export function OnboardingFlow() {
     return new Promise((resolve) => {
       // SpeechRecognition undefined in Firefox - runtime check required
       const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+        window.SpeechRecognition ?? window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         const text = window.prompt("Voice not available. Type your answer:");
         resolve(text ?? "I'm not sure");
@@ -272,6 +272,9 @@ export function OnboardingFlow() {
     const tier =
       musicIndex === 0 ? "easy" : musicIndex === 1 ? "medium" : "hard";
     setMusicSliderValue(ratings[tier]);
+    // Only reset slider position when entering rating phase or switching tracks —
+    // not on every drag (which updates `ratings`).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, musicIndex]);
 
   const handleNextTrack = () => {

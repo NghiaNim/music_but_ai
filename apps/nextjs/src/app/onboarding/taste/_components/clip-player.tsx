@@ -177,9 +177,7 @@ export function ClipPlayer({
         <h2 className="text-lg font-semibold text-balance sm:text-xl">
           What does this make you feel?
         </h2>
-        <p className="text-muted-foreground text-sm">
-          Listen with fresh ears
-        </p>
+        <p className="text-muted-foreground text-sm">Listen with fresh ears</p>
       </div>
 
       <div className="w-full max-w-xs">
