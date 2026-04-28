@@ -276,7 +276,7 @@ export function EventFeed() {
               setSearch(e.target.value);
               resetVisibleCount();
             }}
-            className="w-full border-zinc-300 bg-white pl-9 text-sm text-zinc-900 placeholder:text-zinc-900 md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-100"
+            className="h-9 w-full rounded-full border-zinc-300 bg-white pl-9 text-sm text-zinc-900 placeholder:text-zinc-900 md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-100"
           />
         </div>
         <select
@@ -285,7 +285,7 @@ export function EventFeed() {
             setCityFilter(e.target.value || undefined);
             resetVisibleCount();
           }}
-          className="h-9 w-[88px] rounded-md border border-zinc-300 bg-white px-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          className="h-9 w-[88px] rounded-full border border-zinc-300 bg-white px-2.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <option value="">All Cities</option>
           {CITY_OPTIONS.map((city) => (
@@ -300,7 +300,7 @@ export function EventFeed() {
             setSortBy(e.target.value as "day_asc" | "day_desc");
             resetVisibleCount();
           }}
-          className="h-9 w-[80px] rounded-md border border-zinc-300 bg-white px-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          className="h-9 w-[80px] rounded-full border border-zinc-300 bg-white px-2.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <option value="day_asc">By Date</option>
           <option value="day_desc">Latest Day</option>
