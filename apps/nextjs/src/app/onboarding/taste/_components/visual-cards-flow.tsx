@@ -51,6 +51,9 @@ export function VisualCardsFlow() {
   );
   const derive = useMutation(trpc.tasteProfile.derive.mutationOptions());
 
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const [bootstrapError, setBootstrapError] = useState(false);
+
   // Bootstrap once: pull or create the session, then jump to the
   // earliest unanswered question (resume-aware). If the URL carries
   // `?restart=1`, force a fresh session instead.
@@ -68,9 +71,24 @@ export function VisualCardsFlow() {
     bootstrappedRef.current = true;
 
     let cancelled = false;
-    const bootstrap = isRestart
+    const baseBootstrap = isRestart
       ? restartSession.mutateAsync()
       : getOrCreateSession.mutateAsync();
+
+    const bootstrap = Promise.race([
+      baseBootstrap,
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                "Taking too long to start — check your connection and try again.",
+              ),
+            ),
+          45_000,
+        ),
+      ),
+    ]);
 
     // Clean the `restart` flag off the URL so a refresh doesn't
     // re-trigger another restart and wipe in-progress answers.
@@ -81,6 +99,7 @@ export function VisualCardsFlow() {
     bootstrap.then(
       (session) => {
         if (cancelled) return;
+        setBootstrapError(false);
         setSessionId(session.id);
         const existing = (session.visualAnswers ?? {}) as VisualAnswers;
         setAnswers(existing);
@@ -117,6 +136,8 @@ export function VisualCardsFlow() {
         setPhase("questions");
       },
       (err: unknown) => {
+        bootstrappedRef.current = false;
+        setBootstrapError(true);
         toast.error(
           err instanceof Error
             ? err.message
@@ -127,10 +148,13 @@ export function VisualCardsFlow() {
 
     return () => {
       cancelled = true;
+      // StrictMode remount must be allowed to bootstrap again — otherwise the
+      // aborted first pass can strand the UI on a perpetual loading state.
+      bootstrappedRef.current = false;
     };
-    // We intentionally only run this once on mount.
+    // reloadNonce retries after a bootstrap failure without remounting the page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reloadNonce]);
 
   const total = QUESTIONS.length;
   const currentQuestion = QUESTIONS[questionIndex];
@@ -229,6 +253,28 @@ export function VisualCardsFlow() {
   }, [currentQuestion, answers]);
 
   // ─── Render ────────────────────────────────────────────────────
+
+  if (bootstrapError && phase === "idle") {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 bg-[#FEFCED] px-6 py-12 text-center">
+        <p className="text-muted-foreground max-w-sm text-sm">
+          We couldn&apos;t start your quiz. Check your connection, then try
+          again.
+        </p>
+        <Button
+          type="button"
+          size="lg"
+          onClick={() => {
+            bootstrappedRef.current = false;
+            setBootstrapError(false);
+            setReloadNonce((n) => n + 1);
+          }}
+        >
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   if (phase === "idle" || (phase === "questions" && !currentQuestion)) {
     return (

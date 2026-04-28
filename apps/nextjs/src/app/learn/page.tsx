@@ -21,11 +21,11 @@ export default function LearnPage() {
       <div className="mt-8 rounded-xl border p-4 text-center">
         <div className="mb-2 flex justify-center">
           <Image
-            src="/tanny.png"
+            src="/tanny-cat-cutout.png"
             alt="Tanny the cat"
-            width={40}
-            height={40}
-            className="rounded-full"
+            width={52}
+            height={52}
+            className="object-contain"
           />
         </div>
         <p className="text-sm font-semibold">Have a question?</p>

@@ -19,12 +19,12 @@ export default async function TasteOnboardingPage() {
           button below is the user's escape hatch. The session
           auto-persists at every step, so navigating away and
           coming back resumes mid-flow. */}
-      <div className="relative flex min-h-[calc(100dvh-3rem)] flex-col bg-white dark:bg-neutral-950">
+      <div className="relative flex min-h-dvh flex-col bg-[#FEFCED]">
         <Link
           href="/"
           aria-label="Save and exit — your progress is kept"
           title="Save & exit"
-          className="absolute top-3 right-3 z-20 flex size-9 items-center justify-center rounded-full border border-neutral-200 bg-white/90 text-neutral-600 shadow-sm backdrop-blur transition-colors hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900/90 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+          className="absolute top-3 right-3 z-20 flex size-9 items-center justify-center rounded-full border border-neutral-200 bg-[#FEFCED]/90 text-neutral-600 shadow-sm backdrop-blur transition-colors hover:border-neutral-300 hover:bg-[#fffbe0] hover:text-neutral-900"
         >
           <CloseIcon />
         </Link>
