@@ -1,0 +1,159 @@
+---
+description: What needs to be done next — Classica taste/recommendation system
+alwaysApply: true
+---
+
+# Classica — Taste Profile & Recommendation Build Plan
+
+We are adapting the original spec (kept verbatim at the bottom as **Appendix A**) to fit our actual stack: tRPC end-to-end, Drizzle on Supabase Postgres, OpenAI for AI, no Redis. We blend **two** catalogs (`Event` user-created + `LiveEvent` scraped). Each step ships standalone value.
+
+---
+
+## Step status
+
+| # | Step | Status |
+|---|------|--------|
+| 1 | Schema foundation (UserProfile taste cols + UserMusicEvent + OnboardingSession + EventTaste JSONB) | ✅ DONE |
+| 2 | Tag the catalog (enrich MUSIC_CATALOG; batch-tag Event + LiveEvent) | ✅ DONE |
+| 3 | Profile derivation (`deriveTasteProfile()` + tRPC `tasteProfile` router) | ⏭️ NEXT |
+| 4 | Recommender (content scoring + editorial rules + diversity, blends Event + LiveEvent) | pending |
+| 5 | Visual cards onboarding (5 questions, resume via OnboardingSession) | pending |
+| 6 | Clips phase (auto-play, skip-ms capture, optional voice reaction) | pending |
+| 7 | Reveal animation + `/profile/taste` page | pending |
+| 8 | Event logger (batched client util + `/api/events` REST shim for sendBeacon) | pending |
+| 9 | (Optional) integrate existing Tanny voice phase as Phase 1 | pending |
+| 10 | (Optional) weekly re-derivation cron, gated on ≥20 new events | pending |
+
+---
+
+## Step 1 — DONE: Schema foundation
+
+`packages/db/src/schema.ts` now has:
+
+- **`UserProfile` extended** with: `archetype`, `badgeEmoji`, `tags`, `emotionalOrientation`, `texturePreference`, `eraAffinities`, `complexityTolerance`, `concertMotivation`, `crossGenreBridge`, `profileSummary`, `profileCards`, `tasteOnboardingCompletedAt`, `lastDerivedAt`. Legacy fields (`musicTasteEasy/Medium/Hard`, `onboardingAnswers`) retained for now; will drop in a follow-up migration after Step 5 ships.
+- **`OnboardingSession`** new table — phase/status, voice transcript, visual answers, clip reactions.
+- **`UserMusicEvent`** new table (append-only) — implicit signal log with `(userId, createdAt desc)` and `(userId, eventType)` indexes for the recommender's hot path.
+- **`Event.taste` + `LiveEvent.taste`** JSONB columns sharing the `EventTasteAnnotation` shape `{ era, moodCluster, texture, complexity, tags[], composers[], taggedAt }`. Both are nullable so untagged events still surface in the feed.
+- New enums: `emotionalOrientationEnum`, `texturePreferenceEnum`, `eraAffinityEnum`, `complexityToleranceEnum`, `concertMotivationEnum`, `crossGenreBridgeEnum`, `onboardingPhaseEnum`, `onboardingStatusEnum`, `musicEventEntityEnum`.
+
+Pushed to Supabase via `pnpm -F @acme/db push`.
+
+### Deliberate deviations from spec
+
+- **No `user_taste_profiles` table.** Extended `UserProfile` instead — same FK, no join.
+- **No `clips` table.** `MUSIC_CATALOG` in `packages/ai` will be enriched in code (faster iteration, atomic with deploys).
+- **No standalone `editorial_rules` table.** Will live as a typed JSON config in `packages/api/src/recommendations/rules.ts` (reviewable in PRs, no admin UI needed yet).
+- **`UserMusicEvent.eventType` is `varchar(50)` with API-layer validation**, not a Postgres enum — adding a new signal type shouldn't require a DB migration.
+
+---
+
+## Step 2 — DONE: Tag the catalog
+
+What landed:
+
+- **`MUSIC_CATALOG` enriched by hand** with `era` / `moodCluster` / `texture` / `complexity` for all 31 clips. Spans 5 eras × 4 moods × 3 textures. Hand-curation > AI for this small known set.
+- **`pickClipsForOnboarding()`** picker that maximizes `(era × moodCluster)` coverage, biases toward partial profile if known, reserves ~30% slots for stretch picks (always show something outside their preference).
+- **`packages/ai/src/taste-tagger.ts`** — `inferEventTaste()` + `inferEventTasteBatch()` using OpenAI `response_format: { type: "json_schema", strict: true }`. Bounded concurrency (default 4). Per-row failures don't abort the batch.
+- **`packages/api/src/catalog-tagger.ts`** — `tagCatalog()` walks `Event` + `LiveEvent`, idempotent (60-day staleness), supports `--force` (re-tag all) and `--refresh-nulls` (re-tag rows where era came back null).
+- **CLI: `pnpm -F @acme/api tag-catalog [--refresh-nulls] [--force] [--max=N]`**.
+- **Auto-tag hook** in `live-event-sync`: after every cron sync, `tagUntaggedLiveEvents()` runs in `after()` — newly scraped rows get tagged in the same cron tick, never blocks the response.
+
+Live results after running over the catalog:
+- ~295 LiveEvents tagged. Era nulls 17%, mood nulls 28%, texture nulls 1% — meaningful signal across the catalog.
+- Composers extracted across the catalog (Verdi, Puccini, Tchaikovsky, Stravinsky, Prokofiev, etc.) — feeds editorial rules and dedupe in Step 4.
+
+Deliberate adjustments mid-step: the first-pass prompt was too conservative (68% null era). Tightened the system prompt with venue-aware heuristics (Met Opera → vocal/romantic by default, ballet → grand/catharsis, Wind Orchestra → grand) and a "best-guess > null" instruction. Added `--refresh-nulls` mode so we could iterate on the prompt without paying to re-tag good rows.
+
+---
+
+## Step 3 — NEXT: Profile derivation
+
+- `packages/ai/src/taste-profile.ts` exports `deriveTasteProfile({ session, history? })` returning the full profile JSON. Uses OpenAI `response_format: { type: "json_schema", schema }` so we never hand-parse markdown fences.
+- `packages/api/src/router/taste-profile.ts`: `get`, `derive` (mutation, called at end of Step 6), `update` (manual corrections, preserves `lastDerivedAt`).
+- Falls back to a heuristic profile (built from visual answers only) if OpenAI is unavailable, so onboarding always completes.
+
+---
+
+## Step 4 — Recommender
+
+- `packages/api/src/recommendations/`:
+  - `score.ts` — pure scoring function over a candidate `{ id, source: "event" | "live_event", taste }`.
+  - `rules.ts` — typed editorial rules (`if cross_genre_bridge === "film" then boost ["film_score","cinematic"]`).
+  - `diversity.ts` — top-N filter enforcing era/composer caps + ≥2 discovery items.
+  - `pipeline.ts` — pulls candidates from both catalogs in parallel, scores, diversifies.
+- tRPC: `recommendations.forUser({ limit, offset, surface })` — `surface` lets us reuse for home feed vs. profile vs. notification.
+- Caching: Next.js `unstable_cache` keyed on `userId + lastDerivedAt`, TTL 6h. Invalidated by `revalidateTag("recs:" + userId)` from save/purchase mutations.
+- **Method B (collaborative) skipped** until ≥100 active users (data model is ready for it).
+
+---
+
+## Step 5 — Visual cards onboarding
+
+- New component `_components/taste-onboarding/visual-cards.tsx` — single-select / multi-select per spec section 3.4. One question per screen, swipe-feeling transitions.
+- Resumes from `OnboardingSession.visualAnswers`.
+- Mounted inside the existing `/onboarding` route; replaces the current Tanny-only flow as Phase 2 of the new state machine `idle → voice? → visual → clips → reveal → complete`.
+
+---
+
+## Step 6 — Clips phase
+
+- Pull 10 clips from enriched `MUSIC_CATALOG` via a tiny picker that maximizes `(era × moodCluster)` coverage given partial profile.
+- Auto-play, capture exact `listenedMs` on skip / `clip_complete` on natural end. Optional voice reaction stored as `voiceReaction`.
+- Each interaction writes a `UserMusicEvent` (`clip_play`, `clip_skip`, `clip_complete`, `clip_replay`, `clip_voice_reaction`).
+- On finish, mutation calls `tasteProfile.derive`, marks session `complete`.
+
+---
+
+## Step 7 — Reveal + `/profile/taste`
+
+- Reveal: rotating loading messages → badge animates in → tags fade → summary → 2×2 cards.
+- `/profile/taste`: read-only view + edit drawer that re-uses the visual card components. Edits call `tasteProfile.update`, invalidate recs cache.
+
+---
+
+## Step 8 — Event logger
+
+- `apps/nextjs/src/lib/event-logger.ts`: client-side batcher (10s flush or 10 events). On `pagehide` flushes via `navigator.sendBeacon`.
+- `apps/nextjs/src/app/api/events/route.ts`: REST POST shim — the **only** non-tRPC endpoint, because sendBeacon can't speak tRPC. Validates with `CreateUserMusicEventSchema`, requires Better Auth session.
+- Wire from: event detail (`concert_view`), save toggle (`concert_save`), ticket success (`concert_purchase`), chat send (`search_query`).
+
+---
+
+## Step 9 (optional) — Voice phase integration
+
+Wire the existing Tanny experience as Phase 1 of the new flow so users who prefer voice still get the rich derivation. The voice transcript already maps cleanly into the new `OnboardingSession.voiceTranscript`.
+
+---
+
+## Step 10 (optional) — Re-derivation cron
+
+Weekly job that re-runs derivation for users with `lastDerivedAt < NOW() - 7d` AND ≥20 new `UserMusicEvent` rows since then. Same cron infrastructure as venue sync (Supabase pg_cron → Next.js API route).
+
+---
+
+# Appendix A — Original spec (verbatim, for reference)
+
+> Note: this is the source spec we are adapting. Where it conflicts with the steps above, the steps above win.
+
+Build Instructions: Classical Music Concert Recommendation System
+
+Overview
+You are building a music discovery and recommendation system for a classical concert marketplace. The core feature is an AI-powered taste onboarding experience that collects user preference data through a hybrid voice + visual interface, stores a taste profile, and feeds a recommendation pipeline. These instructions cover the full system: data models, onboarding UX, voice integration, recommendation pipeline, and the badge/profile system.
+
+Part 1: Data Models — see schema in `packages/db/src/schema.ts` (adapted: `UserProfile` extended, no separate `clips` table).
+
+Part 2: API Endpoints — implemented as tRPC routers, not REST under `/api/v1/`. The single REST exception is `/api/events` for `navigator.sendBeacon`.
+
+Part 3: Onboarding UX — three phases (voice → visual → clips → reveal). Single overlay component with internal state machine.
+
+Part 4: Profile Derivation — uses OpenAI (already wired) instead of Claude. Strict JSON schema response, retry on parse failure, heuristic fallback.
+
+Part 5: Recommendation Pipeline — content-based + editorial rules now; collaborative filtering deferred to ≥100 users. Diversity filter implemented per spec. Caching via `unstable_cache`, not Redis.
+
+Part 6: Profile Page UI — `/profile/taste`.
+
+Part 7: Event Logging — batched client util + REST shim for sendBeacon.
+
+Part 8: Environment Variables — `OPENAI_API_KEY`, `DATABASE_URL`. (No Redis, no Anthropic, no separate voice provider beyond what we already use for Tanny.)
+
+Implementation Order — adapted to: schema → catalog tagging → derivation → recommender → visual cards → clips → reveal → event logger → voice integration → re-derivation cron.

@@ -1,8 +1,9 @@
-import { and, eq, notInArray, sql } from "@acme/db";
+import { and, eq, isNull, notInArray, sql } from "@acme/db";
 import { db } from "@acme/db/client";
 import { LiveEvent } from "@acme/db/schema";
 
 import type { ScrapedEvent, ScrapedVenue } from "./venue-scraper";
+import { tagCatalog } from "./catalog-tagger";
 import {
   scrapeCarnegieHall,
   scrapeJuilliard,
@@ -287,6 +288,44 @@ export async function syncAllVenuesToLiveEvents(
     summary,
     allSucceeded: summary.failed === 0,
   };
+}
+
+/**
+ * Run the catalog tagger over any rows still missing taste annotations.
+ * Best-effort: any error here is logged but never thrown — taste tags
+ * are useful but never block listing the event.
+ *
+ * Caller decides whether to await: cron routes typically `void`-call
+ * this inside `after()` so the HTTP response returns fast.
+ */
+export async function tagUntaggedLiveEvents(
+  database: Database = db,
+): Promise<void> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.warn(
+      "[live-event-sync] OPENAI_API_KEY missing — skipping taste tagging",
+    );
+    return;
+  }
+
+  // Quick pre-check so we don't spin up the tagger when nothing's stale.
+  const rows = await database
+    .select({ count: sql<number>`count(*)::int` })
+    .from(LiveEvent)
+    .where(isNull(LiveEvent.taste));
+  const untagged = rows[0]?.count ?? 0;
+  if (untagged === 0) return;
+
+  try {
+    const result = await tagCatalog({ apiKey, maxRows: 100 }, database);
+    console.log(
+      `[live-event-sync] taste-tagged ${result.tagged}/${result.scanned} (failed=${result.failed}, ${result.durationMs}ms)`,
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[live-event-sync] taste tagging failed: ${message}`);
+  }
 }
 
 /** Backward-compat: previous public name. */

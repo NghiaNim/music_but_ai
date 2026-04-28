@@ -25,8 +25,14 @@ export {
   syncAllVenuesToLiveEvents,
   syncMsmPerformancesToLiveEvents,
   syncVenueToLiveEvents,
+  tagUntaggedLiveEvents,
   type SyncAllVenuesSummary,
   type VenueSyncResult,
   type VenueSyncStatus,
 } from "./live-event-sync";
+export {
+  tagCatalog,
+  type CatalogTaggerOptions,
+  type CatalogTaggerResult,
+} from "./catalog-tagger";
 export type { RouterInputs, RouterOutputs };

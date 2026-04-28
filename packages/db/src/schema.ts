@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgEnum, pgTable } from "drizzle-orm/pg-core";
+import { index, pgEnum, pgTable } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -51,6 +51,81 @@ export const liveEventSourceEnum = pgEnum("live_event_source", [
   "nycballet",
 ]);
 
+// ─── Taste profile dimensions ───────────────────────────
+//
+// These mirror the visual onboarding cards. Storing them as enums keeps
+// the recommender's SQL WHERE/CASE clauses fast and prevents drift
+// between the onboarding UI and the inference layer.
+
+export const emotionalOrientationEnum = pgEnum("emotional_orientation", [
+  "catharsis",
+  "tranquility",
+  "intellectual",
+  "energy",
+]);
+
+export const texturePreferenceEnum = pgEnum("texture_preference", [
+  "grand",
+  "intimate",
+  "vocal",
+  "mixed",
+]);
+
+export const eraAffinityEnum = pgEnum("era_affinity", [
+  "baroque",
+  "classical_period",
+  "romantic",
+  "impressionist",
+  "modern",
+  "contemporary",
+]);
+
+export const complexityToleranceEnum = pgEnum("complexity_tolerance", [
+  "accessible",
+  "layered",
+  "challenging",
+]);
+
+export const concertMotivationEnum = pgEnum("concert_motivation", [
+  "emotional_event",
+  "social",
+  "discovery",
+  "prestige",
+]);
+
+export const crossGenreBridgeEnum = pgEnum("cross_genre_bridge", [
+  "film",
+  "jazz",
+  "world",
+  "pop_rock",
+  "already_classical",
+  "mixed",
+]);
+
+export const onboardingPhaseEnum = pgEnum("onboarding_phase", [
+  "voice",
+  "visual",
+  "clips",
+  "complete",
+]);
+
+export const onboardingStatusEnum = pgEnum("onboarding_status", [
+  "in_progress",
+  "complete",
+  "abandoned",
+]);
+
+// One column shape for both clip ratings and concert engagement so the
+// rest of the system never branches on string-typed `event_type`s at the
+// DB level. The full string list is enforced in the validator/logger.
+export const musicEventEntityEnum = pgEnum("music_event_entity", [
+  "clip",
+  "concert",
+  "live_concert",
+  "composer",
+  "search",
+]);
+
 /** Distinguishes informal community listings from formal concerts. */
 export const eventListingCategoryEnum = pgEnum("event_listing_category", [
   "local",
@@ -85,6 +160,18 @@ export const CreatePostSchema = createInsertSchema(Post, {
 
 // ─── User Profile (extends auth user) ───────────────────
 
+/**
+ * Holds both legacy onboarding fields (experienceLevel + 1-question voice
+ * + 3 ratings) and the new derived taste profile (archetype, badge, tags,
+ * the 6 dimensions, summary, profile cards).
+ *
+ * One row per user. The new fields are nullable so users mid-migration
+ * keep working until they complete the new onboarding.
+ *
+ * Legacy fields (`onboardingAnswers`, `musicTasteEasy/Medium/Hard`) will be
+ * dropped in a follow-up migration once the new flow has shipped and we
+ * have re-derived for existing users.
+ */
 export const UserProfile = pgTable("user_profile", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
   userId: t
@@ -92,12 +179,42 @@ export const UserProfile = pgTable("user_profile", (t) => ({
     .notNull()
     .unique()
     .references(() => user.id, { onDelete: "cascade" }),
+
+  // Legacy (pre-taste-model). Keep until migration completes.
   experienceLevel: experienceLevelEnum().notNull().default("new"),
   onboardingCompleted: t.boolean().notNull().default(false),
   onboardingAnswers: t.jsonb().$type<string[]>(),
   musicTasteEasy: t.integer(),
   musicTasteMedium: t.integer(),
   musicTasteHard: t.integer(),
+
+  // ─── Derived taste profile (Step 3 fills these) ───
+  archetype: t.varchar({ length: 100 }),
+  badgeEmoji: t.varchar({ length: 16 }),
+  /** 4–6 short phrases like ["Late Romantic", "Intimate", "Catharsis"]. */
+  tags: t.jsonb().$type<string[]>().default([]),
+  emotionalOrientation: emotionalOrientationEnum(),
+  texturePreference: texturePreferenceEnum(),
+  /** Multi-select; subset of `eraAffinityEnum` values. */
+  eraAffinities: t.jsonb().$type<string[]>().default([]),
+  complexityTolerance: complexityToleranceEnum(),
+  concertMotivation: concertMotivationEnum(),
+  crossGenreBridge: crossGenreBridgeEnum(),
+  profileSummary: t.text(),
+  /** Four `{ label, value }` pairs rendered as the 2x2 profile card grid. */
+  profileCards: t
+    .jsonb()
+    .$type<{ label: string; value: string }[]>()
+    .default([]),
+
+  /** Set the first time the new taste profile is derived. */
+  tasteOnboardingCompletedAt: t.timestamp({
+    mode: "date",
+    withTimezone: true,
+  }),
+  /** Last time we ran the AI derivation (initial or re-derive). */
+  lastDerivedAt: t.timestamp({ mode: "date", withTimezone: true }),
+
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
@@ -129,12 +246,36 @@ export const Event = pgTable("event", (t) => ({
   ticketsAvailable: t.integer().notNull().default(100),
   listingCategory: eventListingCategoryEnum().notNull().default("concert"),
   publicationStatus: eventPublicationStatusEnum().notNull().default("active"),
+  /**
+   * Inferred taste annotations used by the recommender. Filled by the
+   * offline tagger (Step 2). Nullable so untagged events still surface
+   * in the feed (they just won't get content-based score boosts).
+   */
+  taste: t.jsonb().$type<EventTasteAnnotation>(),
   createdBy: t.text().references(() => user.id, { onDelete: "set null" }),
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
     .$onUpdateFn(() => new Date()),
 }));
+
+/**
+ * Inferred taste shape shared by Event and LiveEvent. Lives on the row
+ * (not in a side table) because it's tightly coupled to the catalog
+ * entry and we never query it without the row itself.
+ */
+export interface EventTasteAnnotation {
+  era: (typeof eraAffinityEnum.enumValues)[number] | null;
+  moodCluster: (typeof emotionalOrientationEnum.enumValues)[number] | null;
+  texture: (typeof texturePreferenceEnum.enumValues)[number] | null;
+  complexity: (typeof complexityToleranceEnum.enumValues)[number] | null;
+  /** Free-form tags used by editorial rules (e.g. ["film_score", "premiere"]). */
+  tags: string[];
+  /** Composer fingerprints — used for collaborative + dedupe. */
+  composers: string[];
+  /** ISO timestamp set when the AI tagger last ran. */
+  taggedAt: string;
+}
 
 // ─── UserEvent (saved / attended) ───────────────────────
 
@@ -230,12 +371,96 @@ export const LiveEvent = pgTable("live_event", (t) => ({
   eventUrl: t.text().notNull().unique(),
   buyUrl: t.text().notNull(),
   raw: t.jsonb().$type<unknown>(),
+  /** Inferred taste annotation; same shape as Event.taste. */
+  taste: t.jsonb().$type<EventTasteAnnotation>(),
   lastSeenAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
   updatedAt: t
     .timestamp({ mode: "date", withTimezone: true })
     .$onUpdateFn(() => new Date()),
 }));
+
+// ─── OnboardingSession ──────────────────────────────────
+
+/**
+ * Tracks an in-progress taste onboarding so users can resume after
+ * dropping off. We keep the raw answers separate from the derived
+ * profile because the derivation is async and may need to re-run if
+ * Claude/OpenAI returns malformed JSON.
+ */
+export const OnboardingSession = pgTable("onboarding_session", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  userId: t
+    .text()
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  phase: onboardingPhaseEnum().notNull().default("voice"),
+  status: onboardingStatusEnum().notNull().default("in_progress"),
+  voiceTranscript: t.text(),
+  /**
+   * Visual card answers, e.g.:
+   * { emotional_orientation: "catharsis", texture: "intimate",
+   *   eras: ["romantic","impressionist"], complexity: "layered",
+   *   concert_motivation: "emotional_event", bridge: "film" }
+   */
+  visualAnswers: t.jsonb().$type<Record<string, string | string[]>>(),
+  /** Per-clip listening behavior; one entry per clip shown. */
+  clipReactions: t
+    .jsonb()
+    .$type<
+      {
+        clipId: string;
+        listenedMs: number;
+        skipped: boolean;
+        replayed: boolean;
+        voiceReaction: string | null;
+      }[]
+    >()
+    .default([]),
+  completedAt: t.timestamp({ mode: "date", withTimezone: true }),
+  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
+  updatedAt: t
+    .timestamp({ mode: "date", withTimezone: true })
+    .$onUpdateFn(() => new Date()),
+}));
+
+// ─── UserMusicEvent (implicit signal log) ───────────────
+
+/**
+ * Append-only event log. The recommender re-derivation, collaborative
+ * filtering (Method B), and the negative-signal feature all read from
+ * here. Never mutate rows — write a new event instead.
+ *
+ * `entityId` is a UUID for concerts; for clips and search it's a string
+ * coerced into the column (Postgres is forgiving) so we keep one shape.
+ *
+ * The full set of `eventType` strings is enforced by the validator at
+ * the API layer so we don't need a Postgres enum migration every time
+ * we add a new signal type.
+ */
+export const UserMusicEvent = pgTable(
+  "user_music_event",
+  (t) => ({
+    id: t.uuid().notNull().primaryKey().defaultRandom(),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    eventType: t.varchar({ length: 50 }).notNull(),
+    entityType: musicEventEntityEnum().notNull(),
+    /** UUID for concerts/composers; arbitrary id for clips/searches. */
+    entityId: t.text().notNull(),
+    metadata: t.jsonb().$type<Record<string, unknown>>().default({}),
+    createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
+  }),
+  (table) => [
+    index("user_music_event_user_created_idx").on(
+      table.userId,
+      table.createdAt.desc(),
+    ),
+    index("user_music_event_user_type_idx").on(table.userId, table.eventType),
+  ],
+);
 
 // ─── Relations ──────────────────────────────────────────
 
@@ -247,6 +472,25 @@ export const userRelations = relations(user, ({ one, many }) => ({
   userEvents: many(UserEvent),
   chatSessions: many(ChatSession),
   ticketOrders: many(TicketOrder),
+  musicEvents: many(UserMusicEvent),
+  onboardingSessions: many(OnboardingSession),
+}));
+
+export const onboardingSessionRelations = relations(
+  OnboardingSession,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [OnboardingSession.userId],
+      references: [user.id],
+    }),
+  }),
+);
+
+export const userMusicEventRelations = relations(UserMusicEvent, ({ one }) => ({
+  user: one(user, {
+    fields: [UserMusicEvent.userId],
+    references: [user.id],
+  }),
 }));
 
 export const userProfileRelations = relations(UserProfile, ({ one }) => ({
@@ -342,6 +586,21 @@ export const CreateLiveEventSchema = createInsertSchema(LiveEvent).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const CreateOnboardingSessionSchema = createInsertSchema(
+  OnboardingSession,
+).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const CreateUserMusicEventSchema = createInsertSchema(
+  UserMusicEvent,
+).omit({
+  id: true,
+  createdAt: true,
 });
 
 // ─── Waitlist Signup ────────────────────────────────────

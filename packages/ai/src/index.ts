@@ -10,8 +10,26 @@ export type {
 } from "./concierge";
 export type { EventContext } from "./prompts";
 
-export { getRandomTracksPerTier, MUSIC_CATALOG } from "./music-catalog";
-export type { MusicTier, MusicTrack } from "./music-catalog";
+export {
+  getRandomTracksPerTier,
+  MUSIC_CATALOG,
+  pickClipsForOnboarding,
+} from "./music-catalog";
+export type {
+  ClipComplexity,
+  ClipEra,
+  ClipMood,
+  ClipTexture,
+  MusicTier,
+  MusicTrack,
+} from "./music-catalog";
+
+export { inferEventTaste, inferEventTasteBatch } from "./taste-tagger";
+export type {
+  InferredTaste,
+  TaggerClientOptions,
+  TaggerInput,
+} from "./taste-tagger";
 
 export {
   computeExperienceLevel,
