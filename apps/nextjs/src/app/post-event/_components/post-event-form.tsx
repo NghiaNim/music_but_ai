@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useMutation,
@@ -9,6 +10,7 @@ import {
 } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "@acme/api";
+import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { Input } from "@acme/ui/input";
 import { Label } from "@acme/ui/label";
@@ -44,6 +46,14 @@ const LISTING = [
     hint: "Formal performances, recitals, and ticketed shows.",
   },
 ];
+
+const FIELD_CARD =
+  "flex flex-col gap-1.5 rounded-2xl border border-[#EFE9F4] bg-[#ffffff] p-3 shadow-sm";
+
+const CONTROL =
+  "border-[#EFE9F4] bg-[#ffffff] shadow-none focus-visible:border-primary/40 dark:bg-[#ffffff]";
+
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 type Genre = (typeof GENRES)[number]["value"];
 type Difficulty = (typeof DIFFICULTIES)[number]["value"];
@@ -164,6 +174,7 @@ function HostEventFormShell({
   const [isFree, setIsFree] = useState(initial.isFree);
   const [price, setPrice] = useState(initial.price);
   const [notifySubscribers, setNotifySubscribers] = useState(false);
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   const createEvent = useMutation(
     trpc.event.create.mutationOptions({
@@ -266,6 +277,33 @@ function HostEventFormShell({
 
   const busy = createEvent.isPending || updateEvent.isPending;
 
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file (PNG, JPG, or WebP).");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("Image must be 2 MB or smaller.");
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") setImageUrl(result);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const clearImage = () => {
+    setImageUrl("");
+    if (imageFileInputRef.current) imageFileInputRef.current.value = "";
+  };
+
   return (
     <div className="relative">
       {!isSignedIn && (
@@ -280,10 +318,61 @@ function HostEventFormShell({
       )}
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-5 sm:gap-6"
         aria-disabled={!isSignedIn}
       >
-        <div className="flex flex-col gap-1.5">
+        <div className={FIELD_CARD}>
+          <Label>Event image</Label>
+          <input
+            ref={imageFileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="sr-only"
+            onChange={handleImageFile}
+          />
+          <button
+            type="button"
+            onClick={() => imageFileInputRef.current?.click()}
+            className="flex min-h-[152px] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#EFE9F4] bg-[#ffffff] px-4 py-7 text-center transition-colors hover:bg-rose-50/40 active:bg-rose-50/50"
+          >
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt=""
+                width={200}
+                height={160}
+                className="max-h-40 w-auto rounded-md object-cover"
+                unoptimized
+              />
+            ) : (
+              <>
+                <span className="text-muted-foreground text-3xl leading-none">
+                  +
+                </span>
+                <span className="text-sm font-medium">
+                  Upload a poster or photo
+                </span>
+                <span className="text-muted-foreground max-w-[240px] text-xs">
+                  Tap to choose an image — PNG, JPG, or WebP, up to 2 MB
+                </span>
+              </>
+            )}
+          </button>
+          {imageUrl ? (
+            <button
+              type="button"
+              onClick={clearImage}
+              className="text-muted-foreground self-start text-xs font-medium underline-offset-2 hover:underline"
+            >
+              Remove image
+            </button>
+          ) : null}
+          <p className="text-muted-foreground text-xs">
+            Shown on your listing card in Events.
+          </p>
+        </div>
+
+        <div className={FIELD_CARD}>
           <Label htmlFor="title">Event Title *</Label>
           <Input
             id="title"
@@ -292,11 +381,12 @@ function HostEventFormShell({
             onChange={(e) => setTitle(e.target.value)}
             required
             maxLength={512}
+            className={CONTROL}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
+          <div className={FIELD_CARD}>
             <Label htmlFor="date">Date *</Label>
             <Input
               id="date"
@@ -304,9 +394,10 @@ function HostEventFormShell({
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
+              className={CONTROL}
             />
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className={FIELD_CARD}>
             <Label htmlFor="time">Time *</Label>
             <Input
               id="time"
@@ -314,11 +405,12 @@ function HostEventFormShell({
               value={time}
               onChange={(e) => setTime(e.target.value)}
               required
+              className={CONTROL}
             />
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className={FIELD_CARD}>
           <Label htmlFor="venue">Venue *</Label>
           <Input
             id="venue"
@@ -327,26 +419,28 @@ function HostEventFormShell({
             onChange={(e) => setVenue(e.target.value)}
             required
             maxLength={512}
+            className={CONTROL}
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className={FIELD_CARD}>
           <Label htmlFor="venueAddress">Venue Address</Label>
           <Input
             id="venueAddress"
             placeholder="e.g. 154 W 57th St, New York, NY"
             value={venueAddress}
             onChange={(e) => setVenueAddress(e.target.value)}
+            className={CONTROL}
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className={FIELD_CARD}>
           <Label>Listing type *</Label>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 pt-0.5">
             {LISTING.map((opt) => (
               <label
                 key={opt.value}
-                className="border-input has-[:checked]:border-primary/60 bg-card flex cursor-pointer gap-2 rounded-lg border p-3 text-sm"
+                className="has-[:checked]:border-primary/50 flex cursor-pointer gap-2 rounded-lg border border-[#EFE9F4] bg-[#ffffff] p-3 text-sm"
               >
                 <input
                   type="radio"
@@ -367,13 +461,13 @@ function HostEventFormShell({
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className={FIELD_CARD}>
           <Label htmlFor="genre">Genre *</Label>
           <select
             id="genre"
             value={genre}
             onChange={(e) => setGenre(e.target.value as Genre)}
-            className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
+            className={`${CONTROL} focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md px-3 text-sm focus-visible:ring-[3px] focus-visible:outline-none`}
           >
             {GENRES.map((g) => (
               <option key={g.value} value={g.value}>
@@ -383,13 +477,13 @@ function HostEventFormShell({
           </select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className={FIELD_CARD}>
           <Label htmlFor="difficulty">Audience Level *</Label>
           <select
             id="difficulty"
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-            className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
+            className={`${CONTROL} focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md px-3 text-sm focus-visible:ring-[3px] focus-visible:outline-none`}
           >
             {DIFFICULTIES.map((d) => (
               <option key={d.value} value={d.value}>
@@ -399,7 +493,7 @@ function HostEventFormShell({
           </select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className={FIELD_CARD}>
           <Label htmlFor="program">Program *</Label>
           <textarea
             id="program"
@@ -410,11 +504,11 @@ function HostEventFormShell({
             onChange={(e) => setProgram(e.target.value)}
             required
             rows={4}
-            className="border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-3 py-2 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
+            className={`placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-[3px] focus-visible:outline-none ${CONTROL}`}
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className={FIELD_CARD}>
           <Label htmlFor="description">Description *</Label>
           <textarea
             id="description"
@@ -423,11 +517,11 @@ function HostEventFormShell({
             onChange={(e) => setDescription(e.target.value)}
             required
             rows={4}
-            className="border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-3 py-2 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
+            className={`placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-[3px] focus-visible:outline-none ${CONTROL}`}
           />
         </div>
 
-        <div className="flex flex-col gap-2 rounded-lg border p-3">
+        <div className={cn(FIELD_CARD, "gap-2")}>
           <Label className="text-sm font-medium">Tickets</Label>
           <label className="flex cursor-pointer items-center gap-2 text-sm">
             <input
@@ -450,6 +544,7 @@ function HostEventFormShell({
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 required
+                className={CONTROL}
               />
               <p className="text-muted-foreground text-xs">
                 Attendees will pay this price through Classica checkout.
@@ -462,21 +557,7 @@ function HostEventFormShell({
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="imageUrl">Image URL</Label>
-          <Input
-            id="imageUrl"
-            type="url"
-            placeholder="https://..."
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-          />
-          <p className="text-muted-foreground text-xs">
-            A poster or photo for your event
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
+        <div className={FIELD_CARD}>
           <Label htmlFor="ticketUrl">Ticket / RSVP Link</Label>
           <Input
             id="ticketUrl"
@@ -484,6 +565,7 @@ function HostEventFormShell({
             placeholder="https://..."
             value={ticketUrl}
             onChange={(e) => setTicketUrl(e.target.value)}
+            className={CONTROL}
           />
           <p className="text-muted-foreground text-xs">
             External link where people can get tickets or RSVP
@@ -491,7 +573,7 @@ function HostEventFormShell({
         </div>
 
         {mode === "edit" && event ? (
-          <label className="flex cursor-pointer items-start gap-2 text-sm">
+          <label className="flex cursor-pointer flex-row items-start gap-3 rounded-xl border border-[#EFE9F4] bg-[#ffffff] p-3 text-sm">
             <input
               type="checkbox"
               checked={notifySubscribers}
@@ -505,7 +587,12 @@ function HostEventFormShell({
           </label>
         ) : null}
 
-        <Button type="submit" size="lg" className="mt-2 w-full" disabled={busy}>
+        <Button
+          type="submit"
+          size="lg"
+          className="mt-1 h-12 w-full rounded-xl text-base shadow-sm sm:h-14"
+          disabled={busy}
+        >
           {busy ? (
             <span className="flex items-center gap-2">
               <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
