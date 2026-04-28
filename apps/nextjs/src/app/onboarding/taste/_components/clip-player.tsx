@@ -169,11 +169,17 @@ export function ClipPlayer({
           they're staring at a static screen. */}
       <Visualizer playing={isPlaying} visualizerHeights={visualizerHeights} />
 
+      {/* Title + composer are intentionally hidden in v1 — labels in
+          the catalog are not yet trusted, and the spec actually
+          prefers blind listening so the user reacts to the music
+          rather than the brand. */}
       <div className="space-y-1.5 px-2 text-center">
         <h2 className="text-lg font-semibold text-balance sm:text-xl">
-          {clip.title}
+          What does this make you feel?
         </h2>
-        <p className="text-muted-foreground text-sm">{clip.composer}</p>
+        <p className="text-muted-foreground text-sm">
+          Listen with fresh ears
+        </p>
       </div>
 
       <div className="w-full max-w-xs">

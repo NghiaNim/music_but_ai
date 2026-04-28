@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -54,8 +54,18 @@ export function VisualCardsFlow() {
   // Bootstrap once: pull or create the session, then jump to the
   // earliest unanswered question (resume-aware). If the URL carries
   // `?restart=1`, force a fresh session instead.
+  //
+  // The `useRef` guard is critical: without it, React StrictMode
+  // (dev only) double-invokes effects, which races `restartSession`
+  // against a follow-up `getOrCreateSession`. The follow-up can
+  // see the user's most-recent COMPLETED session before
+  // `restartSession`'s insert commits — bouncing the user straight
+  // back to their old reveal screen instead of starting fresh.
+  const bootstrappedRef = useRef(false);
   useEffect(() => {
     if (phase !== "idle") return;
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
 
     let cancelled = false;
     const bootstrap = isRestart
