@@ -8,15 +8,17 @@ export default function OnboardingPage() {
 
   return (
     <HydrateClient>
-      <div className="fixed inset-0 top-12 bottom-16 flex flex-col">
+      <div className="absolute inset-0 top-12 bottom-0 flex min-h-0 flex-col overflow-x-hidden">
         <Suspense
           fallback={
-            <div className="flex flex-1 items-center justify-center">
+            <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="bg-muted size-8 animate-pulse rounded-full" />
             </div>
           }
         >
-          <OnboardingFlow />
+          <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden">
+            <OnboardingFlow />
+          </div>
         </Suspense>
       </div>
     </HydrateClient>
