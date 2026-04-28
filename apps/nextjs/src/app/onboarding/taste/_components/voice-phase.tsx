@@ -109,10 +109,20 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
    */
   const startListening = useCallback((): Promise<string> => {
     return new Promise((resolve) => {
-      const supportsSpeechRecognition =
+      let SpeechRecognitionCtor: typeof SpeechRecognition | undefined;
+      if (
         "SpeechRecognition" in window &&
-        typeof window.SpeechRecognition === "function";
-      if (!supportsSpeechRecognition) {
+        typeof window.SpeechRecognition === "function"
+      ) {
+        SpeechRecognitionCtor = window.SpeechRecognition;
+      } else if (
+        "webkitSpeechRecognition" in window &&
+        typeof window.webkitSpeechRecognition === "function"
+      ) {
+        SpeechRecognitionCtor = window.webkitSpeechRecognition;
+      }
+
+      if (!SpeechRecognitionCtor) {
         // Firefox + some WebViews: typed fallback so the user can
         // still contribute a transcript.
         const text = window.prompt(
@@ -122,7 +132,7 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
         return;
       }
 
-      const recognition = new window.SpeechRecognition();
+      const recognition = new SpeechRecognitionCtor();
       recognitionRef.current = recognition;
       recognition.continuous = true;
       recognition.interimResults = true;
@@ -146,22 +156,10 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
       // Hard cap at 60s in case the browser keeps the mic open.
       const timeoutId = window.setTimeout(finalize, 60_000);
 
-      recognition.onresult = (event: Event) => {
-        const maybe = event as {
-          resultIndex?: number;
-          results?: {
-            length: number;
-            item: (index: number) => {
-              isFinal: boolean;
-              item: (altIndex: number) => { transcript: string } | null;
-            } | null;
-          };
-        };
-        if (typeof maybe.resultIndex !== "number" || !maybe.results) return;
-
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         let interim = "";
-        for (let i = maybe.resultIndex; i < maybe.results.length; i++) {
-          const result = maybe.results.item(i);
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results.item(i);
           if (!result) continue;
           const alternative = result.item(0);
           const text = alternative ? alternative.transcript : "";

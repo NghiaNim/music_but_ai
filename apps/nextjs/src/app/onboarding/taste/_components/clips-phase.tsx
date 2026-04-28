@@ -116,7 +116,9 @@ export function ClipsPhase({
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="flex items-center justify-between gap-2 border-b border-neutral-200 px-3 py-3 dark:border-neutral-800">
+      {/* pr-14 reserves room for the floating "Save & exit" X
+          button that lives on the page wrapper. */}
+      <header className="flex items-center justify-between gap-2 border-b border-neutral-200 py-3 pr-14 pl-3 dark:border-neutral-800">
         <div className="w-16 shrink-0" />
         <ProgressPips total={total} currentIndex={index} />
         <Button

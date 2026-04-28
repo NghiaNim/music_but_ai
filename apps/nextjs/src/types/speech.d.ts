@@ -11,16 +11,19 @@ interface SpeechRecognition extends EventTarget {
 }
 
 interface SpeechRecognitionEvent extends Event {
+  readonly resultIndex: number;
   results: SpeechRecognitionResultList;
 }
 
 interface SpeechRecognitionResultList {
   readonly length: number;
+  item(index: number): SpeechRecognitionResult | null;
   [index: number]: SpeechRecognitionResult | undefined;
 }
 
 interface SpeechRecognitionResult {
   readonly length: number;
+  item(index: number): SpeechRecognitionAlternative | null;
   [index: number]: SpeechRecognitionAlternative | undefined;
   readonly isFinal: boolean;
 }
@@ -36,6 +39,6 @@ declare const SpeechRecognition: {
 };
 
 interface Window {
-  SpeechRecognition: typeof SpeechRecognition;
-  webkitSpeechRecognition: typeof SpeechRecognition;
+  SpeechRecognition?: typeof SpeechRecognition;
+  webkitSpeechRecognition?: typeof SpeechRecognition;
 }
