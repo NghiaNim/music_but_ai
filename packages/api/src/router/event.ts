@@ -14,6 +14,17 @@ import { protectedProcedure, publicProcedure } from "../trpc";
 
 type Database = Parameters<typeof emailsForEventInterest>[0];
 
+function isParseableUrl(value: string): boolean {
+  try {
+    // Supports https URLs and data:image/... URLs used by client uploads.
+    // Avoid URL.canParse for wider TS/lib compatibility in CI.
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Best-effort taste tagger for a single user-posted event. Runs out
  * of band so the create/update mutation responds immediately.
@@ -66,7 +77,7 @@ const createFields = z.object({
     .string()
     .max(4_000_000)
     .optional()
-    .refine((s) => !s || URL.canParse(s), {
+    .refine((s) => !s || isParseableUrl(s), {
       message: "Invalid image URL",
     }),
   ticketUrl: z.string().url().optional(),
