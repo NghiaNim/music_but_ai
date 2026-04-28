@@ -71,18 +71,18 @@ export default async function HomePage() {
         {/* Ask Tanny */}
         <section className="px-4 pb-6">
           <Link href="/chat" className="group block">
-            <div className="relative overflow-hidden rounded-2xl border border-violet-200 bg-linear-to-br from-violet-50 via-fuchsia-50 to-pink-50 p-4 transition-all group-hover:border-violet-300 group-hover:shadow-md dark:border-violet-800 dark:from-violet-950/40 dark:via-fuchsia-950/30 dark:to-pink-950/20">
-              <div className="pointer-events-none absolute -right-4 -bottom-4 opacity-10 dark:opacity-5">
+            <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-[#ffffff] p-4 transition-all group-hover:border-neutral-300 group-hover:shadow-md">
+              <div className="pointer-events-none absolute -right-4 -bottom-4 opacity-[0.07] dark:opacity-5">
                 <SpeechBubbleDecor />
               </div>
               <div className="relative flex items-center gap-4">
-                <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-2 ring-violet-200 dark:bg-violet-900/40 dark:ring-violet-700">
+                <div className="relative h-[4.75rem] w-[4.75rem] shrink-0">
                   <Image
-                    src="/tanny.png"
+                    src="/tanny-cat-cutout.png"
                     alt="Tanny the cat"
-                    width={56}
-                    height={56}
-                    className="object-cover"
+                    width={76}
+                    height={76}
+                    className="h-full w-full object-contain object-bottom"
                   />
                 </div>
                 <div className="min-w-0 flex-1">

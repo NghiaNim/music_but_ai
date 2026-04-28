@@ -19,7 +19,7 @@ import { useTRPC } from "~/trpc/react";
  * Reuses the existing infra:
  *   - TTS via `onboarding.speak` (ElevenLabs)
  *   - STT via the browser's `SpeechRecognition` (free, no infra)
- *   - Tanny avatar at `/tanny.png`
+ *   - Tanny avatar at `/tanny-cat-cutout.png`
  *
  * If the browser doesn't support SpeechRecognition (Firefox, some
  * iOS WebViews), we fall back to a `window.prompt`. The whole
@@ -47,6 +47,16 @@ const GREETING =
 
 const WRAPUP_TEXT = "Got it. I'll fold that in.";
 
+/** If ElevenLabs hangs, don't block the whole flow forever. */
+const TTS_FETCH_CAP_MS = 22_000;
+
+/** Keeps voice flow from hanging if TTS/API never returns or audio never fires `onended`. */
+const TTS_HARD_CAP_MS = 25_000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
   const trpc = useTRPC();
 
@@ -70,23 +80,44 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
   const playTTS = useCallback(
     async (text: string): Promise<void> => {
       try {
-        const result = await speak.mutateAsync({ text });
-        const bytes = Uint8Array.from(atob(result.audio), (c) =>
+        const payload = await Promise.race([
+          speak.mutateAsync({ text }).then((r) => ({ ok: true as const, r })),
+          sleep(TTS_FETCH_CAP_MS).then(() => ({ ok: false as const })),
+        ]);
+        if (!payload.ok) return;
+
+        const bytes = Uint8Array.from(atob(payload.r.audio), (c) =>
           c.charCodeAt(0),
         );
         const blob = new Blob([bytes], { type: "audio/mpeg" });
         const url = URL.createObjectURL(blob);
 
         await new Promise<void>((resolve) => {
+          let done = false;
+          const finish = () => {
+            if (done) return;
+            done = true;
+            resolve();
+          };
+          const cap = window.setTimeout(finish, 90_000);
           if (ttsAudioRef.current) {
             ttsAudioRef.current.pause();
             URL.revokeObjectURL(ttsAudioRef.current.src);
           }
           const audio = new Audio(url);
           ttsAudioRef.current = audio;
-          audio.onended = () => resolve();
-          audio.onerror = () => resolve();
-          audio.play().catch(() => resolve());
+          audio.onended = () => {
+            window.clearTimeout(cap);
+            finish();
+          };
+          audio.onerror = () => {
+            window.clearTimeout(cap);
+            finish();
+          };
+          audio.play().catch(() => {
+            window.clearTimeout(cap);
+            finish();
+          });
         });
       } catch {
         // TTS is decoration — don't fail the flow on it.
@@ -238,7 +269,7 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
     setInterimTranscript("");
     setState("connecting");
     setStatusText("Connecting…");
-    await playTTS(GREETING);
+    await Promise.race([playTTS(GREETING), sleep(TTS_HARD_CAP_MS)]);
 
     setState("user-speaking");
     setStatusText("Listening — tap when you're done");
@@ -246,7 +277,7 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
 
     setState("ai-speaking");
     setStatusText("Tanny is wrapping up…");
-    await playTTS(WRAPUP_TEXT);
+    await Promise.race([playTTS(WRAPUP_TEXT), sleep(TTS_HARD_CAP_MS)]);
 
     void finalize(utterance);
   };
@@ -283,14 +314,14 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
 
   if (state === "idle") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-8 text-center">
-        <div className="bg-primary/10 flex size-28 items-center justify-center rounded-full">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-[#FEFCED] px-4 py-8 text-center">
+        <div className="bg-primary/10 flex size-48 items-center justify-center rounded-full">
           <Image
-            src="/tanny.png"
+            src="/tanny-cat-cutout.png"
             alt="Tanny"
-            width={88}
-            height={88}
-            className="rounded-full"
+            width={136}
+            height={136}
+            className="object-contain"
           />
         </div>
 
@@ -330,7 +361,7 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
   const isUserSpeaking = state === "user-speaking";
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-between gap-6 px-4 py-8 text-center">
+    <div className="flex flex-1 flex-col items-center justify-between gap-6 bg-[#FEFCED] px-4 py-8 text-center">
       <div className="text-muted-foreground text-sm">{statusText}</div>
 
       <div className="flex flex-col items-center gap-4">
@@ -353,7 +384,7 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
           )}
           <div
             className={cn(
-              "relative flex size-32 items-center justify-center rounded-full transition-colors",
+              "relative flex size-48 items-center justify-center rounded-full transition-colors",
               isAISpeaking && "bg-primary/15",
               isUserSpeaking && "bg-emerald-500/15",
             )}
@@ -362,11 +393,11 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
               <MicIconLarge />
             ) : (
               <Image
-                src="/tanny.png"
+                src="/tanny-cat-cutout.png"
                 alt="Tanny"
-                width={88}
-                height={88}
-                className="rounded-full"
+                width={136}
+                height={136}
+                className="object-contain"
               />
             )}
           </div>

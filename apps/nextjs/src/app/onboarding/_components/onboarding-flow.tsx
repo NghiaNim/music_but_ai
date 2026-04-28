@@ -549,11 +549,11 @@ export function OnboardingFlow() {
 function AIMentorAvatar({ size = 24 }: { size?: number }) {
   return (
     <Image
-      src="/tanny.png"
+      src="/tanny-cat-cutout.png"
       alt="Tanny the cat"
       width={size}
       height={size}
-      className="rounded-full"
+      className="object-contain"
     />
   );
 }

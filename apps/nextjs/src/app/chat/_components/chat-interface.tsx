@@ -104,11 +104,11 @@ export function ChatInterface() {
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <div className="flex items-center gap-2">
             <Image
-              src="/tanny.png"
+              src="/tanny-cat-cutout.png"
               alt="Tanny"
-              width={32}
-              height={32}
-              className="rounded-full"
+              width={44}
+              height={44}
+              className="object-contain"
             />
             <div className="min-w-0">
               <h1 className="text-lg font-semibold">Ask Tanny</h1>
