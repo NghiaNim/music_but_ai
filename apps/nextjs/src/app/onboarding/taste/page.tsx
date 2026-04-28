@@ -13,7 +13,11 @@ export default async function TasteOnboardingPage() {
 
   return (
     <HydrateClient>
-      <div className="fixed inset-0 top-12 bottom-16 flex flex-col bg-white dark:bg-neutral-950">
+      {/* Lives inside the global mobile shell (max-w-[430px]); use
+          min-h to fill the area between TopHeader and BottomNav
+          rather than `fixed inset-0` (which broke out of the shell
+          on desktop). */}
+      <div className="flex min-h-[calc(100dvh-7rem)] flex-col bg-white dark:bg-neutral-950">
         <Suspense
           fallback={
             <div className="flex flex-1 items-center justify-center">

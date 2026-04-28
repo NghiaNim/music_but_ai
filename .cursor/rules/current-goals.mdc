@@ -20,9 +20,19 @@ We are adapting the original spec (kept verbatim at the bottom as **Appendix A**
 | 5 | Visual cards onboarding (5 questions, resume via OnboardingSession) | ✅ DONE |
 | 6 | Clips phase (auto-play, skip-ms capture, optional voice reaction) | ✅ DONE |
 | 7 | Reveal animation + `/profile/taste` page | ✅ DONE |
+| 7.5 | UX fix: mobile shell respect + sign-in default → `/onboarding/taste` | ✅ DONE |
 | 8 | Event logger (batched client util + `/api/events` REST shim for sendBeacon) | ⏭️ NEXT |
 | 9 | (Optional) integrate existing Tanny voice phase as Phase 1 | pending |
 | 10 | (Optional) weekly re-derivation cron, gated on ≥20 new events | pending |
+
+---
+
+## Tanny voice flow status (post Step 7.5)
+
+- The legacy Tanny voice quiz still lives at `/onboarding` and is fully functional.
+- It is **orphaned from primary nav** as of 7.5: home CTA, sign-in default, and `/profile` "Your taste" all point at `/onboarding/taste` (the new visual flow).
+- Direct URL access to `/onboarding` still works for anyone who has it bookmarked.
+- Step 9 will reintegrate Tanny as an optional Phase 1 inside the new flow rather than as a separate competing path.
 
 ---
 
@@ -180,6 +190,27 @@ UI changes were made conservatively — no new shadcn primitives, no new color p
 - **No inline per-dimension editor in v1.** Spec calls for an "edit drawer that re-uses the visual card components." I shipped a "Re-take the taste quiz" link instead, with a working restart flow, and deferred inline edit so we can iterate on the static layout first based on user feedback. Implementation note for the inline edit later: re-use `QuestionCard` from onboarding, swap each profile-card tile into edit-mode on tap, persist via `tasteProfile.update`. The `update` mutation already exists and already busts the recommendation cache.
 - **Same component name (`MinimalReveal`) kept** even though it's no longer minimal — avoids touching the visual-cards-flow import surface during a UI iteration phase. Will rename in a cleanup pass later.
 - **No "Edit my profile" link from the reveal** — spec mentioned it. The reveal links to `/profile/taste` instead, which is the proper home for editing. Cuts dead-end click paths.
+
+---
+
+## Step 7.5 — DONE: UX fix (mobile shell + sign-in default)
+
+What landed:
+
+- **Sign-in default redirect** changed from `/onboarding` (legacy Tanny) → `/onboarding/taste`. Both Discord and Google buttons updated. New users now land on the visual quiz, matching the home CTA.
+- **Mobile-shell containment** — the global app shell is `max-w-[430px]`, but the new flow used `fixed inset-0 top-12 bottom-16`, which is positioned against the viewport and broke out of the 430px shell on desktop. Replaced with `flex min-h-[calc(100dvh-7rem)] flex-col` so the page lives **inside** the shell and inherits its width. (The legacy Tanny `/onboarding` page has the same `fixed inset-0` issue — left untouched per "don't break what works", will be revisited only if Step 9 reactivates it.)
+- **Content widths reduced**:
+  - `QuestionCard`: dropped `max-w-xl` (576px) → `w-full`. Reduced base prompt from `text-2xl md:text-3xl` → `text-xl sm:text-2xl`. Tightened option-button padding from `px-5 py-4` → `px-4 py-3`.
+  - `ClipPlayer`: dropped `max-w-md` (448px) → `w-full`. Reduced title from `text-xl md:text-2xl` → `text-lg sm:text-xl`.
+  - `MinimalReveal`: dropped `mx-auto max-w-lg` (512px) → `w-full`. Tightened padding for narrow viewports.
+- **Header rows tightened** — `gap-4 px-4` → `gap-2 px-3` so the back/skip buttons + progress pips fit comfortably at 430px without wrapping. Added `shrink-0` on the side controls.
+- **Inner flex containers** — `h-full` → `flex-1` everywhere in the flow components, so the new outer wrapper (which is now flex with `min-h-...` instead of `fixed`) actually stretches its children.
+
+Tanny coexistence (per user question "is the Tanny call still supported?"):
+
+- Yes — `/onboarding` route + voice flow are unchanged and still functional. Anyone with a deep link or bookmark can still reach it.
+- It is intentionally orphaned from primary nav as of this step. The home CTA, sign-in default, and `/profile` "Your taste" all point at `/onboarding/taste` now.
+- Step 9 will reintegrate it as an optional Phase 1 inside the new flow rather than as a separate parallel path.
 
 ---
 

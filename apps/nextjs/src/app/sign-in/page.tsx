@@ -42,7 +42,7 @@ export default async function SignInPage(props: {
                 const res = await auth.api.signInSocial({
                   body: {
                     provider: "discord",
-                    callbackURL: callbackUrl ?? "/onboarding",
+                    callbackURL: callbackUrl ?? "/onboarding/taste",
                   },
                 });
                 if (!res.url) {
@@ -66,7 +66,7 @@ export default async function SignInPage(props: {
                 const res = await auth.api.signInSocial({
                   body: {
                     provider: "google",
-                    callbackURL: callbackUrl ?? "/onboarding",
+                    callbackURL: callbackUrl ?? "/onboarding/taste",
                   },
                 });
                 if (!res.url) {

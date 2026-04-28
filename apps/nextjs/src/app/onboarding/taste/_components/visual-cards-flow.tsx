@@ -207,7 +207,7 @@ export function VisualCardsFlow() {
 
   if (phase === "idle" || (phase === "questions" && !currentQuestion)) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <div className="bg-muted size-8 animate-pulse rounded-full" />
       </div>
     );
@@ -225,22 +225,22 @@ export function VisualCardsFlow() {
 
   if (phase === "deriving" || phase === "reveal") {
     return (
-      <div className="flex h-full flex-col items-center justify-center px-6">
+      <div className="flex flex-1 flex-col items-center justify-center">
         <MinimalReveal profile={profile} isLoading={phase === "deriving"} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between gap-4 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
+    <div className="flex flex-1 flex-col">
+      <header className="flex items-center justify-between gap-2 border-b border-neutral-200 px-3 py-3 dark:border-neutral-800">
         <Button
           variant="ghost"
           size="sm"
           onClick={handleBack}
           disabled={questionIndex === 0 || saveAnswers.isPending}
           className={cn(
-            "transition-opacity",
+            "shrink-0 transition-opacity",
             questionIndex === 0 && "pointer-events-none opacity-0",
           )}
           aria-label="Previous question"
@@ -249,14 +249,14 @@ export function VisualCardsFlow() {
           <span>Back</span>
         </Button>
         <ProgressPips total={total} currentIndex={questionIndex} />
-        <span className="text-muted-foreground text-xs tabular-nums">
+        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
           {questionIndex + 1} / {total}
         </span>
       </header>
 
       <main
         key={questionIndex}
-        className="animate-in fade-in slide-in-from-right-4 flex flex-1 items-center justify-center overflow-y-auto px-6 py-8 duration-300"
+        className="animate-in fade-in slide-in-from-right-4 flex flex-1 items-start justify-center px-4 py-6 duration-300 sm:items-center sm:px-6 sm:py-8"
       >
         {currentQuestion && (
           <QuestionCard

@@ -48,7 +48,7 @@ export function ClipsPhase({
 
   if (clipsQuery.isLoading) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
         <div className="bg-muted size-8 animate-pulse rounded-full" />
         <p className="text-muted-foreground text-sm">Loading your clips…</p>
       </div>
@@ -57,7 +57,7 @@ export function ClipsPhase({
 
   if (clipsQuery.isError || !clipsQuery.data) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-muted-foreground">
           We couldn't load your clips. You can still finish onboarding.
         </p>
@@ -99,7 +99,7 @@ export function ClipsPhase({
 
   if (saveReactions.isPending) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
         <div className="bg-muted size-8 animate-pulse rounded-full" />
         <p className="text-muted-foreground text-sm">Saving your reactions…</p>
       </div>
@@ -108,22 +108,22 @@ export function ClipsPhase({
 
   if (!currentClip) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
         <Button onClick={onSkipPhase}>Build my profile</Button>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between gap-4 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-        <div className="w-20" />
+    <div className="flex flex-1 flex-col">
+      <header className="flex items-center justify-between gap-2 border-b border-neutral-200 px-3 py-3 dark:border-neutral-800">
+        <div className="w-16 shrink-0" />
         <ProgressPips total={total} currentIndex={index} />
         <Button
           variant="ghost"
           size="sm"
           onClick={onSkipPhase}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground shrink-0 text-xs"
         >
           Skip the rest
         </Button>
@@ -131,7 +131,7 @@ export function ClipsPhase({
 
       <main
         key={currentClip.id}
-        className="animate-in fade-in slide-in-from-bottom-2 flex flex-1 items-center justify-center overflow-y-auto px-6 py-8 duration-300"
+        className="animate-in fade-in slide-in-from-bottom-2 flex flex-1 items-start justify-center px-4 py-6 duration-300 sm:items-center sm:px-6 sm:py-8"
       >
         <ClipPlayer
           clip={currentClip}

@@ -150,7 +150,7 @@ export function ClipPlayer({
     durationMs > 0 ? Math.min(100, (progressMs / durationMs) * 100) : 0;
 
   return (
-    <div className="flex w-full max-w-md flex-col items-center gap-8">
+    <div className="flex w-full flex-col items-center gap-6">
       <audio
         ref={audioRef}
         src={clip.file}
@@ -169,8 +169,8 @@ export function ClipPlayer({
           they're staring at a static screen. */}
       <Visualizer playing={isPlaying} visualizerHeights={visualizerHeights} />
 
-      <div className="space-y-1.5 text-center">
-        <h2 className="text-xl font-semibold text-balance md:text-2xl">
+      <div className="space-y-1.5 px-2 text-center">
+        <h2 className="text-lg font-semibold text-balance sm:text-xl">
           {clip.title}
         </h2>
         <p className="text-muted-foreground text-sm">{clip.composer}</p>

@@ -60,17 +60,17 @@ export function QuestionCard({
   };
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-5">
       <div className="space-y-1.5 text-center">
         <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           {question.intro}
         </p>
-        <h2 className="text-2xl font-semibold text-balance md:text-3xl">
+        <h2 className="text-xl font-semibold text-balance sm:text-2xl">
           {question.prompt}
         </h2>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-2.5">
         {question.options.map((option) => {
           const isSelected = selected.includes(option.value);
           const isConfirming = confirmingValue === option.value;
@@ -81,7 +81,7 @@ export function QuestionCard({
               onClick={() => handleSelect(option.value)}
               disabled={(disabled ?? false) || confirmingValue !== null}
               className={cn(
-                "group relative w-full rounded-xl border bg-white px-5 py-4 text-left transition-all duration-200",
+                "group relative w-full rounded-xl border bg-white px-4 py-3 text-left transition-all duration-200",
                 "hover:border-emerald-300 hover:bg-emerald-50/40 hover:shadow-sm",
                 "dark:bg-neutral-900 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/20",
                 "disabled:cursor-not-allowed disabled:opacity-60",

@@ -66,7 +66,7 @@ export function MinimalReveal({ profile, isLoading }: RevealProps) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-6 px-5 py-8">
+    <div className="flex w-full flex-col items-center gap-5 px-4 py-6 sm:px-5 sm:py-8">
       {/* Header card — mirrors /profile header card */}
       <div className="bg-card w-full rounded-2xl border p-6 shadow-sm">
         <div className="flex flex-col items-center text-center">
