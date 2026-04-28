@@ -42,222 +42,243 @@ const TANNY_QUOTES = [
 
 const HERO_TAGS = ["Grand", "Dreamy", "Joyful", "Smoky", "Curious"] as const;
 
-export default async function LandingPage() {
+export default function LandingPage() {
   const primaryHref = "/";
   const primaryLabel = "Get started";
 
   return (
-    <div className="relative overflow-hidden bg-linear-to-br from-amber-50/70 via-rose-50/35 to-violet-50/35 dark:from-background dark:via-rose-950/8 dark:to-violet-950/8">
+    <div className="dark:from-background relative overflow-hidden bg-linear-to-br from-amber-50/70 via-rose-50/35 to-violet-50/35 dark:via-rose-950/8 dark:to-violet-950/8">
       <HeroSparkles />
       <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 pb-12 sm:px-6 lg:px-8">
-      <header className="flex items-center justify-between py-5">
-        <Link href="/landingpage" className="text-lg font-bold tracking-tight">
-          <span className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-full border bg-background/90 shadow-sm">
-              <MusicNoteIcon />
+        <header className="flex items-center justify-between py-5">
+          <Link
+            href="/landingpage"
+            className="text-lg font-bold tracking-tight"
+          >
+            <span className="flex items-center gap-2">
+              <span className="bg-background/90 flex size-8 items-center justify-center rounded-full border shadow-sm">
+                <MusicNoteIcon />
+              </span>
+              <span>Classica</span>
             </span>
-            <span>Classica</span>
-          </span>
-        </Link>
-        <div className="flex items-center">
-          <Button asChild>
-            <Link href={primaryHref}>{primaryLabel}</Link>
-          </Button>
-        </div>
-      </header>
-
-      <main className="flex-1">
-        <section className="grid gap-10 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-16">
-          <div className="max-w-2xl">
-            <p className="text-primary mb-3 text-sm font-medium">
-              Meet Tanny, your classical and jazz sidekick
-            </p>
-            <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
-              Discover classical & jazz, powered by curiosity
-            </h1>
-            <p className="text-muted-foreground mt-4 max-w-xl text-base leading-7 sm:text-lg">
-              Classica helps you discover live classical and jazz music through
-              a fun taste profile, thoughtful recommendations, and
-              Tanny-guided moments that make the whole experience feel
-              welcoming from the very first tap.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {HERO_TAGS.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-amber-200/80 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-900 shadow-sm dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" asChild>
-                <Link href={primaryHref}>{primaryLabel}</Link>
-              </Button>
-            </div>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <StoreBadge platform="app-store" />
-              <StoreBadge platform="google-play" />
-            </div>
-            <div className="mt-8 grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
-              <StatCard value="2 min" label="to build your taste profile" />
-              <StatCard value="Tanny-approved" label="concerts matched to your vibe" />
-              <StatCard value="Beginner-friendly" label="guidance without gatekeeping" />
-            </div>
+          </Link>
+          <div className="flex items-center">
+            <Button asChild>
+              <Link href={primaryHref}>{primaryLabel}</Link>
+            </Button>
           </div>
+        </header>
 
-          <div className="relative">
-            <div className="absolute inset-0 rounded-[2rem] bg-linear-to-br from-amber-200/40 via-rose-200/25 to-violet-200/35 blur-3xl dark:from-amber-800/16 dark:via-rose-800/8 dark:to-violet-800/16" />
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-[0_20px_60px_rgba(214,143,92,0.12)] backdrop-blur sm:p-6 dark:border-white/10 dark:bg-card">
-              <div className="absolute -top-8 -right-6 h-24 w-24 rounded-full bg-amber-200/60 blur-2xl dark:bg-amber-700/20" />
-              <div className="absolute right-10 bottom-12 h-20 w-20 rounded-full bg-rose-200/60 blur-2xl dark:bg-rose-700/20" />
-              <div className="absolute top-20 -left-4 h-16 w-16 rounded-full bg-violet-200/50 blur-2xl dark:bg-violet-700/20" />
-              <div className="relative space-y-4">
-                <div className="flex items-center gap-3 rounded-2xl border border-white/80 bg-background/85 p-3 shadow-sm backdrop-blur">
-                  <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[#F5E6DC]">
-                    <Image
-                      src="/tanny-cat-cutout.png"
-                      alt="Tanny the cat mascot"
-                      width={56}
-                      height={56}
-                      className="h-full w-full object-contain object-bottom"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">Tanny says</p>
-                    <p className="text-muted-foreground text-sm leading-6">
-                      "{TANNY_QUOTES[0]}"
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-amber-100 bg-linear-to-br from-amber-50/95 to-rose-50/85 p-4 shadow-sm dark:border-amber-900/40 dark:from-amber-950/30 dark:to-rose-950/20">
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
-                    Your sound
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight">
-                    Cathartic Symphony Enthusiast
-                  </p>
-                  <p className="text-muted-foreground mt-2 text-sm leading-6">
-                    Loves emotional sweep, rich orchestration, and nights that
-                    feel transportive from the first note.
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {["Orchestral drama", "Late-night jazz", "Main-character energy"].map(
-                      (tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-white/80 bg-white/80 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm dark:border-white/10 dark:bg-background/70"
-                        >
-                          {tag}
-                        </span>
-                      ),
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <PreviewCard
-                    eyebrow="Tanny pick"
-                    title="Romantic orchestra at Carnegie"
-                    body="A big, melodic program with drama, warmth, and just the right amount of main-character energy."
-                  />
-                  <PreviewCard
-                    eyebrow="Stretch pick"
-                    title="Contemporary chamber set"
-                    body="A playful curveball for when you want something intimate, fresh, and still emotionally rich."
-                  />
-                </div>
-
-                <div className="rounded-2xl border bg-background/90 p-4 shadow-sm">
-                  <p className="text-sm font-medium">Why people use Classica</p>
-                  <ul className="text-muted-foreground mt-3 space-y-2 text-sm">
-                    <li>Personalized recommendations instead of generic listings</li>
-                    <li>A mascot guide that makes exploring feel fun</li>
-                    <li>A softer, friendlier way into live classical and jazz</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-2 sm:py-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            {TANNY_QUOTES.map((quote, index) => (
-              <div
-                key={quote}
-                className="rounded-3xl border border-white/70 bg-linear-to-br from-amber-50 via-background to-rose-50 p-5 shadow-sm transition-transform hover:-translate-y-1 dark:border-white/10 dark:from-amber-950/20 dark:to-rose-950/20"
-              >
-                <p className="text-primary text-xs font-semibold uppercase tracking-[0.18em]">
-                  Tanny note 0{index + 1}
-                </p>
-                <p className="mt-3 text-base font-medium leading-7">"{quote}"</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="py-6 sm:py-10">
-          <div className="grid gap-4 md:grid-cols-3">
-            {FEATURE_CARDS.map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-sm transition-transform hover:-translate-y-1 dark:border-white/10 dark:bg-card"
-              >
-                <p className="text-lg font-semibold">{feature.title}</p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="py-8 sm:py-12">
-          <div className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-sm sm:p-8 dark:border-white/10 dark:bg-card">
-            <p className="text-primary text-sm font-medium">How the fun starts</p>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
-              {STEPS.map((step, index) => (
-                <div
-                  key={step}
-                  className="rounded-2xl border bg-background/90 p-5 shadow-sm"
-                >
-                  <p className="text-primary text-sm font-semibold">
-                    0{index + 1}
-                  </p>
-                  <p className="mt-2 text-sm leading-6">{step}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-8 sm:py-12">
-          <div className="rounded-[2rem] border bg-linear-to-br from-amber-50 via-background to-rose-50 p-6 shadow-sm dark:from-amber-950/20 dark:via-background dark:to-rose-950/20 sm:p-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-balance">
-                Let Tanny help you find your next obsession.
-              </h2>
-              <p className="text-muted-foreground mt-3 text-sm leading-6 sm:text-base">
-                Whether you are brand new or already obsessed, Classica makes
-                discovering what to hear next feel playful, personal, and easy
-                to jump into.
+        <main className="flex-1">
+          <section className="grid gap-10 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-16">
+            <div className="max-w-2xl">
+              <p className="text-primary mb-3 text-sm font-medium">
+                Meet Tanny, your classical and jazz sidekick
               </p>
-              <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+              <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+                Discover classical & jazz, powered by curiosity
+              </h1>
+              <p className="text-muted-foreground mt-4 max-w-xl text-base leading-7 sm:text-lg">
+                Classica helps you discover live classical and jazz music
+                through a fun taste profile, thoughtful recommendations, and
+                Tanny-guided moments that make the whole experience feel
+                welcoming from the very first tap.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {HERO_TAGS.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-amber-200/80 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-900 shadow-sm dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button size="lg" asChild>
                   <Link href={primaryHref}>{primaryLabel}</Link>
                 </Button>
               </div>
-              <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
-                <StoreBadge platform="app-store" centered />
-                <StoreBadge platform="google-play" centered />
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <StoreBadge platform="app-store" />
+                <StoreBadge platform="google-play" />
+              </div>
+              <div className="text-muted-foreground mt-8 grid gap-3 text-sm sm:grid-cols-3">
+                <StatCard value="2 min" label="to build your taste profile" />
+                <StatCard
+                  value="Tanny-approved"
+                  label="concerts matched to your vibe"
+                />
+                <StatCard
+                  value="Beginner-friendly"
+                  label="guidance without gatekeeping"
+                />
               </div>
             </div>
-          </div>
-        </section>
-      </main>
+
+            <div className="relative">
+              <div className="absolute inset-0 rounded-[2rem] bg-linear-to-br from-amber-200/40 via-rose-200/25 to-violet-200/35 blur-3xl dark:from-amber-800/16 dark:via-rose-800/8 dark:to-violet-800/16" />
+              <div className="dark:bg-card relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-[0_20px_60px_rgba(214,143,92,0.12)] backdrop-blur sm:p-6 dark:border-white/10">
+                <div className="absolute -top-8 -right-6 h-24 w-24 rounded-full bg-amber-200/60 blur-2xl dark:bg-amber-700/20" />
+                <div className="absolute right-10 bottom-12 h-20 w-20 rounded-full bg-rose-200/60 blur-2xl dark:bg-rose-700/20" />
+                <div className="absolute top-20 -left-4 h-16 w-16 rounded-full bg-violet-200/50 blur-2xl dark:bg-violet-700/20" />
+                <div className="relative space-y-4">
+                  <div className="bg-background/85 flex items-center gap-3 rounded-2xl border border-white/80 p-3 shadow-sm backdrop-blur">
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[#F5E6DC]">
+                      <Image
+                        src="/tanny-cat-cutout.png"
+                        alt="Tanny the cat mascot"
+                        width={56}
+                        height={56}
+                        className="h-full w-full object-contain object-bottom"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold">Tanny says</p>
+                      <p className="text-muted-foreground text-sm leading-6">
+                        "{TANNY_QUOTES[0]}"
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-amber-100 bg-linear-to-br from-amber-50/95 to-rose-50/85 p-4 shadow-sm dark:border-amber-900/40 dark:from-amber-950/30 dark:to-rose-950/20">
+                    <p className="text-xs font-medium tracking-[0.18em] text-amber-700 uppercase dark:text-amber-300">
+                      Your sound
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold tracking-tight">
+                      Cathartic Symphony Enthusiast
+                    </p>
+                    <p className="text-muted-foreground mt-2 text-sm leading-6">
+                      Loves emotional sweep, rich orchestration, and nights that
+                      feel transportive from the first note.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {[
+                        "Orchestral drama",
+                        "Late-night jazz",
+                        "Main-character energy",
+                      ].map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-foreground dark:bg-background/70 rounded-full border border-white/80 bg-white/80 px-2.5 py-1 text-xs font-medium shadow-sm dark:border-white/10"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <PreviewCard
+                      eyebrow="Tanny pick"
+                      title="Romantic orchestra at Carnegie"
+                      body="A big, melodic program with drama, warmth, and just the right amount of main-character energy."
+                    />
+                    <PreviewCard
+                      eyebrow="Stretch pick"
+                      title="Contemporary chamber set"
+                      body="A playful curveball for when you want something intimate, fresh, and still emotionally rich."
+                    />
+                  </div>
+
+                  <div className="bg-background/90 rounded-2xl border p-4 shadow-sm">
+                    <p className="text-sm font-medium">
+                      Why people use Classica
+                    </p>
+                    <ul className="text-muted-foreground mt-3 space-y-2 text-sm">
+                      <li>
+                        Personalized recommendations instead of generic listings
+                      </li>
+                      <li>A mascot guide that makes exploring feel fun</li>
+                      <li>
+                        A softer, friendlier way into live classical and jazz
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="py-2 sm:py-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              {TANNY_QUOTES.map((quote, index) => (
+                <div
+                  key={quote}
+                  className="via-background rounded-3xl border border-white/70 bg-linear-to-br from-amber-50 to-rose-50 p-5 shadow-sm transition-transform hover:-translate-y-1 dark:border-white/10 dark:from-amber-950/20 dark:to-rose-950/20"
+                >
+                  <p className="text-primary text-xs font-semibold tracking-[0.18em] uppercase">
+                    Tanny note 0{index + 1}
+                  </p>
+                  <p className="mt-3 text-base leading-7 font-medium">
+                    "{quote}"
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="py-6 sm:py-10">
+            <div className="grid gap-4 md:grid-cols-3">
+              {FEATURE_CARDS.map((feature) => (
+                <div
+                  key={feature.title}
+                  className="dark:bg-card rounded-3xl border border-white/70 bg-white/80 p-6 shadow-sm transition-transform hover:-translate-y-1 dark:border-white/10"
+                >
+                  <p className="text-lg font-semibold">{feature.title}</p>
+                  <p className="text-muted-foreground mt-2 text-sm leading-6">
+                    {feature.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="py-8 sm:py-12">
+            <div className="dark:bg-card rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-sm sm:p-8 dark:border-white/10">
+              <p className="text-primary text-sm font-medium">
+                How the fun starts
+              </p>
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                {STEPS.map((step, index) => (
+                  <div
+                    key={step}
+                    className="bg-background/90 rounded-2xl border p-5 shadow-sm"
+                  >
+                    <p className="text-primary text-sm font-semibold">
+                      0{index + 1}
+                    </p>
+                    <p className="mt-2 text-sm leading-6">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="py-8 sm:py-12">
+            <div className="via-background dark:via-background rounded-[2rem] border bg-linear-to-br from-amber-50 to-rose-50 p-6 shadow-sm sm:p-8 dark:from-amber-950/20 dark:to-rose-950/20">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold tracking-tight text-balance">
+                  Let Tanny help you find your next obsession.
+                </h2>
+                <p className="text-muted-foreground mt-3 text-sm leading-6 sm:text-base">
+                  Whether you are brand new or already obsessed, Classica makes
+                  discovering what to hear next feel playful, personal, and easy
+                  to jump into.
+                </p>
+                <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                  <Button size="lg" asChild>
+                    <Link href={primaryHref}>{primaryLabel}</Link>
+                  </Button>
+                </div>
+                <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
+                  <StoreBadge platform="app-store" centered />
+                  <StoreBadge platform="google-play" centered />
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
   );
@@ -265,7 +286,7 @@ export default async function LandingPage() {
 
 function StatCard(props: { value: string; label: string }) {
   return (
-    <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-card">
+    <div className="dark:bg-card rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-white/10">
       <p className="text-foreground text-sm font-semibold">{props.value}</p>
       <p className="text-muted-foreground mt-1 text-xs leading-5">
         {props.label}
@@ -274,14 +295,10 @@ function StatCard(props: { value: string; label: string }) {
   );
 }
 
-function PreviewCard(props: {
-  eyebrow: string;
-  title: string;
-  body: string;
-}) {
+function PreviewCard(props: { eyebrow: string; title: string; body: string }) {
   return (
-    <div className="rounded-2xl border bg-background/90 p-4 shadow-sm">
-      <p className="text-primary text-xs font-medium uppercase tracking-[0.18em]">
+    <div className="bg-background/90 rounded-2xl border p-4 shadow-sm">
+      <p className="text-primary text-xs font-medium tracking-[0.18em] uppercase">
         {props.eyebrow}
       </p>
       <p className="mt-2 font-semibold">{props.title}</p>
@@ -301,23 +318,25 @@ function StoreBadge(props: {
   return (
     <div
       className={[
-        "flex min-h-14 min-w-[190px] items-center gap-3 rounded-2xl border border-white/70 bg-white/85 px-4 py-3 shadow-sm backdrop-blur dark:border-white/10 dark:bg-card",
+        "dark:bg-card flex min-h-14 min-w-[190px] items-center gap-3 rounded-2xl border border-white/70 bg-white/85 px-4 py-3 shadow-sm backdrop-blur dark:border-white/10",
         props.centered ? "justify-center" : "",
       ].join(" ")}
-      aria-label={isAppStore ? "Download on the App Store" : "Get it on Google Play"}
+      aria-label={
+        isAppStore ? "Download on the App Store" : "Get it on Google Play"
+      }
     >
       <div className="text-foreground shrink-0">
         {isAppStore ? <AppleIcon /> : <PlayStoreIcon />}
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        <p className="text-muted-foreground text-[10px] tracking-[0.18em] uppercase">
           {isAppStore ? "Download on the" : "Get it on"}
         </p>
         <p className="text-sm font-semibold">
           {isAppStore ? "App Store" : "Google Play"}
         </p>
       </div>
-      <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
+      <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-[10px] font-medium">
         Coming soon
       </span>
     </div>
@@ -326,7 +345,10 @@ function StoreBadge(props: {
 
 function HeroSparkles() {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      aria-hidden
+    >
       <div className="absolute top-8 left-[8%] h-32 w-32 rounded-full bg-amber-200/22 blur-3xl dark:bg-amber-700/10" />
       <div className="absolute top-28 right-[18%] h-36 w-36 rounded-full bg-rose-200/18 blur-3xl dark:bg-rose-700/10" />
       <div className="absolute bottom-24 left-[18%] h-36 w-36 rounded-full bg-violet-200/18 blur-3xl dark:bg-violet-700/10" />
@@ -379,7 +401,7 @@ function HeroSparkles() {
         <path d="M12 2.5 13.9 8l5.6 1.9-5.6 1.9L12 17.5l-1.9-5.7L4.5 9.9 10.1 8z" />
       </svg>
       <svg
-        className="absolute bottom-36 right-[28%] rotate-6 text-violet-400/38 dark:text-violet-300/30"
+        className="absolute right-[28%] bottom-36 rotate-6 text-violet-400/38 dark:text-violet-300/30"
         width="18"
         height="18"
         viewBox="0 0 24 24"
@@ -458,9 +480,15 @@ function PlayStoreIcon() {
       fill="none"
     >
       <path d="M4 3.5v17l9.5-8.5z" fill="#34A853" />
-      <path d="M13.5 12 17 8.9 20.8 11c.9.5.9 1.5 0 2L17 15.1z" fill="#FBBC04" />
+      <path
+        d="M13.5 12 17 8.9 20.8 11c.9.5.9 1.5 0 2L17 15.1z"
+        fill="#FBBC04"
+      />
       <path d="M4 3.5 13.5 12 17 8.9l-11-6c-.8-.4-2 .1-2 1.6z" fill="#4285F4" />
-      <path d="M4 20.5 13.5 12 17 15.1l-11 6c-.8.4-2-.1-2-1.6z" fill="#EA4335" />
+      <path
+        d="M4 20.5 13.5 12 17 15.1l-11 6c-.8.4-2-.1-2-1.6z"
+        fill="#EA4335"
+      />
     </svg>
   );
 }
