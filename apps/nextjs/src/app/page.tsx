@@ -247,14 +247,6 @@ function CalendarSparkle() {
   );
 }
 
-function SpeechBubbleDecor() {
-  return (
-    <svg width="120" height="120" viewBox="0 0 120 120" fill="currentColor">
-      <path d="M10 30 C10 15 25 5 50 5 C85 5 110 20 110 50 C110 80 85 95 55 95 L35 115 L38 90 C20 85 10 70 10 50Z" />
-    </svg>
-  );
-}
-
 function SeedlingIllustration() {
   return (
     <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
