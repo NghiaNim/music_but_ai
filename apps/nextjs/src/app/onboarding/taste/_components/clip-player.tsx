@@ -160,10 +160,6 @@ export function ClipPlayer({
         onEnded={handleEnded}
       />
 
-      <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-        Clip {index} of {total}
-      </div>
-
       {/* Pulsing visualizer — purely decorative; gives the user
           something to look at while listening so they don't feel like
           they're staring at a static screen. */}

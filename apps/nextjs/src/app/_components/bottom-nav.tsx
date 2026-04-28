@@ -21,8 +21,9 @@ export function BottomNav() {
   // affordance in the page wrapper so users still have a way out.
   const isOnboarding =
     pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+  const isTasteProfile = pathname === "/profile/taste";
 
-  if (isChatPage || isOnboarding) return null;
+  if (isChatPage || isOnboarding || isTasteProfile) return null;
 
   return (
     <nav className="sticky bottom-0 z-50 border-t bg-amber-50/90 backdrop-blur supports-backdrop-filter:bg-amber-50/70 dark:bg-amber-950/90 dark:supports-backdrop-filter:bg-amber-950/70">

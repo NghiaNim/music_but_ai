@@ -8,7 +8,8 @@ export function HideOnChat({ children }: { children: ReactNode }) {
   const hideHeader =
     pathname === "/chat" ||
     pathname === "/onboarding" ||
-    pathname.startsWith("/onboarding/");
+    pathname.startsWith("/onboarding/") ||
+    pathname === "/profile/taste";
   if (hideHeader) return null;
   return <>{children}</>;
 }
