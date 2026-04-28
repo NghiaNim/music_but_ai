@@ -21,18 +21,17 @@ We are adapting the original spec (kept verbatim at the bottom as **Appendix A**
 | 6 | Clips phase (auto-play, skip-ms capture, optional voice reaction) | ✅ DONE |
 | 7 | Reveal animation + `/profile/taste` page | ✅ DONE |
 | 7.5 | UX fix: mobile shell respect + sign-in default → `/onboarding/taste` | ✅ DONE |
-| 8 | Event logger (batched client util + `/api/events` REST shim for sendBeacon) | ⏭️ NEXT |
-| 9 | (Optional) integrate existing Tanny voice phase as Phase 1 | pending |
+| 8 | Event logger (batched client util + `/api/events` REST shim for sendBeacon) | pending |
+| 9 | Tanny voice as Phase 1 of the new flow (+ bottom-nav escape) | ✅ DONE |
 | 10 | (Optional) weekly re-derivation cron, gated on ≥20 new events | pending |
 
 ---
 
-## Tanny voice flow status (post Step 7.5)
+## Tanny voice flow status (current)
 
-- The legacy Tanny voice quiz still lives at `/onboarding` and is fully functional.
-- It is **orphaned from primary nav** as of 7.5: home CTA, sign-in default, and `/profile` "Your taste" all point at `/onboarding/taste` (the new visual flow).
-- Direct URL access to `/onboarding` still works for anyone who has it bookmarked.
-- Step 9 will reintegrate Tanny as an optional Phase 1 inside the new flow rather than as a separate competing path.
+- **As of Step 9, Tanny is back as Phase 1 of `/onboarding/taste`.** Users land on a Tanny-avatar intro card, tap "Start chatting", get a TTS greeting, speak freely (browser SpeechRecognition with live caption), then auto-advance to the visual cards. The transcript is persisted to `OnboardingSession.voiceTranscript` and feeds `tasteProfile.derive` alongside the cards + clips.
+- Voice is **always skippable** ("Skip — just show me the cards" on the intro, "Skip the rest" mid-call). Skipping calls `onboarding.skipVoicePhase` which only advances the session phase server-side.
+- The legacy `/onboarding` page still works for anyone with a bookmark; it's no longer reachable from primary nav. We can deprecate the legacy route + its supporting procs (`onboarding.reply`, `onboarding.complete`, `onboarding.getQuestions`) in a cleanup pass after the new flow ships.
 
 ---
 
@@ -211,6 +210,29 @@ Tanny coexistence (per user question "is the Tanny call still supported?"):
 - Yes — `/onboarding` route + voice flow are unchanged and still functional. Anyone with a deep link or bookmark can still reach it.
 - It is intentionally orphaned from primary nav as of this step. The home CTA, sign-in default, and `/profile` "Your taste" all point at `/onboarding/taste` now.
 - Step 9 will reintegrate it as an optional Phase 1 inside the new flow rather than as a separate parallel path.
+
+---
+
+## Step 9 — DONE: Tanny voice as Phase 1 + bottom-nav escape
+
+What landed:
+
+- **Exit affordance (immersive-first)** — bottom nav stays hidden on every `/onboarding/**` route so the flow doesn't feel cluttered. Instead, a small floating "X" button sits in the top-right of the page wrapper as the explicit save-and-exit affordance. Because `OnboardingSession` auto-persists at every save proc, tapping X is fully reversible — coming back lands the user exactly where they left off.
+- **`onboarding.saveVoiceTranscript`** — new tRPC proc, saves the transcript onto the session and advances `phase: "voice" → "visual"`. Only auto-advances when phase is currently `voice`, so a returning mid-quiz user re-recording can't get bumped backward.
+- **`onboarding.skipVoicePhase`** — companion proc that just bumps the phase forward without any transcript. No-op if the user already moved past voice.
+- **`VoicePhase` component** (`apps/nextjs/src/app/onboarding/taste/_components/voice-phase.tsx`):
+  - Reuses the existing infra: `onboarding.speak` (ElevenLabs TTS) + browser `SpeechRecognition` (free STT). Same Tanny avatar (`/tanny.png`) and pulsing-ring visual language as the legacy `/onboarding` flow so the brand carries through.
+  - **One-question structure**: Tanny opens with a warm prompt ("Tell me about a piece of music that's stayed with you — what it is, and how it makes you feel"), listens, wraps up. Total time ~60-90s. Multi-turn chat would add complexity without obvious lift over a single open question feeding the LLM.
+  - **`continuous: true` recognition with live interim caption** — user can speak multiple sentences; we show the live transcript so they know the mic is working. 60s safety-net timeout in case the browser refuses to end.
+  - **Always-on skip path** — both "Skip — just show me the cards" on the intro and "Skip the rest" mid-call. Browsers without SpeechRecognition (Firefox, some WebViews) get a `window.prompt` typed fallback rather than an error wall.
+  - **Empty transcript = soft skip** — if the user taps Start but never says anything, we call `skipVoicePhase` server-side rather than persisting an empty transcript.
+- **State machine extended**: `idle → voice → questions → clips → deriving → reveal`. Bootstrap effect now branches on `session.phase === "voice"` to land returning users back at Tanny if they bailed mid-call.
+
+### Deliberate deviations from spec
+
+- **No GPT-driven follow-up turns.** The original spec called for a 3-4 minute conversation covering 3 named topics with the AI following up on interesting answers. I shipped a single open prompt + capture instead. Rationale: the LLM only needs *some* freeform prose to shape the derivation; the cards + clips do the structured signal collection. A back-and-forth voice loop would 4x the time-to-card while delivering marginal lift to the profile. Easy to extend later if voice retention shows users want to keep talking.
+- **No real-time follow-up generation via `onboarding.reply`.** The legacy proc is hardwired to `questionIndex: 0` and a fixed question list — repurposing it would muddy responsibilities. We just use TTS for greeting/wrap-up and capture the user's freeform answer raw.
+- **No mid-call mute / barge-in.** Browser-side support for interrupting TTS is uneven; "Skip the rest" handles the I-want-out case cleanly enough for v1.
 
 ---
 

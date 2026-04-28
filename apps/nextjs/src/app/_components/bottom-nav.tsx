@@ -16,6 +16,9 @@ const NAV_ITEMS = [
 export function BottomNav() {
   const pathname = usePathname();
   const isChatPage = pathname === "/chat";
+  // Hide on every onboarding route (legacy + new) — the flow is
+  // immersive by design. The new flow exposes its own "Save & exit"
+  // affordance in the page wrapper so users still have a way out.
   const isOnboarding =
     pathname === "/onboarding" || pathname.startsWith("/onboarding/");
 

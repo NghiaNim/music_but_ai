@@ -15,8 +15,9 @@ import { MinimalReveal } from "./minimal-reveal";
 import { ProgressPips } from "./progress-pips";
 import { QuestionCard } from "./question-card";
 import { QUESTIONS } from "./questions";
+import { VoicePhase } from "./voice-phase";
 
-type Phase = "idle" | "questions" | "clips" | "deriving" | "reveal";
+type Phase = "idle" | "voice" | "questions" | "clips" | "deriving" | "reveal";
 
 interface DerivedProfile {
   archetype: string | null;
@@ -81,8 +82,13 @@ export function VisualCardsFlow() {
           return;
         }
 
-        // Resume by phase: clips → clip-phase, complete → derive,
-        // otherwise → first unanswered visual question.
+        // Resume by phase: voice → voice phase (Tanny intro),
+        // clips → clip-phase, complete → derive, otherwise →
+        // first unanswered visual question.
+        if (session.phase === "voice") {
+          setPhase("voice");
+          return;
+        }
         if (session.phase === "clips") {
           setPhase("clips");
           return;
@@ -193,6 +199,15 @@ export function VisualCardsFlow() {
     void runDerive(sessionId);
   };
 
+  const handleVoiceDone = () => {
+    // Always advance to the first visual question when the voice
+    // phase finishes (whether the user spoke or skipped). The
+    // `saveVoiceTranscript` proc has already moved the session
+    // phase server-side, so a refresh would land here too.
+    setQuestionIndex(0);
+    setPhase("questions");
+  };
+
   const handleBack = () => {
     if (questionIndex === 0 || saveAnswers.isPending) return;
     setQuestionIndex((i) => Math.max(0, i - 1));
@@ -210,6 +225,16 @@ export function VisualCardsFlow() {
       <div className="flex flex-1 items-center justify-center">
         <div className="bg-muted size-8 animate-pulse rounded-full" />
       </div>
+    );
+  }
+
+  if (phase === "voice" && sessionId) {
+    return (
+      <VoicePhase
+        sessionId={sessionId}
+        onComplete={handleVoiceDone}
+        onSkip={handleVoiceDone}
+      />
     );
   }
 

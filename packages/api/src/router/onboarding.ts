@@ -241,6 +241,98 @@ export const onboardingRouter = {
   }),
 
   /**
+   * Saves the Tanny voice conversation transcript to the session
+   * and advances `phase` from "voice" → "visual". Idempotent: if
+   * the user re-records, the latest transcript wins. Skipping the
+   * voice phase calls this with an empty string (or never; the
+   * UI just advances the phase locally).
+   */
+  saveVoiceTranscript: protectedProcedure
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        // Generous cap — typical 60-90s Tanny chat is ~500-1500
+        // chars, but ElevenLabs/WebSpeech can bloat with retries.
+        transcript: z.string().min(1).max(8000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const session = await ctx.db.query.OnboardingSession.findFirst({
+        where: and(
+          eq(OnboardingSession.id, input.sessionId),
+          eq(OnboardingSession.userId, userId),
+        ),
+      });
+      if (!session) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Onboarding session not found",
+        });
+      }
+      if (session.status === "complete") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot save voice transcript on a finished session",
+        });
+      }
+
+      // Only auto-advance the phase if we're still on "voice".
+      // A returning-mid-quiz user shouldn't get bumped backward
+      // if they re-record from a later stage.
+      const nextPhase: typeof session.phase =
+        session.phase === "voice" ? "visual" : session.phase;
+
+      const [updated] = await ctx.db
+        .update(OnboardingSession)
+        .set({
+          voiceTranscript: input.transcript.trim(),
+          phase: nextPhase,
+        })
+        .where(eq(OnboardingSession.id, session.id))
+        .returning();
+
+      return updated;
+    }),
+
+  /**
+   * Skips the voice phase outright — no transcript, just advance
+   * `phase` from "voice" → "visual". Idempotent and a no-op if
+   * the user has already moved past voice.
+   */
+  skipVoicePhase: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const session = await ctx.db.query.OnboardingSession.findFirst({
+        where: and(
+          eq(OnboardingSession.id, input.sessionId),
+          eq(OnboardingSession.userId, userId),
+        ),
+      });
+      if (!session) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Onboarding session not found",
+        });
+      }
+
+      if (session.phase !== "voice" || session.status === "complete") {
+        return session;
+      }
+
+      const [updated] = await ctx.db
+        .update(OnboardingSession)
+        .set({ phase: "visual" })
+        .where(eq(OnboardingSession.id, session.id))
+        .returning();
+
+      return updated;
+    }),
+
+  /**
    * Persists a partial set of visual answers. Merges into existing
    * `visualAnswers` so callers can save after every tap (powers the
    * resume-on-reload behaviour).
