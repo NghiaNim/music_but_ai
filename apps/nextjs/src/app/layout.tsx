@@ -9,6 +9,7 @@ import { env } from "~/env";
 import { TRPCReactProvider } from "~/trpc/react";
 import { BottomNav } from "./_components/bottom-nav";
 import { HideOnChat } from "./_components/hide-on-chat";
+import { RouteShell } from "./_components/route-shell";
 import { TopHeader } from "./_components/top-header";
 
 import "~/app/styles.css";
@@ -55,13 +56,16 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       >
         <ThemeProvider>
           <TRPCReactProvider>
-            <div className="relative mx-auto flex min-h-dvh max-w-[430px] flex-col bg-amber-50/50 shadow-sm dark:bg-amber-950/10">
-              <HideOnChat>
-                <TopHeader />
-              </HideOnChat>
-              <main className="flex-1">{props.children}</main>
-              <BottomNav />
-            </div>
+            <RouteShell
+              header={
+                <HideOnChat>
+                  <TopHeader />
+                </HideOnChat>
+              }
+              footer={<BottomNav />}
+            >
+              {props.children}
+            </RouteShell>
           </TRPCReactProvider>
           <Toaster />
         </ThemeProvider>

@@ -4,6 +4,8 @@
 
 We're building the **first engagement + identity platform for live performance**, starting with classical music. The app turns live attendance into an edutainment loop — an AI concierge helps you discover concerts, learn about the music, and build a cultural passport of your artistic journey.
 
+The web app now also includes a dedicated marketing entry at `/landingpage`, implemented with a separate route group so it can use a standalone landing-page layout without the in-app mobile shell.
+
 ---
 
 ## Stack: create-t3-turbo Monorepo
