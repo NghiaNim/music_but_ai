@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
+import { formatLongDateOnly } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 
 export function TicketConfirmation() {
@@ -123,14 +124,7 @@ export function TicketConfirmation() {
           <div className="space-y-2 text-sm">
             <div className="text-muted-foreground flex items-center gap-2">
               <CalendarSmallIcon />
-              <span>
-                {new Date(orderData.event.date).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
+              <span>{formatLongDateOnly(new Date(orderData.event.date))}</span>
             </div>
             <div className="text-muted-foreground flex items-center gap-2">
               <MapPinSmallIcon />

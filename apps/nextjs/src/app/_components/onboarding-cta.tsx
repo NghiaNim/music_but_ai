@@ -31,6 +31,30 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
     );
   }
 
+  // Prefer the new taste profile (archetype + badge) when present;
+  // fall back to the legacy experience-level state for users who only
+  // completed the old voice flow.
+  if (isSignedIn && profile?.archetype) {
+    return (
+      <Link href="/profile" className="block">
+        <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-2xl dark:bg-emerald-900/30">
+            {profile.badgeEmoji ?? "♪"}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold">{profile.archetype}</p>
+            <p className="text-muted-foreground truncate text-xs">
+              {profile.tags && profile.tags.length > 0
+                ? profile.tags.slice(0, 3).join(" · ")
+                : "Personalized picks ready for you"}
+            </p>
+          </div>
+          <ChevronRightIcon />
+        </div>
+      </Link>
+    );
+  }
+
   if (isSignedIn && profile?.onboardingCompleted) {
     return (
       <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
@@ -70,15 +94,15 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
 
   if (isSignedIn) {
     return (
-      <Link href="/onboarding" className="block">
+      <Link href="/onboarding/taste" className="block">
         <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
             <WaveformIcon />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold">Take the Music Quiz</p>
+            <p className="font-semibold">Discover your sound</p>
             <p className="text-muted-foreground text-xs">
-              1 min — tell us your taste, hear some music
+              2 min — five quick taps and we'll find your next concert
             </p>
           </div>
           <ChevronRightIcon />
@@ -88,15 +112,15 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
   }
 
   return (
-    <Link href="/sign-in?callbackUrl=/onboarding" className="block">
+    <Link href="/sign-in?callbackUrl=/onboarding/taste" className="block">
       <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
           <WaveformIcon />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold">Sign in & Take the Quiz</p>
+          <p className="font-semibold">Sign in & discover your sound</p>
           <p className="text-muted-foreground text-xs">
-            1 min — tell us your taste, get personalized picks
+            2 min — five taps to your personalized picks
           </p>
         </div>
         <ChevronRightIcon />

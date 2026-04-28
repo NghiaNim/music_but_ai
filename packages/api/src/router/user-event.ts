@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { and, desc, eq } from "@acme/db";
 import { UserEvent } from "@acme/db/schema";
 
+import { bustRecommendationsCache } from "../recs-cache-bust";
 import { protectedProcedure } from "../trpc";
 
 export const userEventRouter = {
@@ -44,6 +45,7 @@ export const userEventRouter = {
 
       if (existing) {
         await ctx.db.delete(UserEvent).where(eq(UserEvent.id, existing.id));
+        void bustRecommendationsCache(ctx.session.user.id);
         return { action: "removed" as const };
       }
 
@@ -52,6 +54,7 @@ export const userEventRouter = {
         eventId: input.eventId,
         status: input.status,
       });
+      void bustRecommendationsCache(ctx.session.user.id);
       return { action: "added" as const };
     }),
 

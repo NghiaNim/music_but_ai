@@ -17,6 +17,7 @@
     "lint": "eslint",
     "sync-venues": "dotenv -e ../../.env -- tsx scripts/sync-venues.ts",
     "tag-catalog": "dotenv -e ../../.env -- tsx scripts/tag-catalog.ts",
+    "test-recommender": "dotenv -e ../../.env -- tsx scripts/test-recommender.ts",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {

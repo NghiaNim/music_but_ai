@@ -10,6 +10,8 @@ import { Button } from "@acme/ui/button";
 import { Input } from "@acme/ui/input";
 import { toast } from "@acme/ui/toast";
 
+import { JOURNAL_USER_EVENT_STATUS_BADGE } from "~/lib/event-display-labels";
+import { formatMonthShort } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 
 type UserEventWithEvent = RouterOutputs["userEvent"]["myEvents"][number];
@@ -103,7 +105,7 @@ function JournalEntry({ userEvent }: { userEvent: UserEventWithEvent }) {
     <div className="bg-card flex items-start gap-4 rounded-lg border p-4">
       <div className="bg-primary/10 flex flex-col items-center rounded-lg px-3 py-2 text-center">
         <span className="text-primary text-xs font-medium uppercase">
-          {date.toLocaleDateString("en-US", { month: "short" })}
+          {formatMonthShort(date)}
         </span>
         <span className="text-primary text-xl font-bold">{date.getDate()}</span>
       </div>
@@ -166,9 +168,7 @@ function JournalEntry({ userEvent }: { userEvent: UserEventWithEvent }) {
       <span
         className={cn(
           "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
-          userEvent.status === "attended"
-            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
-            : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+          JOURNAL_USER_EVENT_STATUS_BADGE[userEvent.status],
         )}
       >
         {userEvent.status === "attended" ? "Attended" : "Saved"}

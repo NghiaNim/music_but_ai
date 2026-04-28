@@ -6,6 +6,12 @@ import type {
   ClipMood,
   ClipTexture,
 } from "./music-catalog";
+import {
+  OPENAI_CLIP_COMPLEXITIES as COMPLEXITIES,
+  OPENAI_CLIP_ERAS as ERAS,
+  OPENAI_CLIP_MOODS as MOODS,
+  OPENAI_CLIP_TEXTURES as TEXTURES,
+} from "./taste-dimensions";
 
 // ─── Public types ───────────────────────────────────────
 
@@ -80,22 +86,6 @@ export interface DeriveOptions {
 
 // ─── OpenAI strict JSON schema ──────────────────────────
 
-const ERAS: ClipEra[] = [
-  "baroque",
-  "classical_period",
-  "romantic",
-  "impressionist",
-  "modern",
-  "contemporary",
-];
-const MOODS: ClipMood[] = [
-  "catharsis",
-  "tranquility",
-  "intellectual",
-  "energy",
-];
-const TEXTURES: ClipTexture[] = ["grand", "intimate", "vocal", "mixed"];
-const COMPLEXITIES: ClipComplexity[] = ["accessible", "layered", "challenging"];
 const MOTIVATIONS: ConcertMotivation[] = [
   "emotional_event",
   "social",
@@ -227,6 +217,19 @@ const BADGE_BY_MOOD: Record<ClipMood, string> = {
   energy: "⚡",
 };
 
+const HEURISTIC_COMPLEXITY_TAG: Record<ClipComplexity, string> = {
+  accessible: "Melodic",
+  layered: "Discerning",
+  challenging: "Adventurous",
+};
+
+const HEURISTIC_MOTIVATION_CARD: Record<ConcertMotivation, string> = {
+  emotional_event: "Profound emotional experience",
+  social: "Shared occasion",
+  discovery: "Discovery & learning",
+  prestige: "Marquee spectacle",
+};
+
 /**
  * Build a profile from visual-card answers alone, no AI involved.
  * Used when:
@@ -263,11 +266,7 @@ export function heuristicTasteProfile(
       ERA_LABEL[primaryEra],
       TEXTURE_LABEL[texture].split(" ")[0] ?? "Open",
       MOOD_LABEL[mood].split("-")[0] ?? "Listening",
-      complexity === "accessible"
-        ? "Melodic"
-        : complexity === "challenging"
-          ? "Adventurous"
-          : "Discerning",
+      HEURISTIC_COMPLEXITY_TAG[complexity],
     ],
     emotionalOrientation: mood,
     texturePreference: texture,
@@ -288,14 +287,7 @@ export function heuristicTasteProfile(
       },
       {
         label: "Concert motivation",
-        value:
-          motivation === "emotional_event"
-            ? "Profound emotional experience"
-            : motivation === "social"
-              ? "Shared occasion"
-              : motivation === "discovery"
-                ? "Discovery & learning"
-                : "Marquee spectacle",
+        value: HEURISTIC_MOTIVATION_CARD[motivation],
       },
     ],
   };

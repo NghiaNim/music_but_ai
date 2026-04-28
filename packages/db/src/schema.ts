@@ -1,5 +1,5 @@
-import { relations } from "drizzle-orm";
-import { index, pgEnum, pgTable } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import { index, pgEnum, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -388,41 +388,50 @@ export const LiveEvent = pgTable("live_event", (t) => ({
  * profile because the derivation is async and may need to re-run if
  * Claude/OpenAI returns malformed JSON.
  */
-export const OnboardingSession = pgTable("onboarding_session", (t) => ({
-  id: t.uuid().notNull().primaryKey().defaultRandom(),
-  userId: t
-    .text()
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  phase: onboardingPhaseEnum().notNull().default("voice"),
-  status: onboardingStatusEnum().notNull().default("in_progress"),
-  voiceTranscript: t.text(),
-  /**
-   * Visual card answers, e.g.:
-   * { emotional_orientation: "catharsis", texture: "intimate",
-   *   eras: ["romantic","impressionist"], complexity: "layered",
-   *   concert_motivation: "emotional_event", bridge: "film" }
-   */
-  visualAnswers: t.jsonb().$type<Record<string, string | string[]>>(),
-  /** Per-clip listening behavior; one entry per clip shown. */
-  clipReactions: t
-    .jsonb()
-    .$type<
-      {
-        clipId: string;
-        listenedMs: number;
-        skipped: boolean;
-        replayed: boolean;
-        voiceReaction: string | null;
-      }[]
-    >()
-    .default([]),
-  completedAt: t.timestamp({ mode: "date", withTimezone: true }),
-  createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
-  updatedAt: t
-    .timestamp({ mode: "date", withTimezone: true })
-    .$onUpdateFn(() => new Date()),
-}));
+export const OnboardingSession = pgTable(
+  "onboarding_session",
+  (t) => ({
+    id: t.uuid().notNull().primaryKey().defaultRandom(),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    phase: onboardingPhaseEnum().notNull().default("voice"),
+    status: onboardingStatusEnum().notNull().default("in_progress"),
+    voiceTranscript: t.text(),
+    /**
+     * Visual card answers, e.g.:
+     * { emotional_orientation: "catharsis", texture: "intimate",
+     *   eras: ["romantic","impressionist"], complexity: "layered",
+     *   concert_motivation: "emotional_event", bridge: "film" }
+     */
+    visualAnswers: t.jsonb().$type<Record<string, string | string[]>>(),
+    /** Per-clip listening behavior; one entry per clip shown. */
+    clipReactions: t
+      .jsonb()
+      .$type<
+        {
+          clipId: string;
+          listenedMs: number;
+          skipped: boolean;
+          replayed: boolean;
+          voiceReaction: string | null;
+        }[]
+      >()
+      .default([]),
+    completedAt: t.timestamp({ mode: "date", withTimezone: true }),
+    createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
+    updatedAt: t
+      .timestamp({ mode: "date", withTimezone: true })
+      .$onUpdateFn(() => new Date()),
+  }),
+  (table) => [
+    /** One in-progress quiz per user (concurrent resume safety). */
+    uniqueIndex("onboarding_session_one_in_progress_per_user")
+      .on(table.userId)
+      .where(sql`${table.status} = 'in_progress'`),
+  ],
+);
 
 // ─── UserMusicEvent (implicit signal log) ───────────────
 

@@ -20,7 +20,8 @@
     },
     "lint": {
       "dependsOn": ["^topo", "^build"],
-      "outputs": [".cache/.eslintcache"]
+      "outputs": [".cache/.eslintcache"],
+      "env": ["DEBUG_DIVERSITY", "DEBUG_RECS_CACHE"]
     },
     "typecheck": {
       "dependsOn": ["^topo", "^build"],
@@ -60,7 +61,9 @@
     "VERCEL_PROJECT_PRODUCTION_URL",
     "CRON_SECRET",
     "SENDGRID_API_KEY",
-    "SENDGRID_FROM_EMAIL"
+    "SENDGRID_FROM_EMAIL",
+    "DEBUG_DIVERSITY",
+    "DEBUG_RECS_CACHE"
   ],
   "globalPassThroughEnv": [
     "NODE_ENV",

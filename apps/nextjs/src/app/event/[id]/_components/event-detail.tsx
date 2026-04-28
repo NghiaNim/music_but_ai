@@ -13,29 +13,17 @@ import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
+import {
+  DIFFICULTY_COLORS,
+  DIFFICULTY_LABELS,
+  GENRE_LABELS,
+} from "~/lib/event-display-labels";
+import { formatLongDateAtTime } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
-
-const GENRE_LABELS: Record<string, string> = {
-  orchestral: "Orchestral",
-  opera: "Opera",
-  chamber: "Chamber",
-  solo_recital: "Solo Recital",
-  choral: "Choral",
-  ballet: "Ballet",
-  jazz: "Jazz",
-};
 
 const LISTING_LABELS: Record<string, string> = {
   local: "Local / community",
   concert: "Concert",
-};
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner:
-    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-  intermediate:
-    "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  advanced: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400",
 };
 
 export function EventDetail({
@@ -62,16 +50,7 @@ export function EventDetail({
   const isHostPreviewing = isHost && previewAsAttendee;
 
   const date = new Date(event.date);
-  const formattedDate = date.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-  const formattedTime = date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const whenLine = formatLongDateAtTime(date);
 
   return (
     <div className="relative mx-auto max-w-lg">
@@ -158,10 +137,7 @@ export function EventDetail({
                 DIFFICULTY_COLORS[event.difficulty],
               )}
             >
-              {event.difficulty === "beginner"
-                ? "Beginner Friendly"
-                : event.difficulty.charAt(0).toUpperCase() +
-                  event.difficulty.slice(1)}
+              {DIFFICULTY_LABELS[event.difficulty] ?? event.difficulty}
             </span>
             {event.isFree ? (
               <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
@@ -175,9 +151,7 @@ export function EventDetail({
           <div className="text-muted-foreground mt-3 flex flex-col gap-1.5 text-sm">
             <div className="flex items-center gap-2">
               <CalendarIcon />
-              <span>
-                {formattedDate} at {formattedTime}
-              </span>
+              <span>{whenLine}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPinIcon />

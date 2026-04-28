@@ -7,44 +7,21 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 
+import {
+  GENRE_LABELS,
+  VENUE_CAMPUS_ADDRESS,
+  VENUE_CAMPUS_DEFAULT_NAME,
+  VENUE_SOURCE_FULL_NAMES,
+} from "~/lib/event-display-labels";
+import { formatLongDateAtTime } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
-
-const GENRE_LABELS: Record<string, string> = {
-  orchestral: "Orchestral",
-  opera: "Opera",
-  chamber: "Chamber",
-  solo_recital: "Solo Recital",
-  choral: "Choral",
-  ballet: "Ballet",
-  jazz: "Jazz",
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  msm: "Manhattan School of Music",
-  juilliard: "Juilliard",
-  met_opera: "Metropolitan Opera",
-  carnegie_hall: "Carnegie Hall",
-  ny_phil: "New York Philharmonic",
-  nycballet: "New York City Ballet",
-};
 
 function formatWhen(ev: {
   date: Date | null;
   dateText: string | null;
 }): string {
   if (ev.date) {
-    const d = new Date(ev.date);
-    const datePart = d.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-    const timePart = d.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-    return `${datePart} at ${timePart}`;
+    return formatLongDateAtTime(new Date(ev.date));
   }
   if (ev.dateText?.trim()) return ev.dateText.trim();
   return "Date to be announced";
@@ -57,21 +34,21 @@ function venueLine(ev: {
 }): string {
   if (ev.source === "msm") {
     const hall = ev.venueName?.trim();
-    const msmAddress =
-      "Manhattan School of Music, 130 Claremont Ave, New York, NY 10027";
-    if (hall && hall !== "Manhattan School of Music") {
-      return `${hall} · ${msmAddress}`;
+    const campus = VENUE_CAMPUS_ADDRESS.msm;
+    const defaultName = VENUE_CAMPUS_DEFAULT_NAME.msm;
+    if (hall && hall !== defaultName) {
+      return `${hall} · ${campus}`;
     }
-    return msmAddress;
+    return campus;
   }
   if (ev.source === "juilliard") {
     const hall = ev.venueName?.trim();
-    const juilliardAddress =
-      "The Juilliard School, 155 W 65th St, New York, NY 10023";
-    if (hall && hall !== "The Juilliard School") {
-      return `${hall} · ${juilliardAddress}`;
+    const campus = VENUE_CAMPUS_ADDRESS.juilliard;
+    const defaultName = VENUE_CAMPUS_DEFAULT_NAME.juilliard;
+    if (hall && hall !== defaultName) {
+      return `${hall} · ${campus}`;
     }
-    return juilliardAddress;
+    return campus;
   }
   const v = ev.venueName?.trim();
   const loc = ev.location?.trim();
@@ -86,9 +63,9 @@ function directionsUrl(ev: {
 }): string {
   const destination =
     ev.source === "msm"
-      ? "Manhattan School of Music, 130 Claremont Ave, New York, NY 10027"
+      ? VENUE_CAMPUS_ADDRESS.msm
       : ev.source === "juilliard"
-        ? "The Juilliard School, 155 W 65th St, New York, NY 10023"
+        ? VENUE_CAMPUS_ADDRESS.juilliard
         : [ev.venueName?.trim(), ev.location?.trim()]
             .filter(Boolean)
             .join(", ");
@@ -109,7 +86,7 @@ export function LiveEventDetail({
     trpc.liveEvent.byId.queryOptions({ id: liveEventId }),
   );
 
-  const sourceLabel = SOURCE_LABELS[event.source] ?? event.source;
+  const sourceLabel = VENUE_SOURCE_FULL_NAMES[event.source] ?? event.source;
   const chatPrefill = `I'm interested in "${event.title}" — what should I know before I go?`;
   const chatHref = `/chat?mode=discovery&q=${encodeURIComponent(chatPrefill)}`;
   const mapHref = directionsUrl({

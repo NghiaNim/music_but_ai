@@ -16,9 +16,9 @@ We are adapting the original spec (kept verbatim at the bottom as **Appendix A**
 | 1 | Schema foundation (UserProfile taste cols + UserMusicEvent + OnboardingSession + EventTaste JSONB) | ✅ DONE |
 | 2 | Tag the catalog (enrich MUSIC_CATALOG; batch-tag Event + LiveEvent) | ✅ DONE |
 | 3 | Profile derivation (`deriveTasteProfile()` + tRPC `tasteProfile` router) | ✅ DONE |
-| 4 | Recommender (content scoring + editorial rules + diversity, blends Event + LiveEvent) | ⏭️ NEXT |
-| 5 | Visual cards onboarding (5 questions, resume via OnboardingSession) | pending |
-| 6 | Clips phase (auto-play, skip-ms capture, optional voice reaction) | pending |
+| 4 | Recommender (content scoring + editorial rules + diversity, blends Event + LiveEvent) | ✅ DONE |
+| 5 | Visual cards onboarding (5 questions, resume via OnboardingSession) | ✅ DONE |
+| 6 | Clips phase (auto-play, skip-ms capture, optional voice reaction) | ⏭️ NEXT |
 | 7 | Reveal animation + `/profile/taste` page | pending |
 | 8 | Event logger (batched client util + `/api/events` REST shim for sendBeacon) | pending |
 | 9 | (Optional) integrate existing Tanny voice phase as Phase 1 | pending |
@@ -83,24 +83,56 @@ Validation: end-to-end smoke test with synthetic Mahler-leaning user produced `C
 
 ---
 
-## Step 4 — NEXT: Recommender
+## Step 4 — DONE: Recommender
 
-- `packages/api/src/recommendations/`:
-  - `score.ts` — pure scoring function over a candidate `{ id, source: "event" | "live_event", taste }`.
-  - `rules.ts` — typed editorial rules (`if cross_genre_bridge === "film" then boost ["film_score","cinematic"]`).
-  - `diversity.ts` — top-N filter enforcing era/composer caps + ≥2 discovery items.
-  - `pipeline.ts` — pulls candidates from both catalogs in parallel, scores, diversifies.
-- tRPC: `recommendations.forUser({ limit, offset, surface })` — `surface` lets us reuse for home feed vs. profile vs. notification.
-- Caching: Next.js `unstable_cache` keyed on `userId + lastDerivedAt`, TTL 6h. Invalidated by `revalidateTag("recs:" + userId)` from save/purchase mutations.
-- **Method B (collaborative) skipped** until ≥100 active users (data model is ready for it).
+What landed in `packages/api/src/recommendations/`:
+
+- **`score.ts`** — pure scoring function. Per-candidate score: `1.0 + 0.3 era + 0.2 texture + 0.25 mood + 0.15 complexity + 0.4 editorial + 0.1·similarUsers (capped 0.5) − 0.5 skipPenalty + 0.1 premiere`. Each delta also writes a human-readable string into `reasons[]` so the UI can render explainable rec cards (the spec didn't ask for this but it's a real product win).
+- **`rules.ts`** — 7 typed editorial rules (film-bridge, catharsis-romantic, accessible-gateway, intimate-chamber, discovery-contemporary, prestige-marquee, intellectual-fugues). Each rule has `applies(profile)` + `matches(taste)`. Multiple matching rules don't double-stack the bonus.
+- **`diversity.ts`** — single-pass algorithm that places each candidate in the top-10 window (era cap ≤3, composer cap ≤2) or the slot 11–20 window (composer cap only), then a discovery-quota swap pass guarantees ≥2 items from outside the user's stated eras. Critical fix during testing: my first version deferred over-cap items but then re-promoted them without re-checking caps, completely defeating the filter — caught by smoke test, not by typecheck.
+- **`pipeline.ts`** — loads ≤150 future `Event` + ≤250 future/undated `LiveEvent` rows in parallel, dedupes `LiveEvent` rows by `(venue, normalizedTitle)` to collapse multi-night productions (NYCB lists each performance separately), reads negative signals from `UserMusicEvent` (composers with ≥3 skips in last 90d), scores, diversifies, hydrates. Returns `{ items, hasProfile, firedRuleIds }`.
+
+tRPC: **`recommendations.forUser({ limit })`** at `protectedProcedure`. Returns the diversified top 20 with score + reasons. If user has no derived profile yet, `hasProfile: false` so the UI knows to show the popular fallback + onboarding nudge.
+
+Caching: pure router stays cache-free (so it works in any runtime). Exposed `recsCacheTag(userId)` helper for Next.js callers to wrap with `unstable_cache`. Cache invalidation wired into mutations that change recommendation inputs: `tasteProfile.derive`, `tasteProfile.update`, `userEvent.toggle`. Implemented via dynamic `import("next/cache")` in `packages/api/src/recs-cache-bust.ts` so `@acme/api` doesn't take a hard Next dep (Expo + scripts can still import it).
+
+**Method B (collaborative)** intentionally skipped — `similarUserHits` interface exists in `score.ts` but the loader returns an empty Map until we cross ~100 active users.
+
+Validation: `pnpm -F @acme/api test-recommender -- --user=<id>` runs the full pipeline against the real Supabase catalog and prints scored top 20 with reasons. End-to-end test with a synthetic catharsis+grand+romantic+modern+film-bridge profile fired both `film-bridge-cinematic` and `catharsis-romantic-symphonic` rules; top 10 came back as 3 romantic + 3 modern + 4 discovery (Bach, contemporary dance, classical-period workshop), composer cap held across 20 slots.
+
+### Deliberate deviations from spec
+
+- **No SQL scoring query.** Spec says "implement as a SQL scoring query with weighted columns rather than application-side filtering." Skipped — at ≤400 candidates, in-memory scoring runs in single-digit ms and is far easier to unit-test, evolve, and add explainability to. We'll revisit if the catalog 10×.
+- **No `editorial_rules` DB table.** Rules live in `rules.ts` as code — reviewable in PRs, no admin UI needed yet, and `applies/matches` are typed against `ScorerProfile` so impossible rules can't be authored.
+- **Composer cap counts every composer on multi-composer programs.** A Stravinsky/Frank/Tchaikovsky triple bill counts toward all three caps. Prevents one composer dominating just because their works are bundled.
+- **Production-level dedupe BEFORE scoring**, not after diversity. NYCB lists every performance of `All Balanchine III` as a separate `LiveEvent` row; we keep the earliest upcoming one per `(venue, normalizedTitle)` pair so the user sees variety, not a calendar.
+- **Reasons strings on every item.** Not in the spec — but rec cards without "why" feel like a black box. Reasons surface era/texture/mood matches and curator picks; complexity matches deliberately stay silent (too inside-baseball).
 
 ---
 
-## Step 5 — Visual cards onboarding
+## Step 5 — DONE: Visual cards onboarding
 
-- New component `_components/taste-onboarding/visual-cards.tsx` — single-select / multi-select per spec section 3.4. One question per screen, swipe-feeling transitions.
-- Resumes from `OnboardingSession.visualAnswers`.
-- Mounted inside the existing `/onboarding` route; replaces the current Tanny-only flow as Phase 2 of the new state machine `idle → voice? → visual → clips → reveal → complete`.
+What landed:
+
+- **New route `/onboarding/taste`** — auth-guarded, full-screen overlay matching the existing `/onboarding` chrome but distinct so we don't break the legacy Tanny voice flow while we transition.
+- **`packages/validators/src/onboarding-session.ts`** — single source of truth for `VisualAnswers` and the six taste enums. Mirrors the AI module's `VisualAnswers` shape so the UI, tRPC router, and AI derivation can't disagree.
+- **Two new tRPC procs on `onboardingRouter`**:
+  - `getOrCreateSession` — returns the user's in-progress session, or the most recent completed one, or creates a fresh one. Idempotent; powers reload-resume.
+  - `saveVisualAnswers({ sessionId, answers, markVisualComplete })` — re-validates with `VisualAnswersSchema`, *merges* the patch with whatever's already persisted (so a dropped network packet can't lose earlier answers), advances `phase` from `voice → visual` on first save and `visual → clips` when the UI flags Q5 complete.
+- **5 questions, one per screen** (`_components/questions.ts`) — typed against `keyof VisualAnswers` so a renamed enum is a compile error. Question text + descriptions are evocative ("Big emotions, drama — something that moves you deeply") not mechanical.
+- **`question-card.tsx`** — single-select cards auto-advance after a 220ms confirm flash (the tap *feels* acknowledged); multi-select uses `[Skip][Continue]` per spec. Hover/focus/selected/confirming states all distinct.
+- **`visual-cards-flow.tsx`** — orchestrator: bootstraps the session, jumps to the first unanswered question on resume, persists per-tap, derives via `tasteProfile.derive` after Q5, transitions to a minimal reveal. Defensive throughout — toast + retain-state on save errors, idempotent derive on already-complete sessions.
+- **`minimal-reveal.tsx`** — placeholder reveal used here AND on the post-clips phase later. Rotating loading messages while derive is in flight; badge → archetype → tag pills → summary on success. Step 7 will replace with the polished `/profile/taste` reveal.
+- **`OnboardingCTA` rewired** — recognizes the new-style profile (`archetype` set) as completed and links to `/profile`; previously-onboarded legacy users still see their experience-level badge; brand-new users get pointed at `/onboarding/taste` with new copy ("Discover your sound — 2 min, five quick taps").
+
+Validation: end-to-end DB smoke test confirmed the merge-and-resume behaviour — saving Q1, then Q2+Q3 in one call left the session with all three answers correctly merged and `phase=visual`.
+
+### Deliberate deviations from spec
+
+- **No global "8-second nudge banner".** That ships with the explore-mode UI work, not here. Today the CTA on the home page is the entry point.
+- **Auto-advance on single-select** with a 220ms confirm flash. Spec just said "card highlight" — the flash gives the tap weight without slowing the user down.
+- **End-of-flow derive happens immediately** (no clips phase yet). Once Step 6 lands, `markVisualComplete` will route into clips instead of straight to derive. The minimal reveal will then be re-used post-clips.
+- **`OnboardingCTA` made profile-aware now**, not at Step 7, because shipping Step 5 without the entry-point change would leave the new flow undiscoverable.
 
 ---
 

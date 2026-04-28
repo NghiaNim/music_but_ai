@@ -15,6 +15,7 @@ import {
 import { and, eq } from "@acme/db";
 import { OnboardingSession, UserProfile } from "@acme/db/schema";
 
+import { bustRecommendationsCache } from "../recs-cache-bust";
 import { protectedProcedure } from "../trpc";
 
 // ─── Validators (mirror the AI module's enums) ──────────
@@ -250,6 +251,9 @@ export const tasteProfileRouter = {
         })
         .where(eq(OnboardingSession.id, session.id));
 
+      // Bust the recs cache so the next read picks up the new profile.
+      void bustRecommendationsCache(ctx.session.user.id);
+
       return { profile: saved, source };
     }),
 
@@ -282,6 +286,9 @@ export const tasteProfileRouter = {
         .set(input)
         .where(eq(UserProfile.id, existing.id))
         .returning();
+
+      void bustRecommendationsCache(ctx.session.user.id);
+
       return row;
     }),
 } satisfies TRPCRouterRecord;

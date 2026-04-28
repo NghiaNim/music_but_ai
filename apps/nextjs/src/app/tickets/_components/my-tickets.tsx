@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { cn } from "@acme/ui";
 
+import { formatShortMonthDay } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -101,12 +102,7 @@ export function MyTickets() {
               {order.event.title}
             </p>
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <span>
-                {new Date(order.event.date).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </span>
+              <span>{formatShortMonthDay(new Date(order.event.date))}</span>
               <span>·</span>
               <span>
                 {order.quantity}× ${(order.totalCents / 100).toFixed(2)}

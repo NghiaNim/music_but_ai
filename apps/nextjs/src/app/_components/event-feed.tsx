@@ -15,6 +15,17 @@ import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { Input } from "@acme/ui/input";
 
+import {
+  DIFFICULTY_COLORS,
+  DIFFICULTY_LABELS,
+  GENRE_LABELS,
+  VENUE_SOURCE_FULL_NAMES,
+} from "~/lib/event-display-labels";
+import {
+  formatFriendlyDate,
+  formatMonthShort,
+  formatWeekdayShort,
+} from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 
 type EventItem = RouterOutputs["event"]["all"][number];
@@ -23,24 +34,6 @@ type LiveEventItem = RouterOutputs["liveEvent"]["page"]["items"][number];
 type UnifiedRow =
   | { kind: "created"; event: EventItem }
   | { kind: "live"; event: LiveEventItem };
-
-const GENRE_LABELS: Record<string, string> = {
-  orchestral: "Orchestral",
-  opera: "Opera",
-  chamber: "Chamber",
-  solo_recital: "Solo Recital",
-  choral: "Choral",
-  ballet: "Ballet",
-  jazz: "Jazz",
-};
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner:
-    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-  intermediate:
-    "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  advanced: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400",
-};
 
 const GENRE_OPTIONS = [
   "orchestral",
@@ -88,15 +81,6 @@ const SOURCE_FILTER_LABELS: Record<SourceFilter, string> = {
   nycballet: "NYC Ballet",
 };
 
-const LIVE_VENUE_LABELS: Record<VenueSource, string> = {
-  msm: "Manhattan School of Music",
-  juilliard: "Juilliard",
-  met_opera: "Metropolitan Opera",
-  carnegie_hall: "Carnegie Hall",
-  ny_phil: "New York Philharmonic",
-  nycballet: "New York City Ballet",
-};
-
 const LIVE_PAGE_SIZE = 15;
 
 function dateTextSortTime(dateText: string | null | undefined): number {
@@ -121,6 +105,12 @@ function dateTextSortTime(dateText: string | null | undefined): number {
 function liveSortTime(ev: LiveEventItem): number {
   if (ev.date) return new Date(ev.date).getTime();
   return dateTextSortTime(ev.dateText);
+}
+
+function unifiedRowSortTime(row: UnifiedRow): number {
+  return row.kind === "created"
+    ? new Date(row.event.date).getTime()
+    : liveSortTime(row.event);
 }
 
 function matchesCityFilter(row: UnifiedRow, city: string): boolean {
@@ -167,17 +157,7 @@ export function FeaturedEvents() {
     ...community.map((event) => ({ kind: "created" as const, event })),
     ...liveEvents.map((event) => ({ kind: "live" as const, event })),
   ];
-  merged.sort((a, b) => {
-    const ta =
-      a.kind === "created"
-        ? new Date(a.event.date).getTime()
-        : liveSortTime(a.event);
-    const tb =
-      b.kind === "created"
-        ? new Date(b.event.date).getTime()
-        : liveSortTime(b.event);
-    return ta - tb;
-  });
+  merged.sort((a, b) => unifiedRowSortTime(a) - unifiedRowSortTime(b));
   const featured = merged.slice(0, 4);
 
   if (featured.length === 0) {
@@ -190,13 +170,9 @@ export function FeaturedEvents() {
 
   return (
     <div className="flex flex-col gap-3">
-      {featured.map((row) =>
-        row.kind === "created" ? (
-          <EventCard key={row.event.id} event={row.event} />
-        ) : (
-          <LiveEventCard key={row.event.id} event={row.event} />
-        ),
-      )}
+      {featured.map((row) => (
+        <UnifiedEventRow key={`${row.kind}-${row.event.id}`} row={row} />
+      ))}
     </div>
   );
 }
@@ -276,15 +252,7 @@ export function EventFeed() {
   ];
 
   const mergedSorted = [...merged].sort((a, b) => {
-    const ta =
-      a.kind === "created"
-        ? new Date(a.event.date).getTime()
-        : liveSortTime(a.event);
-    const tb =
-      b.kind === "created"
-        ? new Date(b.event.date).getTime()
-        : liveSortTime(b.event);
-    const diff = ta - tb;
+    const diff = unifiedRowSortTime(a) - unifiedRowSortTime(b);
     return sortBy === "day_asc" ? diff : -diff;
   });
 
@@ -456,13 +424,9 @@ export function EventFeed() {
       ) : (
         <>
           <div className="flex flex-col gap-3">
-            {visibleEvents.map((row) =>
-              row.kind === "created" ? (
-                <EventCard key={row.event.id} event={row.event} />
-              ) : (
-                <LiveEventCard key={row.event.id} event={row.event} />
-              ),
-            )}
+            {visibleEvents.map((row) => (
+              <UnifiedEventRow key={`${row.kind}-${row.event.id}`} row={row} />
+            ))}
           </div>
           {filteredEvents.length > visibleCount ||
           (showLive && liveQuery.hasNextPage) ? (
@@ -494,21 +458,6 @@ export function EventFeed() {
   );
 }
 
-/** e.g. "Sat, May 2, 2026 · 7:30 PM" */
-function formatFriendlyDate(date: Date): string {
-  const time = date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
-  const monthDayYear = date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  return `${weekday}, ${monthDayYear} · ${time}`;
-}
-
 /** Parsed instant for live cards (DB `date` or ISO / human `dateText`). */
 function parseLiveEventInstant(ev: LiveEventItem): Date | null {
   if (ev.date) {
@@ -530,6 +479,30 @@ function liveEventCardWhenLine(ev: LiveEventItem): string {
   return fallback ?? "";
 }
 
+function CalendarDateThumb({ date }: { date: Date }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
+      <span className="text-[10px] font-semibold text-orange-600 uppercase dark:text-orange-300">
+        {formatMonthShort(date)}
+      </span>
+      <span className="text-xl leading-none font-bold text-orange-700 dark:text-orange-200">
+        {date.getDate()}
+      </span>
+      <span className="mt-0.5 text-[9px] font-medium text-orange-500 dark:text-orange-400">
+        {formatWeekdayShort(date)}
+      </span>
+    </div>
+  );
+}
+
+function UnifiedEventRow({ row }: { row: UnifiedRow }) {
+  return row.kind === "created" ? (
+    <EventCard event={row.event} />
+  ) : (
+    <LiveEventCard event={row.event} />
+  );
+}
+
 function EventCard({ event }: { event: EventItem }) {
   const date = new Date(event.date);
   const line = formatFriendlyDate(date);
@@ -547,17 +520,7 @@ function EventCard({ event }: { event: EventItem }) {
               unoptimized
             />
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
-              <span className="text-[10px] font-semibold text-orange-600 uppercase dark:text-orange-300">
-                {date.toLocaleDateString("en-US", { month: "short" })}
-              </span>
-              <span className="text-xl leading-none font-bold text-orange-700 dark:text-orange-200">
-                {date.getDate()}
-              </span>
-              <span className="mt-0.5 text-[9px] font-medium text-orange-500 dark:text-orange-400">
-                {date.toLocaleDateString("en-US", { weekday: "short" })}
-              </span>
-            </div>
+            <CalendarDateThumb date={date} />
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -571,10 +534,7 @@ function EventCard({ event }: { event: EventItem }) {
                 DIFFICULTY_COLORS[event.difficulty],
               )}
             >
-              {event.difficulty === "beginner"
-                ? "Beginner Friendly"
-                : event.difficulty.charAt(0).toUpperCase() +
-                  event.difficulty.slice(1)}
+              {DIFFICULTY_LABELS[event.difficulty] ?? event.difficulty}
             </span>
           </div>
           <h3
@@ -593,7 +553,7 @@ function EventCard({ event }: { event: EventItem }) {
 }
 
 function LiveEventCard({ event }: { event: LiveEventItem }) {
-  const sourceLabel = LIVE_VENUE_LABELS[event.source];
+  const sourceLabel = VENUE_SOURCE_FULL_NAMES[event.source];
   const when = liveEventCardWhenLine(event);
   const venue = event.venueName?.trim() ?? "";
   const thumbDate = parseLiveEventInstant(event);
@@ -611,17 +571,7 @@ function LiveEventCard({ event }: { event: LiveEventItem }) {
               unoptimized
             />
           ) : thumbDate ? (
-            <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
-              <span className="text-[10px] font-semibold text-orange-600 uppercase dark:text-orange-300">
-                {thumbDate.toLocaleDateString("en-US", { month: "short" })}
-              </span>
-              <span className="text-xl leading-none font-bold text-orange-700 dark:text-orange-200">
-                {thumbDate.getDate()}
-              </span>
-              <span className="mt-0.5 text-[9px] font-medium text-orange-500 dark:text-orange-400">
-                {thumbDate.toLocaleDateString("en-US", { weekday: "short" })}
-              </span>
-            </div>
+            <CalendarDateThumb date={thumbDate} />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-orange-200 to-amber-100 dark:from-orange-900/50 dark:to-amber-800/30">
               <span className="text-[10px] font-semibold text-orange-700 dark:text-orange-200">

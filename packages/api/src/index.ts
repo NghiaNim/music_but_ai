@@ -23,10 +23,8 @@ export { createTRPCContext } from "./trpc";
 export {
   ALL_VENUE_SOURCES,
   syncAllVenuesToLiveEvents,
-  syncMsmPerformancesToLiveEvents,
   syncVenueToLiveEvents,
   tagUntaggedCatalog,
-  tagUntaggedLiveEvents,
   type SyncAllVenuesSummary,
   type VenueSyncResult,
   type VenueSyncStatus,
@@ -36,4 +34,11 @@ export {
   type CatalogTaggerOptions,
   type CatalogTaggerResult,
 } from "./catalog-tagger";
+export {
+  buildRecommendations,
+  type RecommendationItem,
+  type RecommendationsInput,
+  type RecommendationsOutput,
+} from "./recommendations";
+export { recsCacheTag } from "./router/recommendations";
 export type { RouterInputs, RouterOutputs };

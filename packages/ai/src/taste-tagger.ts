@@ -6,6 +6,12 @@ import type {
   ClipMood,
   ClipTexture,
 } from "./music-catalog";
+import {
+  OPENAI_CLIP_COMPLEXITIES as COMPLEXITIES,
+  OPENAI_CLIP_ERAS as ERAS,
+  OPENAI_CLIP_MOODS as MOODS,
+  OPENAI_CLIP_TEXTURES as TEXTURES,
+} from "./taste-dimensions";
 
 /**
  * The shape this tagger returns. Mirrors `EventTasteAnnotation` from
@@ -34,23 +40,6 @@ export interface TaggerInput {
   /** Venue name — gives strong context for things like "Met Opera". */
   venueName?: string | null;
 }
-
-const ERAS: ClipEra[] = [
-  "baroque",
-  "classical_period",
-  "romantic",
-  "impressionist",
-  "modern",
-  "contemporary",
-];
-const MOODS: ClipMood[] = [
-  "catharsis",
-  "tranquility",
-  "intellectual",
-  "energy",
-];
-const TEXTURES: ClipTexture[] = ["grand", "intimate", "vocal", "mixed"];
-const COMPLEXITIES: ClipComplexity[] = ["accessible", "layered", "challenging"];
 
 /**
  * Strict JSON schema we hand to OpenAI. `additionalProperties: false`
