@@ -23,7 +23,7 @@ export interface ClipReactionDraft {
 
 interface ClipsPhaseProps {
   sessionId: string;
-  /** Called once all 10 reactions have been persisted server-side. */
+  /** Called once all clip reactions have been persisted server-side. */
   onComplete: () => void;
   /** Lets users bail to derivation early if they're done. */
   onSkipPhase: () => void;

@@ -30,7 +30,7 @@ export default async function EditHostedEventPage({
 
   return (
     <HydrateClient>
-      <div className="mx-auto max-w-lg px-4 py-6 pb-24">
+      <div className="mx-auto max-w-lg px-4 py-6 pb-16">
         <h1 className="mb-1 text-2xl font-bold tracking-tight">Edit event</h1>
         <p className="text-muted-foreground mb-6 text-sm">
           Update details or cancel your listing. Subscribers can be emailed when

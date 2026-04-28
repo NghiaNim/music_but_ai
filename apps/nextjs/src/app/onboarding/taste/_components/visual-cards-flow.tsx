@@ -184,12 +184,33 @@ export function VisualCardsFlow() {
         markVisualComplete: isLast,
       });
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Could not save your answer — please try again.",
-      );
-      return;
+      if (isFinishedSessionError(err)) {
+        try {
+          const fresh = await restartSession.mutateAsync();
+          setSessionId(fresh.id);
+          // Retain the in-flight answer and continue seamlessly on the
+          // newly created in-progress session.
+          await saveAnswers.mutateAsync({
+            sessionId: fresh.id,
+            answers: patch,
+            markVisualComplete: isLast,
+          });
+        } catch (retryErr) {
+          toast.error(
+            retryErr instanceof Error
+              ? retryErr.message
+              : "Could not restart your quiz — please try again.",
+          );
+          return;
+        }
+      } else {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Could not save your answer — please try again.",
+        );
+        return;
+      }
     }
 
     if (!isLast) {
@@ -360,6 +381,11 @@ function hasAnswerFor(answers: VisualAnswers, key: keyof VisualAnswers) {
   const v = answers[key];
   if (Array.isArray(v)) return v.length > 0;
   return v != null;
+}
+
+function isFinishedSessionError(err: unknown) {
+  if (!(err instanceof Error)) return false;
+  return err.message.toLowerCase().includes("finished onboarding session");
 }
 
 // Defensive: the tRPC profile object has many nullable fields. We

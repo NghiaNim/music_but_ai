@@ -72,11 +72,8 @@ export default async function HomePage() {
         <section className="px-4 pb-6">
           <Link href="/chat" className="group block">
             <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-[#ffffff] p-4 transition-all group-hover:border-neutral-300 group-hover:shadow-md">
-              <div className="pointer-events-none absolute -right-4 -bottom-4 opacity-[0.07] dark:opacity-5">
-                <SpeechBubbleDecor />
-              </div>
               <div className="relative flex items-center gap-4">
-                <div className="relative h-[4.75rem] w-[4.75rem] shrink-0">
+                <div className="relative grid size-[4.75rem] shrink-0 place-items-center rounded-full bg-[#F5E6DC]">
                   <Image
                     src="/tanny-cat-cutout.png"
                     alt="Tanny the cat"

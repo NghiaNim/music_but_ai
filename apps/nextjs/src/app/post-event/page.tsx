@@ -18,7 +18,7 @@ export default async function PostEventPage() {
 
   return (
     <HydrateClient>
-      <div className="relative min-h-dvh w-full overflow-x-hidden bg-gradient-to-b from-white via-amber-50/40 to-[#fcf8ec]">
+      <div className="relative w-full overflow-x-hidden bg-gradient-to-b from-white via-amber-50/40 to-[#fcf8ec]">
         {/* Mesh-style soft blobs — full tab background (warm yellow) */}
         <div
           className="pointer-events-none absolute top-[-8%] -right-[15%] h-[42vmin] max-h-80 min-h-[12rem] w-[42vmin] max-w-[20rem] min-w-[12rem] rounded-full bg-amber-300/28 blur-[3rem]"
@@ -33,7 +33,7 @@ export default async function PostEventPage() {
           aria-hidden
         />
 
-        <div className="relative z-10 mx-auto max-w-lg px-4 py-8 pb-28 sm:px-5 sm:py-10 sm:pb-28">
+        <div className="relative z-10 mx-auto max-w-lg px-4 py-8 pb-16 sm:px-5 sm:py-10 sm:pb-16">
           <header className="relative mb-8 sm:mb-10">
             <p className="text-primary mb-2 text-[11px] font-semibold tracking-[0.14em] uppercase sm:text-xs">
               Share with Classica
