@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { VisualAnswers } from "@acme/validators";
@@ -9,23 +10,28 @@ import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
+import { ClipsPhase } from "./clips-phase";
 import { MinimalReveal } from "./minimal-reveal";
 import { ProgressPips } from "./progress-pips";
 import { QuestionCard } from "./question-card";
 import { QUESTIONS } from "./questions";
 
-type Phase = "idle" | "questions" | "deriving" | "reveal";
+type Phase = "idle" | "questions" | "clips" | "deriving" | "reveal";
 
 interface DerivedProfile {
   archetype: string | null;
   badgeEmoji: string | null;
   tags: string[] | null;
   profileSummary: string | null;
+  profileCards: { label: string; value: string }[] | null;
 }
 
 export function VisualCardsFlow() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isRestart = searchParams.get("restart") === "1";
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -36,18 +42,32 @@ export function VisualCardsFlow() {
   const getOrCreateSession = useMutation(
     trpc.onboarding.getOrCreateSession.mutationOptions(),
   );
+  const restartSession = useMutation(
+    trpc.onboarding.restartSession.mutationOptions(),
+  );
   const saveAnswers = useMutation(
     trpc.onboarding.saveVisualAnswers.mutationOptions(),
   );
   const derive = useMutation(trpc.tasteProfile.derive.mutationOptions());
 
   // Bootstrap once: pull or create the session, then jump to the
-  // earliest unanswered question (resume-aware).
+  // earliest unanswered question (resume-aware). If the URL carries
+  // `?restart=1`, force a fresh session instead.
   useEffect(() => {
     if (phase !== "idle") return;
 
     let cancelled = false;
-    getOrCreateSession.mutateAsync().then(
+    const bootstrap = isRestart
+      ? restartSession.mutateAsync()
+      : getOrCreateSession.mutateAsync();
+
+    // Clean the `restart` flag off the URL so a refresh doesn't
+    // re-trigger another restart and wipe in-progress answers.
+    if (isRestart) {
+      router.replace("/onboarding/taste", { scroll: false });
+    }
+
+    bootstrap.then(
       (session) => {
         if (cancelled) return;
         setSessionId(session.id);
@@ -55,21 +75,20 @@ export function VisualCardsFlow() {
         setAnswers(existing);
 
         if (session.status === "complete") {
-          // Already done — go straight to reveal with whatever profile
-          // they have. tasteProfile.derive is idempotent so we can
-          // safely re-call to populate.
-          setPhase("deriving");
-          derive.mutateAsync({ sessionId: session.id }).then(
-            (res) => {
-              if (cancelled) return;
-              setProfile(extractProfile(res.profile));
-              setPhase("reveal");
-            },
-            () => {
-              if (cancelled) return;
-              setPhase("reveal");
-            },
-          );
+          // Already done — re-derive (idempotent) just to repopulate
+          // the local `profile` state for the reveal screen.
+          void runDerive(session.id, () => cancelled);
+          return;
+        }
+
+        // Resume by phase: clips → clip-phase, complete → derive,
+        // otherwise → first unanswered visual question.
+        if (session.phase === "clips") {
+          setPhase("clips");
+          return;
+        }
+        if (session.phase === "complete") {
+          void runDerive(session.id, () => cancelled);
           return;
         }
 
@@ -139,12 +158,18 @@ export function VisualCardsFlow() {
       return;
     }
 
-    // Last question — derive the profile and transition to reveal.
+    // Last visual question — advance to the clips phase. The
+    // server already moved `phase` to `clips` because we passed
+    // `markVisualComplete: true`.
+    setPhase("clips");
+  };
+
+  const runDerive = async (id: string, isCancelled?: () => boolean) => {
     setPhase("deriving");
     try {
-      const res = await derive.mutateAsync({ sessionId });
+      const res = await derive.mutateAsync({ sessionId: id });
+      if (isCancelled?.()) return;
       setProfile(extractProfile(res.profile));
-      // Invalidate the cached profile so the rest of the app sees it.
       await queryClient.invalidateQueries({
         queryKey: trpc.tasteProfile.get.queryKey(),
       });
@@ -152,13 +177,20 @@ export function VisualCardsFlow() {
         queryKey: trpc.userProfile.get.queryKey(),
       });
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "We hit a snag building your profile, but your answers are saved.",
-      );
+      if (!isCancelled?.()) {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "We hit a snag building your profile, but your answers are saved.",
+        );
+      }
     }
-    setPhase("reveal");
+    if (!isCancelled?.()) setPhase("reveal");
+  };
+
+  const handleClipsDone = () => {
+    if (!sessionId) return;
+    void runDerive(sessionId);
   };
 
   const handleBack = () => {
@@ -178,6 +210,16 @@ export function VisualCardsFlow() {
       <div className="flex h-full items-center justify-center">
         <div className="bg-muted size-8 animate-pulse rounded-full" />
       </div>
+    );
+  }
+
+  if (phase === "clips" && sessionId) {
+    return (
+      <ClipsPhase
+        sessionId={sessionId}
+        onComplete={handleClipsDone}
+        onSkipPhase={handleClipsDone}
+      />
     );
   }
 
@@ -242,6 +284,18 @@ function extractProfile(profile: unknown): DerivedProfile {
     profile && typeof profile === "object"
       ? (profile as Record<string, unknown>)
       : {};
+  let cards: { label: string; value: string }[] | null = null;
+  if (Array.isArray(p.profileCards)) {
+    const filtered = p.profileCards.filter(
+      (c): c is { label: string; value: string } =>
+        !!c &&
+        typeof c === "object" &&
+        typeof (c as { label?: unknown }).label === "string" &&
+        typeof (c as { value?: unknown }).value === "string",
+    );
+    cards = filtered.length > 0 ? filtered.slice(0, 4) : null;
+  }
+
   return {
     archetype: typeof p.archetype === "string" ? p.archetype : null,
     badgeEmoji: typeof p.badgeEmoji === "string" ? p.badgeEmoji : null,
@@ -251,6 +305,7 @@ function extractProfile(profile: unknown): DerivedProfile {
         : null,
     profileSummary:
       typeof p.profileSummary === "string" ? p.profileSummary : null,
+    profileCards: cards,
   };
 }
 

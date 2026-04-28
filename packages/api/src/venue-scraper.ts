@@ -243,7 +243,7 @@ LIMIT 500`;
       Accept: "application/sparql-results+json",
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({ query }),
+    body: new URLSearchParams({ query }).toString(),
   });
   if (!res.ok) {
     throw new Error(`Carnegie SPARQL HTTP ${res.status}`);

@@ -8,6 +8,15 @@ import { Event, TicketOrder } from "@acme/db/schema";
 
 import { protectedProcedure } from "../trpc";
 
+function formatEventDateLong(date: Date): string {
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
@@ -101,7 +110,7 @@ export const ticketRouter = {
               currency: "usd",
               product_data: {
                 name: event.title,
-                description: `${new Date(event.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })} at ${event.venue}`,
+                description: `${formatEventDateLong(new Date(event.date))} at ${event.venue}`,
               },
               unit_amount: event.discountedPriceCents,
             },

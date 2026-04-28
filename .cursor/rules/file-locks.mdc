@@ -32,10 +32,4 @@ Multiple engineers (human + AI) may work on this repo at the same time. Use this
 ## Locked files
 
 <!-- LOCKED-FILES-START -->
-### Step 6 — clips phase — 2026-04-27T21:08 — claude
-- packages/api/src/router/onboarding.ts (add getClips + saveClipReactions)
-- packages/validators/src/onboarding-session.ts (add ClipReactionSchema)
-- apps/nextjs/src/app/onboarding/taste/_components/visual-cards-flow.tsx (state-machine refactor)
-- apps/nextjs/src/app/onboarding/taste/_components/clips-phase.tsx (new)
-- apps/nextjs/src/app/onboarding/taste/_components/clip-player.tsx (new)
 <!-- LOCKED-FILES-END -->

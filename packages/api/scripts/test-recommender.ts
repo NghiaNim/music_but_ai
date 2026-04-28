@@ -5,7 +5,7 @@ import { buildRecommendations } from "../src/recommendations/index.ts";
 const userIdArg = process.argv.find((a) => a.startsWith("--user="));
 if (!userIdArg) {
   console.error(
-    "Usage: pnpm test-recommender -- --user=<userId>\n" +
+    "Usage: pnpm -F @acme/api test-recommender -- --user=<userId>\n" +
       "Pick a userId from the `user` table that has a derived profile.",
   );
   process.exit(2);

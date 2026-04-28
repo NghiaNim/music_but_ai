@@ -605,9 +605,21 @@ export const CreateOnboardingSessionSchema = createInsertSchema(
   updatedAt: true,
 });
 
-export const CreateUserMusicEventSchema = createInsertSchema(
-  UserMusicEvent,
-).omit({
+export const MusicEventTypeSchema = z.enum([
+  "clip_play",
+  "clip_skip",
+  "clip_complete",
+  "clip_replay",
+  "clip_voice_reaction",
+  "concert_view",
+  "concert_save",
+  "concert_purchase",
+  "search_query",
+]);
+
+export const CreateUserMusicEventSchema = createInsertSchema(UserMusicEvent, {
+  eventType: MusicEventTypeSchema,
+}).omit({
   id: true,
   createdAt: true,
 });

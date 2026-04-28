@@ -42,5 +42,5 @@ tooling/
 ## External venue events (testing)
 
 - Scraped venue events (Carnegie, Met, Juilliard, MSM) are stored in `ExternalEvent` in `packages/db/src/schema.ts`.
-- Scraper logic lives in `packages/api/src/venue-scraper.ts` and is exercised locally via `node scripts/test-venue-scraper.mjs`.
+- Scraper logic lives in `packages/api/src/venue-scraper.ts` and is exercised locally via `pnpm -C packages/api exec tsx scripts/test-venue-scraper.mjs` (from repo root).
 - Schema changes are pushed with `pnpm -C packages/db push` (drizzle-kit) pointing at the Supabase URL in `.env`.

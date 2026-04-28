@@ -36,7 +36,7 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
   // completed the old voice flow.
   if (isSignedIn && profile?.archetype) {
     return (
-      <Link href="/profile" className="block">
+      <Link href="/profile/taste" className="block">
         <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-2xl dark:bg-emerald-900/30">
             {profile.badgeEmoji ?? "♪"}

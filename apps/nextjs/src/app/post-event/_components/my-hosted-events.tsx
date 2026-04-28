@@ -5,6 +5,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Button } from "@acme/ui/button";
 
+import { formatMediumDateTimeLocal } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 
 export function MyHostedEvents() {
@@ -31,10 +32,7 @@ export function MyHostedEvents() {
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{ev.title}</p>
               <p className="text-muted-foreground text-xs">
-                {new Date(ev.date).toLocaleString(undefined, {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
+                {formatMediumDateTimeLocal(new Date(ev.date))}
                 {ev.publicationStatus === "cancelled" ? " · Cancelled" : ""}
               </p>
             </div>

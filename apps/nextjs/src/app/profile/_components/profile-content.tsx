@@ -451,10 +451,53 @@ export function ProfileContent() {
         </div>
       </div>
 
+      {/* Your Taste */}
+      <Link
+        href="/profile/taste"
+        className="bg-card hover:bg-muted/50 mt-5 flex items-center gap-3 rounded-2xl border p-4 shadow-sm transition-colors"
+      >
+        <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-emerald-600 dark:text-emerald-400"
+          >
+            <path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" />
+          </svg>
+        </div>
+        <div className="flex-1">
+          <p className="font-semibold">Your taste</p>
+          <p className="text-muted-foreground text-xs">
+            Your archetype, dimensions, and how we read your sound
+          </p>
+        </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-muted-foreground"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </Link>
+
       {/* My Tickets */}
       <Link
         href="/tickets"
-        className="bg-card hover:bg-muted/50 mt-5 flex items-center gap-3 rounded-2xl border p-4 shadow-sm transition-colors"
+        className="bg-card hover:bg-muted/50 mt-3 flex items-center gap-3 rounded-2xl border p-4 shadow-sm transition-colors"
       >
         <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
           <svg

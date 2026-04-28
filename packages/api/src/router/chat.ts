@@ -41,7 +41,16 @@ export const chatRouter = {
 
   messages: protectedProcedure
     .input(z.object({ sessionId: z.string().uuid() }))
-    .query(({ ctx, input }) => {
+    .query(async ({ ctx, input }) => {
+      const session = await ctx.db.query.ChatSession.findFirst({
+        where: eq(ChatSession.id, input.sessionId),
+      });
+      if (!session || session.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Chat session not found",
+        });
+      }
       return ctx.db.query.ChatMessage.findMany({
         where: eq(ChatMessage.sessionId, input.sessionId),
         orderBy: ChatMessage.createdAt,
@@ -96,6 +105,16 @@ export const chatRouter = {
             });
           }
           sessionId = newSession.id;
+        } else {
+          const existing = await ctx.db.query.ChatSession.findFirst({
+            where: eq(ChatSession.id, sessionId),
+          });
+          if (!existing || existing.userId !== user.id) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Chat session not found",
+            });
+          }
         }
 
         await ctx.db.insert(ChatMessage).values({

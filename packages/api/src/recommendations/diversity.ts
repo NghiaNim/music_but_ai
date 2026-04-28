@@ -137,13 +137,10 @@ export function diversify(
     ) {
       let improved = false;
       outer: for (const replacement of ranked) {
-        if (used.has(replacement.id) || !isDiscovery(replacement))
-          continue;
+        if (used.has(replacement.id) || !isDiscovery(replacement)) continue;
         const tailTargets = accepted
           .map((c, idx) => ({ c, idx }))
-          .filter(
-            ({ c, idx }) => tailSwapIndexOk(idx) && !isDiscovery(c),
-          )
+          .filter(({ c, idx }) => tailSwapIndexOk(idx) && !isDiscovery(c))
           .sort((a, b) => a.c.score - b.c.score);
 
         for (const tgt of tailTargets) {

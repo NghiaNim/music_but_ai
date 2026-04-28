@@ -8,6 +8,22 @@ export function formatWeekdayShort(date: Date): string {
   return date.toLocaleDateString(LOCALE, { weekday: "short" });
 }
 
+/** e.g. "May 2" — browser locale variant for local UI chrome */
+export function formatShortMonthDayLocal(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/** e.g. "Apr 27, 2026, 7:30 PM" — browser locale variant */
+export function formatMediumDateTimeLocal(date: Date): string {
+  return date.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 /** e.g. "Sat, May 2, 2026 · 7:30 PM" — compact feed / cards */
 export function formatFriendlyDate(date: Date): string {
   const time = date.toLocaleTimeString(LOCALE, {

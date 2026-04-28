@@ -34,6 +34,10 @@ Use this when assessing refactors, cleanup PRs, or “is this file still needed?
 4. **Next.js**: Unused `page.tsx` or `_components` only referenced by orphaned parents?
 5. **DB / cron**: Removing a route or secret — still referenced in Supabase cron or docs?
 
+## Workspace package `exports` (types hygiene)
+
+Private packages under `packages/*` use **`package.json` `"exports"`** with `types` + `default`. **`types` must resolve to real files** (`./src/...`) so `tsc` and editors work without a prior `build` (declaration emit to `dist/` is still produced by `pnpm build` / Turbo, but is gitignored). Pointing `types` only at missing `./dist/*.d.ts` breaks standalone `pnpm -F @acme/<pkg> typecheck`.
+
 ## Suggested tooling (when available)
 
 - **Typecheck**: `pnpm typecheck` — must stay green after cleanup.

@@ -2,16 +2,27 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod/v4";
 
+import type { ClipReaction, VisualAnswers } from "@acme/validators";
 import {
   computeExperienceLevel,
   generateOnboardingReply,
   getRandomTracksPerTier,
+  MUSIC_CATALOG,
   ONBOARDING_QUESTIONS,
+  pickClipsForOnboarding,
   textToSpeech,
 } from "@acme/ai";
 import { and, eq } from "@acme/db";
-import { OnboardingSession, UserProfile } from "@acme/db/schema";
-import { SaveVisualAnswersSchema, VisualAnswersSchema } from "@acme/validators";
+import {
+  OnboardingSession,
+  UserMusicEvent,
+  UserProfile,
+} from "@acme/db/schema";
+import {
+  SaveClipReactionsSchema,
+  SaveVisualAnswersSchema,
+  VisualAnswersSchema,
+} from "@acme/validators";
 
 import { protectedProcedure, publicProcedure } from "../trpc";
 
@@ -192,6 +203,44 @@ export const onboardingRouter = {
   }),
 
   /**
+   * Force-creates a brand new in-progress session, marking any prior
+   * in-progress one as `complete` first (the unique index requires
+   * exactly one in-progress per user). Used by the "Re-take the taste
+   * quiz" affordance on `/profile/taste`.
+   */
+  restartSession: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const existing = await ctx.db.query.OnboardingSession.findFirst({
+      where: and(
+        eq(OnboardingSession.userId, userId),
+        eq(OnboardingSession.status, "in_progress"),
+      ),
+    });
+    if (existing) {
+      // Don't lose the data — mark complete so /profile/taste still
+      // resolves the user's prior answers in the recommender's negative-
+      // signal pass via UserMusicEvent rows.
+      await ctx.db
+        .update(OnboardingSession)
+        .set({ status: "complete", completedAt: new Date() })
+        .where(eq(OnboardingSession.id, existing.id));
+    }
+
+    const [created] = await ctx.db
+      .insert(OnboardingSession)
+      .values({ userId, phase: "voice", status: "in_progress" })
+      .returning();
+    if (!created) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to restart onboarding session",
+      });
+    }
+    return created;
+  }),
+
+  /**
    * Persists a partial set of visual answers. Merges into existing
    * `visualAnswers` so callers can save after every tap (powers the
    * resume-on-reload behaviour).
@@ -250,4 +299,190 @@ export const onboardingRouter = {
 
       return updated;
     }),
+
+  /**
+   * Returns 10 clips for the post-visual phase. Picks span the
+   * `(era × moodCluster)` grid with a tilt toward the user's stated
+   * preferences (so we get sharper signal where they care) but
+   * always keeps ~30% stretch picks for discovery.
+   *
+   * **Blind by design:** we strip era/mood labels from the response.
+   * If the user knows a piece is "romantic" they'll judge against the
+   * label, not the music — and our taste signal goes muddy.
+   */
+  getClips: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const session = await ctx.db.query.OnboardingSession.findFirst({
+        where: and(
+          eq(OnboardingSession.id, input.sessionId),
+          eq(OnboardingSession.userId, ctx.session.user.id),
+        ),
+      });
+      if (!session) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Onboarding session not found",
+        });
+      }
+
+      const visual = (session.visualAnswers ?? {}) as VisualAnswers;
+      const picks = pickClipsForOnboarding({
+        count: 10,
+        prior: {
+          eras: visual.eras,
+          emotionalOrientation: visual.emotional_orientation,
+        },
+      });
+
+      // Randomize so the cell-coverage order isn't visible to the
+      // user (they'd otherwise notice the curated narrative arc).
+      const shuffled = [...picks].sort(() => Math.random() - 0.5);
+
+      return {
+        clips: shuffled.map((t) => ({
+          id: String(t.id),
+          composer: t.composer,
+          title: t.title,
+          file: t.file,
+          // Intentionally NOT returning era/moodCluster.
+        })),
+      };
+    }),
+
+  /**
+   * Persists clip reactions on the session AND fans them out into the
+   * append-only `UserMusicEvent` log. Advances `phase` to `reveal`.
+   *
+   * Idempotent: re-calling overwrites the session's `clipReactions`
+   * but does NOT replay the event log inserts (we can't easily dedupe
+   * those without a unique constraint, so we accept that a network
+   * retry would double-count — better to overweight a real signal
+   * than lose it). The UI guards against retries for normal flows.
+   */
+  saveClipReactions: protectedProcedure
+    .input(SaveClipReactionsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const session = await ctx.db.query.OnboardingSession.findFirst({
+        where: and(
+          eq(OnboardingSession.id, input.sessionId),
+          eq(OnboardingSession.userId, userId),
+        ),
+      });
+      if (!session) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Onboarding session not found",
+        });
+      }
+
+      // Convert wire shape → persisted shape. The DB column was
+      // typed before the tap-reaction UI existed, so we collapse
+      // `reaction` (love/ok/not_for_me) into the `voiceReaction`
+      // string slot. `clipDurationMs` rides on `UserMusicEvent`
+      // metadata instead.
+      const persistedReactions = input.reactions.map((r) => ({
+        clipId: r.clipId,
+        listenedMs: r.listenedMs,
+        skipped: r.skipped,
+        replayed: r.replayed,
+        voiceReaction: r.reaction ?? null,
+      }));
+
+      // Phase advances to `complete` (the work of the clips phase is
+      // done) but `status` stays `in_progress` until `tasteProfile.
+      // derive` actually persists a profile.
+      await ctx.db
+        .update(OnboardingSession)
+        .set({
+          clipReactions: persistedReactions,
+          phase: "complete",
+        })
+        .where(eq(OnboardingSession.id, session.id));
+
+      // Fan out into the implicit-signal log. Each reaction yields up
+      // to 3 events (play, plus skip/complete, plus replay if any).
+      // We do this best-effort: a logging failure shouldn't block the
+      // user's onboarding completion.
+      try {
+        const rows = buildMusicEventRows(userId, input.reactions);
+        if (rows.length > 0) {
+          await ctx.db.insert(UserMusicEvent).values(rows);
+        }
+      } catch (err) {
+        console.warn(
+          "[onboarding.saveClipReactions] event log write failed:",
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+
+      return { ok: true as const, count: input.reactions.length };
+    }),
 } satisfies TRPCRouterRecord;
+
+/**
+ * Convert clip reactions into the rows we append to `UserMusicEvent`.
+ * Every clip gets a `clip_play` event; skipped clips get a
+ * `clip_skip`, finished clips get a `clip_complete`, replayed clips
+ * get a `clip_replay`. Composer + listenedMs in metadata is enough
+ * for the recommender's negative-signal calculation.
+ */
+function buildMusicEventRows(userId: string, reactions: ClipReaction[]) {
+  // Build a server-side lookup so we can attach composer + era + mood
+  // to every event row. The recommender's negative-signal pass reads
+  // `metadata.composer`; without this, skipped composers wouldn't get
+  // penalized.
+  const trackById = new Map(MUSIC_CATALOG.map((t) => [String(t.id), t]));
+
+  const rows: (typeof UserMusicEvent.$inferInsert)[] = [];
+  for (const r of reactions) {
+    const track = trackById.get(r.clipId);
+    const baseMetadata = {
+      listenedMs: r.listenedMs,
+      clipDurationMs: r.clipDurationMs,
+      reaction: r.reaction ?? null,
+      composer: track?.composer ?? null,
+      era: track?.era ?? null,
+      moodCluster: track?.moodCluster ?? null,
+    };
+
+    rows.push({
+      userId,
+      eventType: "clip_play",
+      entityType: "clip",
+      entityId: r.clipId,
+      metadata: baseMetadata,
+    });
+
+    if (r.skipped) {
+      rows.push({
+        userId,
+        eventType: "clip_skip",
+        entityType: "clip",
+        entityId: r.clipId,
+        metadata: baseMetadata,
+      });
+    } else {
+      rows.push({
+        userId,
+        eventType: "clip_complete",
+        entityType: "clip",
+        entityId: r.clipId,
+        metadata: baseMetadata,
+      });
+    }
+
+    if (r.replayed) {
+      rows.push({
+        userId,
+        eventType: "clip_replay",
+        entityType: "clip",
+        entityId: r.clipId,
+        metadata: baseMetadata,
+      });
+    }
+  }
+  return rows;
+}

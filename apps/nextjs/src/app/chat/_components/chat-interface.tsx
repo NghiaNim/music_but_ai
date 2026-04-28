@@ -10,6 +10,7 @@ import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
+import { formatShortMonthDayLocal } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 
 const BUY_TICKET_REGEX = /\[BUY_TICKET:([a-f0-9-]+)\]/g;
@@ -330,10 +331,7 @@ function EventContextBanner({
   date: Date | string;
   venue: string;
 }) {
-  const when = new Date(date).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
+  const when = formatShortMonthDayLocal(new Date(date));
   return (
     <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/40 dark:bg-amber-950/30">
       <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-amber-900 dark:bg-amber-900/50 dark:text-amber-200">
