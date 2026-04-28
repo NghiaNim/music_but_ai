@@ -72,11 +72,8 @@ export default async function HomePage() {
         <section className="px-4 pb-6">
           <Link href="/chat" className="group block">
             <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-[#ffffff] p-4 transition-all group-hover:border-neutral-300 group-hover:shadow-md">
-              <div className="pointer-events-none absolute -right-4 -bottom-4 opacity-[0.07] dark:opacity-5">
-                <SpeechBubbleDecor />
-              </div>
               <div className="relative flex items-center gap-4">
-                <div className="relative h-[4.75rem] w-[4.75rem] shrink-0">
+                <div className="relative grid size-[4.75rem] shrink-0 place-items-center rounded-full bg-[#F5E6DC]">
                   <Image
                     src="/tanny-cat-cutout.png"
                     alt="Tanny the cat"
@@ -246,14 +243,6 @@ function CalendarSparkle() {
         strokeLinejoin="round"
         opacity="0.6"
       />
-    </svg>
-  );
-}
-
-function SpeechBubbleDecor() {
-  return (
-    <svg width="120" height="120" viewBox="0 0 120 120" fill="currentColor">
-      <path d="M10 30 C10 15 25 5 50 5 C85 5 110 20 110 50 C110 80 85 95 55 95 L35 115 L38 90 C20 85 10 70 10 50Z" />
     </svg>
   );
 }

@@ -393,7 +393,7 @@ export const onboardingRouter = {
     }),
 
   /**
-   * Returns 10 clips for the post-visual phase. Picks span the
+   * Returns 7 clips for the post-visual phase. Picks span the
    * `(era × moodCluster)` grid with a tilt toward the user's stated
    * preferences (so we get sharper signal where they care) but
    * always keeps ~30% stretch picks for discovery.
@@ -420,7 +420,7 @@ export const onboardingRouter = {
 
       const visual = (session.visualAnswers ?? {}) as VisualAnswers;
       const picks = pickClipsForOnboarding({
-        count: 10,
+        count: 7,
         prior: {
           eras: visual.eras,
           emotionalOrientation: visual.emotional_orientation,

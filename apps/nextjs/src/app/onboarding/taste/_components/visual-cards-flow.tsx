@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { VisualAnswers } from "@acme/validators";
-import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
@@ -185,12 +184,33 @@ export function VisualCardsFlow() {
         markVisualComplete: isLast,
       });
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Could not save your answer — please try again.",
-      );
-      return;
+      if (isFinishedSessionError(err)) {
+        try {
+          const fresh = await restartSession.mutateAsync();
+          setSessionId(fresh.id);
+          // Retain the in-flight answer and continue seamlessly on the
+          // newly created in-progress session.
+          await saveAnswers.mutateAsync({
+            sessionId: fresh.id,
+            answers: patch,
+            markVisualComplete: isLast,
+          });
+        } catch (retryErr) {
+          toast.error(
+            retryErr instanceof Error
+              ? retryErr.message
+              : "Could not restart your quiz — please try again.",
+          );
+          return;
+        }
+      } else {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Could not save your answer — please try again.",
+        );
+        return;
+      }
     }
 
     if (!isLast) {
@@ -316,23 +336,26 @@ export function VisualCardsFlow() {
     <div className="flex flex-1 flex-col">
       {/* pr-14 reserves room for the floating "Save & exit" X
           button that lives on the page wrapper. */}
-      <header className="flex items-center justify-between gap-2 border-b border-neutral-200 py-3 pr-14 pl-3 dark:border-neutral-800">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBack}
-          disabled={questionIndex === 0 || saveAnswers.isPending}
-          className={cn(
-            "shrink-0 transition-opacity",
-            questionIndex === 0 && "pointer-events-none opacity-0",
-          )}
-          aria-label="Previous question"
-        >
-          <BackArrow />
-          <span>Back</span>
-        </Button>
-        <ProgressPips total={total} currentIndex={questionIndex} />
-        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+      <header className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 py-3 pr-14 pl-3">
+        <div className="flex min-w-0 items-center justify-start">
+          {questionIndex > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              disabled={saveAnswers.isPending}
+              className="shrink-0"
+              aria-label="Previous question"
+            >
+              <BackArrow />
+              <span>Back</span>
+            </Button>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 justify-center">
+          <ProgressPips total={total} currentIndex={questionIndex} />
+        </div>
+        <span className="text-muted-foreground shrink-0 justify-self-end text-right text-xs tabular-nums">
           {questionIndex + 1} / {total}
         </span>
       </header>
@@ -358,6 +381,11 @@ function hasAnswerFor(answers: VisualAnswers, key: keyof VisualAnswers) {
   const v = answers[key];
   if (Array.isArray(v)) return v.length > 0;
   return v != null;
+}
+
+function isFinishedSessionError(err: unknown) {
+  if (!(err instanceof Error)) return false;
+  return err.message.toLowerCase().includes("finished onboarding session");
 }
 
 // Defensive: the tRPC profile object has many nullable fields. We

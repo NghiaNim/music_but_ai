@@ -422,7 +422,7 @@ export function pickClipsForOnboarding(input: {
   count?: number;
   prior?: { eras?: ClipEra[]; emotionalOrientation?: ClipMood };
 }): MusicTrack[] {
-  const count = input.count ?? 10;
+  const count = input.count ?? 7;
   const preferredEras = new Set(input.prior?.eras ?? []);
   const preferredMood = input.prior?.emotionalOrientation;
 

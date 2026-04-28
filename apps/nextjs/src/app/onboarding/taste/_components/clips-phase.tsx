@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
+import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
@@ -22,7 +23,7 @@ export interface ClipReactionDraft {
 
 interface ClipsPhaseProps {
   sessionId: string;
-  /** Called once all 10 reactions have been persisted server-side. */
+  /** Called once all clip reactions have been persisted server-side. */
   onComplete: () => void;
   /** Lets users bail to derivation early if they're done. */
   onSkipPhase: () => void;
@@ -97,6 +98,12 @@ export function ClipsPhase({
     setIndex(index + 1);
   };
 
+  const handleBack = () => {
+    if (index === 0 || saveReactions.isPending) return;
+    setIndex((i) => i - 1);
+    setReactions((r) => r.slice(0, -1));
+  };
+
   if (saveReactions.isPending) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4">
@@ -115,25 +122,35 @@ export function ClipsPhase({
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* pr-14 reserves room for the floating "Save & exit" X
           button that lives on the page wrapper. */}
-      <header className="flex items-center justify-between gap-2 border-b border-neutral-200 py-3 pr-14 pl-3 dark:border-neutral-800">
-        <div className="w-16 shrink-0" />
-        <ProgressPips total={total} currentIndex={index} />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onSkipPhase}
-          className="text-muted-foreground hover:text-foreground shrink-0 text-xs"
-        >
-          Skip the rest
-        </Button>
+      <header className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 py-3 pr-14 pl-3">
+        <div className="flex min-w-0 items-center justify-start">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBack}
+            disabled={index === 0 || saveReactions.isPending}
+            className={cn(
+              "shrink-0 transition-opacity",
+              index === 0 && "pointer-events-none opacity-0",
+            )}
+            aria-label="Previous clip"
+          >
+            <BackArrow />
+            <span>Back</span>
+          </Button>
+        </div>
+        <div className="flex shrink-0 justify-center">
+          <ProgressPips total={total} currentIndex={index} />
+        </div>
+        <span className="shrink-0" aria-hidden />
       </header>
 
       <main
         key={currentClip.id}
-        className="animate-in fade-in slide-in-from-bottom-2 flex flex-1 items-start justify-center px-4 py-6 duration-300 sm:items-center sm:px-6 sm:py-8"
+        className="animate-in fade-in slide-in-from-bottom-2 flex min-h-0 flex-1 flex-col items-start justify-center px-4 py-6 duration-300 sm:items-center sm:px-6 sm:py-8"
       >
         <ClipPlayer
           clip={currentClip}
@@ -144,6 +161,33 @@ export function ClipsPhase({
           onFirstTapConsumed={() => setFirstTapConsumed(true)}
         />
       </main>
+
+      <footer className="shrink-0 bg-[#FEFCED] px-4 pt-3 pb-[max(env(safe-area-inset-bottom),1rem)] dark:bg-neutral-950">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onSkipPhase}
+          className="text-muted-foreground hover:text-foreground h-auto w-full py-2 text-xs"
+        >
+          Skip the rest
+        </Button>
+      </footer>
     </div>
+  );
+}
+
+function BackArrow() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m15 18-6-6 6-6" />
+    </svg>
   );
 }
