@@ -8,6 +8,8 @@ import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
+import posthog from "posthog-js";
+
 import { useTRPC } from "~/trpc/react";
 
 /**
@@ -291,6 +293,7 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
   const handleSkipPhase = async () => {
     stopListening();
     if (ttsAudioRef.current) ttsAudioRef.current.pause();
+    posthog.capture("onboarding_voice_skipped");
     try {
       await skipVoice.mutateAsync({ sessionId });
     } catch {

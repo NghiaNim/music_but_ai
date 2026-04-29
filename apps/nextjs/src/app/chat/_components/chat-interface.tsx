@@ -10,6 +10,8 @@ import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
+import posthog from "posthog-js";
+
 import { formatShortMonthDayLocal } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 
@@ -107,6 +109,13 @@ export function ChatInterface() {
     e.preventDefault();
     const content = inputValue.trim();
     if (!content || sendMessage.isPending) return;
+
+    posthog.capture("chat_message_sent", {
+      mode,
+      event_id: eventId,
+      live_event_id: liveEventId,
+      message_index: messages.length,
+    });
 
     const newMessages: Message[] = [...messages, { role: "user", content }];
     setMessages(newMessages);
@@ -322,7 +331,10 @@ function ChatBubble({ message }: { message: Message }) {
         </div>
         {eventId && !isUser && (
           <button
-            onClick={() => checkout.mutate({ eventId, quantity: 1 })}
+            onClick={() => {
+              posthog.capture("chat_ticket_purchased", { event_id: eventId });
+              checkout.mutate({ eventId, quantity: 1 });
+            }}
             disabled={checkout.isPending}
             className="flex w-full items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-left transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40"
           >

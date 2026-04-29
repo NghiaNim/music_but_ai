@@ -8,6 +8,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
+import posthog from "posthog-js";
+
 import { formatLongDateOnly } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 
@@ -23,6 +25,12 @@ export function TicketConfirmation() {
       onSuccess: (data) => {
         if (data.status === "completed") {
           toast.success("Payment confirmed!");
+          posthog.capture("ticket_purchase_completed", {
+            order_id: data.id,
+            event_id: data.eventId,
+            quantity: data.quantity,
+            total_cents: data.totalCents,
+          });
           void queryClient.invalidateQueries({
             queryKey: trpc.ticket.orderById.queryKey({
               orderId: orderId ?? "",
@@ -31,6 +39,7 @@ export function TicketConfirmation() {
         }
       },
       onError: (err) => {
+        posthog.captureException(err);
         toast.error(err.message || "Failed to confirm order");
       },
     }),

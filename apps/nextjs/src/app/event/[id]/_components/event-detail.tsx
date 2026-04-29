@@ -18,6 +18,8 @@ import {
   DIFFICULTY_LABELS,
   GENRE_LABELS,
 } from "~/lib/event-display-labels";
+import posthog from "posthog-js";
+
 import { formatLongDateAtTime } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 
@@ -303,6 +305,10 @@ function EventActionButtons({
         toast.success(
           result.action === "added" ? "Event saved!" : "Event removed",
         );
+        posthog.capture("event_saved", {
+          event_id: eventId,
+          action: result.action,
+        });
         await queryClient.invalidateQueries(trpc.userEvent.pathFilter());
       },
       onError: (err) => {
@@ -323,6 +329,10 @@ function EventActionButtons({
             ? "Marked as attended!"
             : "Removed attendance",
         );
+        posthog.capture("event_attended_marked", {
+          event_id: eventId,
+          action: result.action,
+        });
         await queryClient.invalidateQueries(trpc.userEvent.pathFilter());
       },
       onError: (err) => {
@@ -390,6 +400,7 @@ function BuyTicketButton({
           toast.error("Please sign in to purchase tickets");
           return;
         }
+        posthog.captureException(err);
         toast.error(err.message || "Failed to start checkout");
       },
     }),
@@ -399,7 +410,10 @@ function BuyTicketButton({
     <Button
       className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
       size="lg"
-      onClick={() => checkout.mutate({ eventId, quantity: 1 })}
+      onClick={() => {
+        posthog.capture("ticket_checkout_started", { event_id: eventId });
+        checkout.mutate({ eventId, quantity: 1 });
+      }}
       disabled={(disabled ?? false) || checkout.isPending}
     >
       {checkout.isPending ? (

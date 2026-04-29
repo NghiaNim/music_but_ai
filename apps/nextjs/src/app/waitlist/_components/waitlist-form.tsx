@@ -6,6 +6,8 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@acme/ui/button";
 import { Input } from "@acme/ui/input";
 
+import posthog from "posthog-js";
+
 import { useTRPC } from "~/trpc/react";
 
 export function WaitlistForm() {
@@ -21,6 +23,7 @@ export function WaitlistForm() {
       onSuccess(data) {
         setStatus(data.status);
         if (data.status === "joined") {
+          posthog.capture("waitlist_joined", { source: "web" });
           setName("");
           setEmail("");
         }

@@ -15,6 +15,8 @@ import { Input } from "@acme/ui/input";
 import { Label } from "@acme/ui/label";
 import { toast } from "@acme/ui/toast";
 
+import posthog from "posthog-js";
+
 import { useTRPC } from "~/trpc/react";
 
 const GENRES = [
@@ -174,8 +176,14 @@ function HostEventFormShell({
 
   const createEvent = useMutation(
     trpc.event.create.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (data) => {
         toast.success("Event posted successfully!");
+        posthog.capture("event_created", {
+          event_id: data[0]?.id,
+          genre,
+          difficulty,
+          is_free: isFree,
+        });
         await queryClient.invalidateQueries(trpc.event.pathFilter());
         router.push("/events");
       },
@@ -210,6 +218,10 @@ function HostEventFormShell({
             ? `Event cancelled · emailed ${data.emailed} subscriber(s)`
             : "Event cancelled",
         );
+        posthog.capture("event_cancelled", {
+          event_id: event?.id,
+          emailed_subscribers: data.emailed,
+        });
         await queryClient.invalidateQueries(trpc.event.pathFilter());
         router.push("/post-event");
       },

@@ -26,6 +26,8 @@
     "@trpc/tanstack-react-query": "catalog:",
     "better-auth": "catalog:",
     "next": "^16.0.9",
+    "posthog-js": "^1.246.3",
+    "posthog-node": "^4.13.0",
     "react": "catalog:react19",
     "react-dom": "catalog:react19",
     "superjson": "2.2.3",

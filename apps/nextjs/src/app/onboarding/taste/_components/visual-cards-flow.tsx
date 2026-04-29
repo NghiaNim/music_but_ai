@@ -8,6 +8,8 @@ import type { VisualAnswers } from "@acme/validators";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
 
+import posthog from "posthog-js";
+
 import { useTRPC } from "~/trpc/react";
 import { ClipsPhase } from "./clips-phase";
 import { MinimalReveal } from "./minimal-reveal";
@@ -229,7 +231,12 @@ export function VisualCardsFlow() {
     try {
       const res = await derive.mutateAsync({ sessionId: id });
       if (isCancelled?.()) return;
-      setProfile(extractProfile(res.profile));
+      const derived = extractProfile(res.profile);
+      setProfile(derived);
+      posthog.capture("onboarding_completed", {
+        archetype: derived.archetype,
+        tags: derived.tags,
+      });
       await queryClient.invalidateQueries({
         queryKey: trpc.tasteProfile.get.queryKey(),
       });
@@ -238,6 +245,7 @@ export function VisualCardsFlow() {
       });
     } catch (err) {
       if (!isCancelled?.()) {
+        posthog.captureException(err);
         toast.error(
           err instanceof Error
             ? err.message
