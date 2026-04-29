@@ -46,9 +46,7 @@ export default async function HomePage() {
         </section>
 
         {/* Onboarding */}
-        <section className="px-4 pb-4">
-          <OnboardingCTA isSignedIn={!!session} />
-        </section>
+        <OnboardingCTA isSignedIn={!!session} />
 
         {/* Upcoming Events */}
         <section className="px-4 pb-6">
@@ -68,22 +66,22 @@ export default async function HomePage() {
           </Suspense>
         </section>
 
-        {/* Ask Tanny */}
+        {/* Ask Ton Ton */}
         <section className="px-4 pb-6">
           <Link href="/chat" className="group block">
             <div className="bg-card relative overflow-hidden rounded-2xl border p-3.5 transition-all group-hover:shadow-md">
               <div className="relative flex items-center gap-3">
                 <div className="relative grid size-[4.25rem] shrink-0 place-items-center rounded-full bg-[#F5E6DC] dark:bg-rose-950/30">
                   <Image
-                    src="/tanny-cat-cutout.png"
-                    alt="Tanny the cat"
+                    src="/ton-ton-cat-cutout.png"
+                    alt="Ton Ton the cat"
                     width={68}
                     height={68}
                     className="h-full w-full object-contain object-bottom"
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold">Ask Tanny</p>
+                  <p className="font-semibold">Ask Ton Ton</p>
                   <p className="text-muted-foreground text-xs">
                     Your musical sidekick &mdash; recs, trivia, anything!
                   </p>
@@ -95,51 +93,51 @@ export default async function HomePage() {
         </section>
 
         {/* Quick Start */}
-        <section className="px-4 pb-8">
-          <div className="mb-3 flex items-center gap-2">
+        <section className="pb-8">
+          <div className="mb-3 flex items-center gap-2 px-4">
             <CompassIcon />
             <h2 className="text-lg font-semibold">Explore</h2>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Link href="/events?difficulty=beginner" className="group">
-              <div className="flex flex-col items-center gap-2 rounded-2xl border bg-emerald-50 p-5 text-center transition-all group-hover:border-emerald-300 group-hover:shadow-sm dark:bg-emerald-950/30">
+          <div className="flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <Link href="/events?difficulty=beginner" className="group shrink-0">
+              <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <SeedlingIllustration />
                 <div>
-                  <p className="text-sm font-semibold">For Beginners</p>
-                  <p className="text-muted-foreground mt-0.5 text-[11px]">
+                  <p className="text-sm font-semibold leading-tight">For Beginners</p>
+                  <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     First concert? Start here
                   </p>
                 </div>
               </div>
             </Link>
-            <Link href="/chat?mode=discovery" className="group">
-              <div className="flex flex-col items-center gap-2 rounded-2xl border bg-violet-50 p-5 text-center transition-all group-hover:border-violet-300 group-hover:shadow-sm dark:bg-violet-950/30">
+            <Link href="/chat?mode=discovery" className="group shrink-0">
+              <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <SparkleIllustration />
                 <div>
-                  <p className="text-sm font-semibold">Get a Rec</p>
-                  <p className="text-muted-foreground mt-0.5 text-[11px]">
+                  <p className="text-sm font-semibold leading-tight">Get a Rec</p>
+                  <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     AI-picked just for you
                   </p>
                 </div>
               </div>
             </Link>
-            <Link href="/learn" className="group">
-              <div className="flex flex-col items-center gap-2 rounded-2xl border bg-amber-50 p-5 text-center transition-all group-hover:border-amber-300 group-hover:shadow-sm dark:bg-amber-950/30">
+            <Link href="/learn" className="group shrink-0">
+              <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <BookIllustration />
                 <div>
-                  <p className="text-sm font-semibold">Learn</p>
-                  <p className="text-muted-foreground mt-0.5 text-[11px]">
-                    Classical & jazz 101
+                  <p className="text-sm font-semibold leading-tight">Learn</p>
+                  <p className="text-muted-foreground mt-1 text-xs leading-snug">
+                    Classical &amp; jazz 101
                   </p>
                 </div>
               </div>
             </Link>
-            <Link href="/profile" className="group">
-              <div className="flex flex-col items-center gap-2 rounded-2xl border bg-sky-50 p-5 text-center transition-all group-hover:border-sky-300 group-hover:shadow-sm dark:bg-sky-950/30">
+            <Link href="/profile" className="group shrink-0">
+              <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <TrophyIllustration />
                 <div>
-                  <p className="text-sm font-semibold">My Badges</p>
-                  <p className="text-muted-foreground mt-0.5 text-[11px]">
+                  <p className="text-sm font-semibold leading-tight">My Badges</p>
+                  <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     See what you&apos;ve earned
                   </p>
                 </div>
@@ -257,7 +255,7 @@ function CompassIcon() {
       height="20"
       viewBox="0 0 24 24"
       fill="none"
-      className="text-violet-500 dark:text-violet-400"
+      className="text-amber-500 dark:text-amber-400"
     >
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
       <path
@@ -368,19 +366,19 @@ function TrophyIllustration() {
   );
 }
 
-function ChevronRightIcon() {
+function ChevronRightIcon({ className }: { className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="text-muted-foreground"
+      className={className ?? "text-muted-foreground"}
     >
       <path d="m9 18 6-6-6-6" />
     </svg>

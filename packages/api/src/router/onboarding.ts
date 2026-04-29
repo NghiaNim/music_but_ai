@@ -241,7 +241,7 @@ export const onboardingRouter = {
   }),
 
   /**
-   * Saves the Tanny voice conversation transcript to the session
+   * Saves the Ton Ton voice conversation transcript to the session
    * and advances `phase` from "voice" → "visual". Idempotent: if
    * the user re-records, the latest transcript wins. Skipping the
    * voice phase calls this with an empty string (or never; the
@@ -251,7 +251,7 @@ export const onboardingRouter = {
     .input(
       z.object({
         sessionId: z.string().uuid(),
-        // Generous cap — typical 60-90s Tanny chat is ~500-1500
+        // Generous cap — typical 60-90s Ton Ton chat is ~500-1500
         // chars, but ElevenLabs/WebSpeech can bloat with retries.
         transcript: z.string().min(1).max(8000),
       }),

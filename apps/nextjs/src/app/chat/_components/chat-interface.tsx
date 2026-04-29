@@ -128,14 +128,14 @@ export function ChatInterface() {
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <div className="flex items-center gap-2">
             <Image
-              src="/tanny-cat-cutout.png"
-              alt="Tanny"
+              src="/ton-ton-cat-cutout.png"
+              alt="Ton Ton"
               width={44}
               height={44}
               className="object-contain"
             />
             <div className="min-w-0">
-              <h1 className="text-lg font-semibold">Ask Tanny</h1>
+              <h1 className="text-lg font-semibold">Ask Ton Ton</h1>
               <p className="text-muted-foreground truncate text-xs">
                 {mode === "discovery"
                   ? "Help me find a concert"

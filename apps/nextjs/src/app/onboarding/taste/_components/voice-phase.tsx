@@ -12,14 +12,14 @@ import { useTRPC } from "~/trpc/react";
 
 /**
  * Phase 1 of the new taste onboarding: a short voice chat with
- * Tanny. Optional but nudged. The transcript feeds into
+ * Ton Ton. Optional but nudged. The transcript feeds into
  * `tasteProfile.derive` alongside the visual answers + clip
  * reactions, giving the LLM warmer signal than cards alone.
  *
  * Reuses the existing infra:
  *   - TTS via `onboarding.speak` (ElevenLabs)
  *   - STT via the browser's `SpeechRecognition` (free, no infra)
- *   - Tanny avatar at `/tanny-cat-cutout.png`
+ *   - Ton Ton avatar at `/ton-ton-cat-cutout.png`
  *
  * If the browser doesn't support SpeechRecognition (Firefox, some
  * iOS WebViews), we fall back to a `window.prompt`. The whole
@@ -29,7 +29,7 @@ import { useTRPC } from "~/trpc/react";
 type VoiceState =
   | "idle" // intro screen, waiting for user to tap Start
   | "connecting" // TTS warming up before greeting plays
-  | "ai-speaking" // Tanny is talking
+  | "ai-speaking" // Ton Ton is talking
   | "user-speaking" // mic open, capturing one long utterance
   | "saving" // transcript hitting the server
   | "done"; // ready to advance — auto-fires onComplete
@@ -43,7 +43,7 @@ interface VoicePhaseProps {
 }
 
 const GREETING =
-  "Hi, I'm Tanny. Tell me about a piece of music that's stayed with you — what it is, and how it makes you feel.";
+  "Hi, I'm Ton Ton. Tell me about a piece of music that's stayed with you — what it is, and how it makes you feel.";
 
 const WRAPUP_TEXT = "Got it. I'll fold that in.";
 
@@ -276,7 +276,7 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
     const utterance = await startListening();
 
     setState("ai-speaking");
-    setStatusText("Tanny is wrapping up…");
+    setStatusText("Ton Ton is wrapping up…");
     await Promise.race([playTTS(WRAPUP_TEXT), sleep(TTS_HARD_CAP_MS)]);
 
     void finalize(utterance);
@@ -317,8 +317,8 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
       <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-[#FEFCED] px-4 py-8 text-center">
         <div className="bg-primary/10 flex size-48 items-center justify-center rounded-full">
           <Image
-            src="/tanny-cat-cutout.png"
-            alt="Tanny"
+            src="/ton-ton-cat-cutout.png"
+            alt="Ton Ton"
             width={136}
             height={136}
             className="object-contain"
@@ -330,7 +330,7 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
             A quick chat first
           </p>
           <h2 className="text-xl font-semibold text-balance sm:text-2xl">
-            Tell Tanny about music you love
+            Tell Ton Ton about music you love
           </h2>
           <p className="text-muted-foreground mt-2 text-sm text-balance">
             About a minute of voice. The more you share, the sharper your
@@ -393,8 +393,8 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
               <MicIconLarge />
             ) : (
               <Image
-                src="/tanny-cat-cutout.png"
-                alt="Tanny"
+                src="/ton-ton-cat-cutout.png"
+                alt="Ton Ton"
                 width={136}
                 height={136}
                 className="object-contain"
@@ -404,7 +404,7 @@ export function VoicePhase({ sessionId, onComplete, onSkip }: VoicePhaseProps) {
         </div>
 
         <h2 className="text-lg font-semibold">
-          {isUserSpeaking ? "Listening…" : "Tanny"}
+          {isUserSpeaking ? "Listening…" : "Ton Ton"}
         </h2>
 
         {/* Live caption while the user is speaking — gives them

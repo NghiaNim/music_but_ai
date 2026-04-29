@@ -22,8 +22,11 @@ export function BottomNav() {
   const isOnboarding =
     pathname === "/onboarding" || pathname.startsWith("/onboarding/");
   const isTasteProfile = pathname === "/profile/taste";
+  const isEventDetail =
+    pathname.startsWith("/event/") || pathname.startsWith("/live-event/");
 
-  if (isChatPage || isOnboarding || isTasteProfile) return null;
+  if (isChatPage || isOnboarding || isTasteProfile || isEventDetail)
+    return null;
 
   return (
     <nav className="sticky bottom-0 z-50 border-t bg-amber-50/90 backdrop-blur supports-backdrop-filter:bg-amber-50/70 dark:bg-amber-950/90 dark:supports-backdrop-filter:bg-amber-950/70">

@@ -99,7 +99,7 @@ export function LiveEventDetail({
       {!isSignedIn && (
         <div className="bg-background/80 absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-4 py-6 backdrop-blur-md">
           <p className="text-center text-sm font-medium">
-            Sign in to view event details and ask Tanny
+            Sign in to view event details and ask Ton Ton
           </p>
           <Button asChild size="lg">
             <Link
@@ -202,7 +202,7 @@ export function LiveEventDetail({
               className="inline-flex items-center justify-center gap-2"
             >
               <ChatIcon />
-              Ask Tanny About This Event
+              Ask Ton Ton About This Event
             </Link>
           </Button>
         </div>

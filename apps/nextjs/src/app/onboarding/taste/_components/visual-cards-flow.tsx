@@ -110,7 +110,7 @@ export function VisualCardsFlow() {
           return;
         }
 
-        // Resume by phase: voice → voice phase (Tanny intro),
+        // Resume by phase: voice → voice phase (Ton Ton intro),
         // clips → clip-phase, complete → derive, otherwise →
         // first unanswered visual question.
         if (session.phase === "voice") {

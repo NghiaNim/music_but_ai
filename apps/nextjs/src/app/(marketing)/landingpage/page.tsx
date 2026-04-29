@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const FEATURE_CARDS = [
   {
-    title: "Tanny helps you find your sound",
+    title: "Ton Ton helps you find your sound",
     description:
       "Your musical sidekick makes the first step feel playful, warm, and way less intimidating.",
   },
@@ -29,12 +29,12 @@ const FEATURE_CARDS = [
 ] as const;
 
 const STEPS = [
-  "Meet Tanny and tell Classica what kind of music moves you.",
+  "Meet Ton Ton and tell Classica what kind of music moves you.",
   "Get a taste profile that turns feelings into concert recs.",
   "Save favorites, learn as you go, and build your concert life.",
 ] as const;
 
-const TANNY_QUOTES = [
+const TON_TON_QUOTES = [
   "Big feelings? I know a symphony for that.",
   "New to classical or jazz? Perfect. I love an origin story.",
   "Let's find you a concert worth dressing up for.",
@@ -73,7 +73,7 @@ export default function LandingPage() {
           <section className="grid gap-10 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-16">
             <div className="max-w-2xl">
               <p className="text-primary mb-3 text-sm font-medium">
-                Meet Tanny, your classical and jazz sidekick
+                Meet Ton Ton, your classical and jazz sidekick
               </p>
               <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
                 Discover classical & jazz, powered by curiosity
@@ -81,7 +81,7 @@ export default function LandingPage() {
               <p className="text-muted-foreground mt-4 max-w-xl text-base leading-7 sm:text-lg">
                 Classica helps you discover live classical and jazz music
                 through a fun taste profile, thoughtful recommendations, and
-                Tanny-guided moments that make the whole experience feel
+                Ton Ton-guided moments that make the whole experience feel
                 welcoming from the very first tap.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
@@ -106,7 +106,7 @@ export default function LandingPage() {
               <div className="text-muted-foreground mt-8 grid gap-3 text-sm sm:grid-cols-3">
                 <StatCard value="2 min" label="to build your taste profile" />
                 <StatCard
-                  value="Tanny-approved"
+                  value="Ton Ton-approved"
                   label="concerts matched to your vibe"
                 />
                 <StatCard
@@ -126,17 +126,17 @@ export default function LandingPage() {
                   <div className="bg-background/85 flex items-center gap-3 rounded-2xl border border-white/80 p-3 shadow-sm backdrop-blur">
                     <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[#F5E6DC]">
                       <Image
-                        src="/tanny-cat-cutout.png"
-                        alt="Tanny the cat mascot"
+                        src="/ton-ton-cat-cutout.png"
+                        alt="Ton Ton the cat mascot"
                         width={56}
                         height={56}
                         className="h-full w-full object-contain object-bottom"
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold">Tanny says</p>
+                      <p className="text-sm font-semibold">Ton Ton says</p>
                       <p className="text-muted-foreground text-sm leading-6">
-                        "{TANNY_QUOTES[0]}"
+                        "{TON_TON_QUOTES[0]}"
                       </p>
                     </div>
                   </div>
@@ -170,7 +170,7 @@ export default function LandingPage() {
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <PreviewCard
-                      eyebrow="Tanny pick"
+                      eyebrow="Ton Ton pick"
                       title="Romantic orchestra at Carnegie"
                       body="A big, melodic program with drama, warmth, and just the right amount of main-character energy."
                     />
@@ -202,13 +202,13 @@ export default function LandingPage() {
 
           <section className="py-2 sm:py-4">
             <div className="grid gap-4 md:grid-cols-3">
-              {TANNY_QUOTES.map((quote, index) => (
+              {TON_TON_QUOTES.map((quote, index) => (
                 <div
                   key={quote}
                   className="via-background rounded-3xl border border-white/70 bg-linear-to-br from-amber-50 to-rose-50 p-5 shadow-sm transition-transform hover:-translate-y-1 dark:border-white/10 dark:from-amber-950/20 dark:to-rose-950/20"
                 >
                   <p className="text-primary text-xs font-semibold tracking-[0.18em] uppercase">
-                    Tanny note 0{index + 1}
+                    Ton Ton note 0{index + 1}
                   </p>
                   <p className="mt-3 text-base leading-7 font-medium">
                     "{quote}"
@@ -259,7 +259,7 @@ export default function LandingPage() {
             <div className="via-background dark:via-background rounded-[2rem] border bg-linear-to-br from-amber-50 to-rose-50 p-6 shadow-sm sm:p-8 dark:from-amber-950/20 dark:to-rose-950/20">
               <div className="mx-auto max-w-2xl text-center">
                 <h2 className="text-3xl font-bold tracking-tight text-balance">
-                  Let Tanny help you find your next obsession.
+                  Let Ton Ton help you find your next obsession.
                 </h2>
                 <p className="text-muted-foreground mt-3 text-sm leading-6 sm:text-base">
                   Whether you are brand new or already obsessed, Classica makes
