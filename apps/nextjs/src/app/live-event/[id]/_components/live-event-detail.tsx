@@ -87,8 +87,7 @@ export function LiveEventDetail({
   );
 
   const sourceLabel = VENUE_SOURCE_FULL_NAMES[event.source] ?? event.source;
-  const chatPrefill = `I'm interested in "${event.title}" — what should I know before I go?`;
-  const chatHref = `/chat?mode=discovery&q=${encodeURIComponent(chatPrefill)}`;
+  const chatHref = `/chat?mode=learning&liveEventId=${liveEventId}`;
   const mapHref = directionsUrl({
     source: event.source,
     venueName: event.venueName,

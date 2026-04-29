@@ -34,13 +34,12 @@ const DIFFICULTIES = [
 ] as const;
 
 /** One outer card wraps the entire form (fields stack inside with spacing). */
-const FORM_CARD =
-  "rounded-2xl border border-[#EFE9F4] bg-[#ffffff] p-4 shadow-sm sm:p-5";
+const FORM_CARD = "rounded-2xl border bg-card p-4 shadow-sm sm:p-5";
 
 const SECTION = "flex flex-col gap-1.5";
 
 const CONTROL =
-  "border-[#EFE9F4] bg-[#ffffff] shadow-none focus-visible:border-primary/40 dark:bg-[#ffffff]";
+  "border shadow-none focus-visible:border-primary/40 bg-background text-foreground";
 
 const SELECT_CONTROL = `${CONTROL} focus-visible:border-ring focus-visible:ring-ring/50 h-10 w-full rounded-md border px-3 text-sm focus-visible:ring-[3px] focus-visible:outline-none`;
 
@@ -332,7 +331,7 @@ function HostEventFormShell({
                 <button
                   type="button"
                   onClick={() => imageFileInputRef.current?.click()}
-                  className="relative aspect-square w-full overflow-hidden rounded-2xl border border-dashed border-[#EFE9F4] bg-[#FFFEF8] text-center shadow-none transition-colors hover:bg-amber-50/35 active:bg-amber-50/50"
+                  className="bg-muted/20 relative aspect-square w-full overflow-hidden rounded-2xl border border-dashed text-center shadow-none transition-colors hover:bg-muted/30 active:bg-muted/40 dark:bg-zinc-900/50"
                 >
                   {imageUrl ? (
                     <Image
@@ -547,7 +546,7 @@ function HostEventFormShell({
             </div>
 
             {mode === "edit" && event ? (
-              <label className="flex cursor-pointer flex-row items-start gap-3 rounded-lg border border-[#EFE9F4] bg-[#faf8fc] p-3 text-sm">
+              <label className="flex cursor-pointer flex-row items-start gap-3 rounded-lg border bg-muted/30 p-3 text-sm">
                 <input
                   type="checkbox"
                   checked={notifySubscribers}

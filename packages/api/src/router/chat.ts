@@ -5,9 +5,33 @@ import { z } from "zod/v4";
 import type { EventContext } from "@acme/ai";
 import { streamDiscoveryResponse, streamLearningResponse } from "@acme/ai";
 import { desc, eq } from "@acme/db";
-import { ChatMessage, ChatSession, Event, UserProfile } from "@acme/db/schema";
+import {
+  ChatMessage,
+  ChatSession,
+  Event,
+  LiveEvent,
+  UserProfile,
+} from "@acme/db/schema";
 
 import { protectedProcedure, publicProcedure } from "../trpc";
+
+function liveEventToContext(
+  event: typeof LiveEvent.$inferSelect,
+): EventContext {
+  return {
+    id: event.id,
+    title: event.title,
+    date: event.date
+      ? event.date.toISOString()
+      : (event.dateText ?? "Date TBD"),
+    venue: event.venueName ?? event.location ?? "Unknown venue",
+    program: event.program ?? "",
+    description: "",
+    difficulty: "intermediate",
+    genre: event.genre,
+    beginnerNotes: null,
+  };
+}
 
 function eventToContext(event: typeof Event.$inferSelect): EventContext {
   return {
@@ -62,6 +86,7 @@ export const chatRouter = {
       z.object({
         sessionId: z.string().uuid().optional(),
         eventId: z.string().uuid().optional(),
+        liveEventId: z.string().uuid().optional(),
         mode: z.enum(["discovery", "learning"]),
         content: z.string().min(1).max(4000),
         history: z
@@ -156,8 +181,14 @@ export const chatRouter = {
 
       try {
         if (input.mode === "discovery") {
-          const events = await ctx.db.query.Event.findMany({ limit: 50 });
-          const eventContexts = events.map(eventToContext);
+          const [communityEvents, liveEvents] = await Promise.all([
+            ctx.db.query.Event.findMany({ limit: 50 }),
+            ctx.db.query.LiveEvent.findMany({ limit: 100 }),
+          ]);
+          const eventContexts = [
+            ...communityEvents.map(eventToContext),
+            ...liveEvents.map(liveEventToContext),
+          ];
 
           for await (const chunk of streamDiscoveryResponse({
             messages,
@@ -168,25 +199,41 @@ export const chatRouter = {
             fullResponse += chunk;
           }
         } else {
-          if (!input.eventId) {
+          if (!input.eventId && !input.liveEventId) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "Learning mode requires an eventId",
+              message: "Learning mode requires an eventId or liveEventId",
             });
           }
-          const event = await ctx.db.query.Event.findFirst({
-            where: eq(Event.id, input.eventId),
-          });
-          if (!event) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Event not found",
+
+          let eventCtx: EventContext;
+          if (input.liveEventId) {
+            const liveEvent = await ctx.db.query.LiveEvent.findFirst({
+              where: eq(LiveEvent.id, input.liveEventId),
             });
+            if (!liveEvent) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Event not found",
+              });
+            }
+            eventCtx = liveEventToContext(liveEvent);
+          } else {
+            const event = await ctx.db.query.Event.findFirst({
+              where: eq(Event.id, input.eventId!),
+            });
+            if (!event) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Event not found",
+              });
+            }
+            eventCtx = eventToContext(event);
           }
 
           for await (const chunk of streamLearningResponse({
             messages,
-            event: eventToContext(event),
+            event: eventCtx,
             userExperience,
             apiKey,
           })) {

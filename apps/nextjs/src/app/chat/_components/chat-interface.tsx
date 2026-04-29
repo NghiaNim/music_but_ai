@@ -24,6 +24,7 @@ export function ChatInterface() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId") ?? undefined;
+  const liveEventId = searchParams.get("liveEventId") ?? undefined;
   const initialMode =
     searchParams.get("mode") === "learning" ? "learning" : "discovery";
 
@@ -42,6 +43,28 @@ export function ChatInterface() {
     ...trpc.event.byId.queryOptions({ id: eventId ?? "" }),
     enabled: !!eventId,
   });
+
+  const { data: contextLiveEvent } = useQuery({
+    ...trpc.liveEvent.byId.queryOptions({ id: liveEventId ?? "" }),
+    enabled: !!liveEventId,
+  });
+
+  const activeEvent = contextEvent
+    ? {
+        id: contextEvent.id,
+        title: contextEvent.title,
+        date: contextEvent.date,
+        venue: contextEvent.venue,
+      }
+    : contextLiveEvent
+      ? {
+          id: contextLiveEvent.id,
+          title: contextLiveEvent.title,
+          date: contextLiveEvent.date ?? contextLiveEvent.dateText ?? "",
+          venue:
+            contextLiveEvent.venueName ?? contextLiveEvent.location ?? "",
+        }
+      : undefined;
 
   const sendMessage = useMutation(
     trpc.chat.send.mutationOptions({
@@ -74,11 +97,11 @@ export function ChatInterface() {
 
   const announcedRef = useRef(false);
   useEffect(() => {
-    if (contextEvent && !announcedRef.current) {
+    if (activeEvent && !announcedRef.current) {
       announcedRef.current = true;
-      toast.success(`Now chatting about "${contextEvent.title}"`);
+      toast.success(`Now chatting about "${activeEvent.title}"`);
     }
-  }, [contextEvent]);
+  }, [activeEvent]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +115,7 @@ export function ChatInterface() {
     sendMessage.mutate({
       sessionId,
       eventId,
+      liveEventId,
       mode,
       content,
       history: messages,
@@ -115,13 +139,13 @@ export function ChatInterface() {
               <p className="text-muted-foreground truncate text-xs">
                 {mode === "discovery"
                   ? "Help me find a concert"
-                  : contextEvent
-                    ? `About: ${contextEvent.title}`
+                  : activeEvent
+                    ? `About: ${activeEvent.title}`
                     : "Help me understand this event"}
               </p>
             </div>
           </div>
-          {!eventId && (
+          {!eventId && !liveEventId && (
             <div className="flex gap-1 rounded-lg border p-1">
               <button
                 className={cn(
@@ -160,18 +184,19 @@ export function ChatInterface() {
             <BackIcon />
             Back
           </button>
-          {contextEvent ? (
+          {activeEvent ? (
             <EventContextBanner
-              eventId={contextEvent.id}
-              title={contextEvent.title}
-              date={contextEvent.date}
-              venue={contextEvent.venue}
+              eventId={activeEvent.id}
+              title={activeEvent.title}
+              date={activeEvent.date}
+              venue={activeEvent.venue}
+              isLiveEvent={!!liveEventId}
             />
           ) : null}
           {messages.length === 0 && (
             <EmptyState
               mode={mode}
-              eventTitle={contextEvent?.title}
+              eventTitle={activeEvent?.title}
               onSuggestionClick={(s) => setInputValue(s)}
             />
           )}
@@ -325,11 +350,13 @@ function EventContextBanner({
   title,
   date,
   venue,
+  isLiveEvent,
 }: {
   eventId: string;
   title: string;
   date: Date | string;
   venue: string;
+  isLiveEvent?: boolean;
 }) {
   const when = formatShortMonthDayLocal(new Date(date));
   return (
@@ -347,7 +374,7 @@ function EventContextBanner({
         </p>
       </div>
       <Link
-        href={`/event/${eventId}`}
+        href={isLiveEvent ? `/live-event/${eventId}` : `/event/${eventId}`}
         className="shrink-0 text-xs font-medium text-amber-800 underline-offset-2 hover:underline dark:text-amber-200"
       >
         View

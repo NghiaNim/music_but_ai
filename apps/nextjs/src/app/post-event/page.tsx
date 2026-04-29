@@ -18,7 +18,7 @@ export default async function PostEventPage() {
 
   return (
     <HydrateClient>
-      <div className="relative w-full overflow-x-hidden bg-gradient-to-b from-white via-amber-50/40 to-[#fcf8ec]">
+      <div className="relative w-full overflow-x-hidden bg-gradient-to-b from-white via-amber-50/40 to-[#fcf8ec] dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
         {/* Mesh-style soft blobs — full tab background (warm yellow) */}
         <div
           className="pointer-events-none absolute top-[-8%] -right-[15%] h-[42vmin] max-h-80 min-h-[12rem] w-[42vmin] max-w-[20rem] min-w-[12rem] rounded-full bg-amber-300/28 blur-[3rem]"
