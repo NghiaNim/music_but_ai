@@ -6,7 +6,11 @@ type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
 // Active state: filled variant. Inactive: outline variant.
 // These map as closely as possible to the Next.js SVG icon shapes.
-const ICONS: Record<string, { filled: IoniconsName; outline: IoniconsName }> = {
+type TabIconKey = "home" | "learn" | "events" | "postEvent" | "profile";
+const ICONS: Record<
+  TabIconKey,
+  { filled: IoniconsName; outline: IoniconsName }
+> = {
   home: { filled: "home", outline: "home-outline" },
   learn: { filled: "book", outline: "book-outline" },
   events: { filled: "calendar-clear", outline: "calendar-clear-outline" },
@@ -15,7 +19,7 @@ const ICONS: Record<string, { filled: IoniconsName; outline: IoniconsName }> = {
 };
 
 function TabIcon(
-  name: keyof typeof ICONS,
+  name: TabIconKey,
   focused: boolean,
   color: string,
   size: number,

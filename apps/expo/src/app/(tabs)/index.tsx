@@ -1,4 +1,3 @@
-import type { ImageSourcePropType } from "react-native";
 import {
   Image,
   Pressable,
@@ -15,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "~/utils/api";
 import { trpc } from "~/utils/api";
 import { authClient } from "~/utils/auth";
+import tonTonAvatar from "../../../assets/ton-ton.png";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -555,8 +555,9 @@ export default function HomeScreen() {
   const router = useRouter();
   const isDark = useColorScheme() === "dark";
   const { data: session } = authClient.useSession();
-  const displayName = session?.user?.name;
-  const firstName = displayName?.split(" ")[0] ?? "friend";
+  const rawName = session?.user.name ?? "";
+  const firstName =
+    rawName.length > 0 ? rawName.split(" ")[0] ?? "friend" : "friend";
 
   const { data: communityData, isPending: communityPending } = useQuery(
     trpc.event.all.queryOptions({}),
@@ -655,9 +656,7 @@ export default function HomeScreen() {
                 }}
               >
                 <Image
-                  source={
-                    require("../../../assets/ton-ton.png") as ImageSourcePropType
-                  }
+                  source={tonTonAvatar}
                   style={{ width: 68, height: 68 }}
                   resizeMode="contain"
                 />
