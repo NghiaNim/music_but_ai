@@ -1,4 +1,3 @@
-import type { Href } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Dimensions,
@@ -20,7 +19,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
-import { useNavigation, useRouter } from "expo-router";
+import { useNavigation } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 
 import { authClient } from "~/utils/auth";
@@ -165,7 +164,18 @@ function BadgeCard({
   return (
     <Pressable
       onPress={onFlip}
-      style={[cardShadow, { width: badgeCardWidth, marginBottom: 14, alignItems: "center", borderRadius: 16, paddingTop: 20, paddingBottom: 16, backgroundColor: "#FFFFFF" }]}
+      style={[
+        cardShadow,
+        {
+          width: badgeCardWidth,
+          marginBottom: 14,
+          alignItems: "center",
+          borderRadius: 16,
+          paddingTop: 20,
+          paddingBottom: 16,
+          backgroundColor: "#FFFFFF",
+        },
+      ]}
     >
       <View style={{ width: 116, height: 116 }}>
         {/* Front */}
@@ -302,11 +312,27 @@ function BadgeCard({
         </Animated.View>
       </View>
 
-      <Text style={{ fontSize: 14, fontWeight: "600", color: "#111827", textAlign: "center", marginTop: 12 }}>
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: "600",
+          color: "#111827",
+          textAlign: "center",
+          marginTop: 12,
+        }}
+      >
         {badge.label}
       </Text>
       {!earned && (
-        <Text style={{ fontSize: 10, color: "#6B7280", textAlign: "center", marginTop: 4, textTransform: "uppercase" }}>
+        <Text
+          style={{
+            fontSize: 10,
+            color: "#6B7280",
+            textAlign: "center",
+            marginTop: 4,
+            textTransform: "uppercase",
+          }}
+        >
           Locked
         </Text>
       )}
@@ -315,7 +341,6 @@ function BadgeCard({
 }
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const navigation = useNavigation();
   const colorScheme = useColorScheme();
   const { data: session } = authClient.useSession();
@@ -482,17 +507,55 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         scrollEnabled={!overlayBadge}
       >
-        <Text style={{ fontSize: 28, fontWeight: "700", color: textPrimary, marginTop: 16, paddingHorizontal: 20 }}>
+        <Text
+          style={{
+            fontSize: 28,
+            fontWeight: "700",
+            color: textPrimary,
+            marginTop: 16,
+            paddingHorizontal: 20,
+          }}
+        >
           Profile
         </Text>
 
-        <View style={[cardShadow, { backgroundColor: cardBg, borderWidth: 1, borderColor: border, marginHorizontal: 20, marginTop: 20, borderRadius: 16, padding: 24 }]}>
+        <View
+          style={[
+            cardShadow,
+            {
+              backgroundColor: cardBg,
+              borderWidth: 1,
+              borderColor: border,
+              marginHorizontal: 20,
+              marginTop: 20,
+              borderRadius: 16,
+              padding: 24,
+            },
+          ]}
+        >
           <View className="flex-row">
             <View style={{ marginRight: 24, alignItems: "center" }}>
-              <View style={{ width: 112, height: 112, borderRadius: 56, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: "#F8E8EE" }}>
+              <View
+                style={{
+                  width: 112,
+                  height: 112,
+                  borderRadius: 56,
+                  overflow: "hidden",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#F8E8EE",
+                }}
+              >
                 <Text style={{ fontSize: 48 }}>🎵</Text>
               </View>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: textPrimary, marginTop: 12 }}>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: textPrimary,
+                  marginTop: 12,
+                }}
+              >
                 {name}
               </Text>
             </View>
@@ -501,11 +564,26 @@ export default function ProfileScreen() {
               {STATS.map((stat, index) => (
                 <View key={stat.label}>
                   <View style={{ paddingVertical: 10 }}>
-                    <Text style={{ fontSize: 24, fontWeight: "700", color: textPrimary }}>{stat.value}</Text>
-                    <Text style={{ fontSize: 12, color: "#6B7280" }}>{stat.label}</Text>
+                    <Text
+                      style={{
+                        fontSize: 24,
+                        fontWeight: "700",
+                        color: textPrimary,
+                      }}
+                    >
+                      {stat.value}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: "#6B7280" }}>
+                      {stat.label}
+                    </Text>
                   </View>
                   {index < STATS.length - 1 && (
-                    <View style={{ height: 1, backgroundColor: isDark ? "#2D2D2D" : "#E5E7EB" }} />
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: isDark ? "#2D2D2D" : "#E5E7EB",
+                      }}
+                    />
                   )}
                 </View>
               ))}
@@ -513,10 +591,26 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <Text style={{ fontSize: 20, fontWeight: "700", color: textPrimary, marginTop: 32, paddingHorizontal: 20 }}>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "700",
+            color: textPrimary,
+            marginTop: 32,
+            paddingHorizontal: 20,
+          }}
+        >
           Badges
         </Text>
-        <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 8, marginBottom: 16, paddingHorizontal: 20 }}>
+        <Text
+          style={{
+            fontSize: 12,
+            color: "#6B7280",
+            marginTop: 8,
+            marginBottom: 16,
+            paddingHorizontal: 20,
+          }}
+        >
           Tap a badge to flip it
         </Text>
         <View className="flex-row flex-wrap justify-between px-5">

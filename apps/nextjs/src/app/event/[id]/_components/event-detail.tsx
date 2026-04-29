@@ -8,6 +8,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import posthog from "posthog-js";
 
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
@@ -18,8 +19,6 @@ import {
   DIFFICULTY_LABELS,
   GENRE_LABELS,
 } from "~/lib/event-display-labels";
-import posthog from "posthog-js";
-
 import { formatLongDateAtTime } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
 

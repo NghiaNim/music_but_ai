@@ -1,4 +1,10 @@
-import { Pressable, ScrollView, Text, useColorScheme, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const TOPICS = [
@@ -61,8 +67,12 @@ export default function LearnScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}>
-          <Text style={{ fontSize: 24, fontWeight: "700", color: textPrimary }}>Learn</Text>
+        <View
+          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}
+        >
+          <Text style={{ fontSize: 24, fontWeight: "700", color: textPrimary }}>
+            Learn
+          </Text>
           <Text style={{ fontSize: 14, color: "#6B7280", marginTop: 4 }}>
             Classical & jazz, explained simply
           </Text>
@@ -74,25 +84,48 @@ export default function LearnScreen() {
             <Pressable
               key={topic.title}
               style={{ marginBottom: 12, opacity: 1 }}
-              onPress={() => {/* coming soon */}}
+              onPress={() => {
+                /* coming soon */
+              }}
             >
-              <View style={{
-                flexDirection: "row", alignItems: "center", gap: 16,
-                borderRadius: 16, borderWidth: 1, borderColor: border,
-                backgroundColor: cardBg, padding: 16,
-              }}>
-                <View style={{
-                  width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-                  alignItems: "center", justifyContent: "center",
-                  backgroundColor: isDark ? topic.bgDark : topic.bgLight,
-                }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 16,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: border,
+                  backgroundColor: cardBg,
+                  padding: 16,
+                }}
+              >
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    flexShrink: 0,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: isDark ? topic.bgDark : topic.bgLight,
+                  }}
+                >
                   <Text style={{ fontSize: 22 }}>{topic.emoji}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: textPrimary }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: textPrimary,
+                    }}
+                  >
                     {topic.title}
                   </Text>
-                  <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
+                  <Text
+                    style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}
+                  >
                     {topic.subtitle}
                   </Text>
                 </View>
@@ -103,16 +136,34 @@ export default function LearnScreen() {
         </View>
 
         {/* Coming soon banner */}
-        <View style={{
-          marginHorizontal: 16, marginTop: 8, borderRadius: 16,
-          borderWidth: 1, borderColor: isDark ? "rgba(120,53,15,0.4)" : "#FDE68A",
-          backgroundColor: isDark ? "rgba(120,53,15,0.15)" : "#FFFBEB",
-          padding: 16,
-        }}>
-          <Text style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#FCD34D" : "#92400E" }}>
+        <View
+          style={{
+            marginHorizontal: 16,
+            marginTop: 8,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: isDark ? "rgba(120,53,15,0.4)" : "#FDE68A",
+            backgroundColor: isDark ? "rgba(120,53,15,0.15)" : "#FFFBEB",
+            padding: 16,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: isDark ? "#FCD34D" : "#92400E",
+            }}
+          >
             More coming soon
           </Text>
-          <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 4, lineHeight: 18 }}>
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#6B7280",
+              marginTop: 4,
+              lineHeight: 18,
+            }}
+          >
             Deep dives, composer profiles, and listening guides are on the way.
           </Text>
         </View>

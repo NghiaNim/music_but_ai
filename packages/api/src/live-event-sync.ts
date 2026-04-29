@@ -1,7 +1,7 @@
+import { formatConcertProgram } from "@acme/ai";
 import { and, eq, inArray, isNull, notInArray, sql } from "@acme/db";
 import { db } from "@acme/db/client";
 import { Event, LiveEvent } from "@acme/db/schema";
-import { formatConcertProgram } from "@acme/ai";
 
 import type { ScrapedEvent, ScrapedVenue } from "./venue-scraper";
 import { tagCatalog } from "./catalog-tagger";
@@ -144,7 +144,10 @@ async function formatProgramsInBackground(
       .select({ id: LiveEvent.id, program: LiveEvent.program })
       .from(LiveEvent)
       .where(
-        and(eq(LiveEvent.source, source), inArray(LiveEvent.eventUrl, eventUrls)),
+        and(
+          eq(LiveEvent.source, source),
+          inArray(LiveEvent.eventUrl, eventUrls),
+        ),
       );
   } catch {
     return;
@@ -261,7 +264,9 @@ export async function syncVenueToLiveEvents(
     .returning({ id: LiveEvent.id });
 
   // Format garbled programs in the background — fire-and-forget
-  const urlsWithProgram = scraped.filter((s) => s.program).map((s) => s.eventUrl);
+  const urlsWithProgram = scraped
+    .filter((s) => s.program)
+    .map((s) => s.eventUrl);
   if (urlsWithProgram.length > 0) {
     void formatProgramsInBackground(source, urlsWithProgram, database);
   }

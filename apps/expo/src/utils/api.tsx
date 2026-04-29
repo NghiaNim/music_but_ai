@@ -26,8 +26,7 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
     links: [
       loggerLink({
         enabled: (opts) =>
-          process.env.NODE_ENV === "development" &&
-          opts.direction === "up",
+          process.env.NODE_ENV === "development" && opts.direction === "up",
         colorMode: "ansi",
       }),
       httpBatchLink({

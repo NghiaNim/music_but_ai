@@ -68,9 +68,7 @@ function buildLiveEventWhere(
   }
   if (input.difficulty) {
     const complexity = DIFFICULTY_TO_COMPLEXITY[input.difficulty];
-    conditions.push(
-      sql`${LiveEvent.taste}->>'complexity' = ${complexity}`,
-    );
+    conditions.push(sql`${LiveEvent.taste}->>'complexity' = ${complexity}`);
   }
 
   conditions.push(eq(LiveEvent.cancelled, false));

@@ -1,4 +1,11 @@
-import { Image, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,7 +40,7 @@ export default function EventDetailScreen() {
   const router = useRouter();
 
   const { data: event, isPending } = useQuery({
-    ...trpc.event.byId.queryOptions({ id: id ?? "" }),
+    ...trpc.event.byId.queryOptions({ id }),
     enabled: !!id,
   });
 
@@ -54,7 +61,10 @@ export default function EventDetailScreen() {
           <Text className="text-foreground text-lg font-semibold">
             Event not found
           </Text>
-          <Pressable onPress={() => router.back()} className="mt-4 active:opacity-70">
+          <Pressable
+            onPress={() => router.back()}
+            className="mt-4 active:opacity-70"
+          >
             <Text className="text-primary">Go back</Text>
           </Pressable>
         </View>
@@ -72,8 +82,12 @@ export default function EventDetailScreen() {
     minute: "2-digit",
   });
 
-  const diffColors =
-    DIFFICULTY_COLORS[event.difficulty] ?? DIFFICULTY_COLORS.beginner!;
+  const fallbackDiff = DIFFICULTY_COLORS.beginner ?? {
+    bg: "#D1FAE5",
+    text: "#065F46",
+  };
+  const diffColors = DIFFICULTY_COLORS[event.difficulty] ?? fallbackDiff;
+  const ticketUrl = event.ticketUrl;
 
   return (
     <SafeAreaView className="bg-background flex-1">
@@ -128,18 +142,22 @@ export default function EventDetailScreen() {
           </View>
 
           {/* Title */}
-          <Text className="text-foreground mb-4 text-xl font-bold leading-snug">
+          <Text className="text-foreground mb-4 text-xl leading-snug font-bold">
             {event.title}
           </Text>
 
           {/* Date & venue */}
           <View className="mb-4 gap-2">
             <View className="flex-row items-start gap-2">
-              <View className="mt-0.5"><Ionicons name="calendar-outline" size={16} color="#6B7280" /></View>
+              <View className="mt-0.5">
+                <Ionicons name="calendar-outline" size={16} color="#6B7280" />
+              </View>
               <Text className="text-foreground flex-1 text-sm">{when}</Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <View className="mt-0.5"><Ionicons name="location-outline" size={16} color="#6B7280" /></View>
+              <View className="mt-0.5">
+                <Ionicons name="location-outline" size={16} color="#6B7280" />
+              </View>
               <Text className="text-foreground flex-1 text-sm">
                 {event.venue}
                 {event.venueAddress ? `\n${event.venueAddress}` : ""}
@@ -151,11 +169,13 @@ export default function EventDetailScreen() {
           {event.ticketUrl || !event.isFree ? (
             <View className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/20">
               <Text className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                {event.isFree ? "Free event" : `Tickets · $${(event.discountedPriceCents / 100).toFixed(2)}`}
+                {event.isFree
+                  ? "Free event"
+                  : `Tickets · $${(event.discountedPriceCents / 100).toFixed(2)}`}
               </Text>
-              {event.ticketUrl ? (
+              {ticketUrl ? (
                 <Pressable
-                  onPress={() => void Linking.openURL(event.ticketUrl!)}
+                  onPress={() => void Linking.openURL(ticketUrl)}
                   className="mt-3 items-center rounded-xl bg-[#9C1738] py-3 active:opacity-80"
                 >
                   <Text className="text-sm font-semibold text-white">

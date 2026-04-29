@@ -45,29 +45,8 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Onboarding */}
-        <OnboardingCTA isSignedIn={!!session} />
-
-        {/* Upcoming Events */}
-        <section className="px-4 pb-6">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarSparkle />
-              <h2 className="text-lg font-semibold">Upcoming Events</h2>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/events" className="text-xs">
-                See all
-              </Link>
-            </Button>
-          </div>
-          <Suspense fallback={<EventFeedSkeleton count={3} />}>
-            <FeaturedEvents />
-          </Suspense>
-        </section>
-
         {/* Ask Ton Ton */}
-        <section className="px-4 pb-6">
+        <section className="px-4 pb-4">
           <Link href="/chat" className="group block">
             <div className="bg-card relative overflow-hidden rounded-2xl border p-3.5 transition-all group-hover:shadow-md">
               <div className="relative flex items-center gap-3">
@@ -92,6 +71,27 @@ export default async function HomePage() {
           </Link>
         </section>
 
+        {/* Onboarding */}
+        <OnboardingCTA isSignedIn={!!session} />
+
+        {/* Upcoming Events */}
+        <section className="px-4 pb-6">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarSparkle />
+              <h2 className="text-lg font-semibold">Upcoming Events</h2>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/events" className="text-xs">
+                See all
+              </Link>
+            </Button>
+          </div>
+          <Suspense fallback={<EventFeedSkeleton count={3} />}>
+            <FeaturedEvents />
+          </Suspense>
+        </section>
+
         {/* Quick Start */}
         <section className="pb-8">
           <div className="mb-3 flex items-center gap-2 px-4">
@@ -103,7 +103,9 @@ export default async function HomePage() {
               <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <SeedlingIllustration />
                 <div>
-                  <p className="text-sm font-semibold leading-tight">For Beginners</p>
+                  <p className="text-sm leading-tight font-semibold">
+                    For Beginners
+                  </p>
                   <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     First concert? Start here
                   </p>
@@ -114,7 +116,9 @@ export default async function HomePage() {
               <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <SparkleIllustration />
                 <div>
-                  <p className="text-sm font-semibold leading-tight">Get a Rec</p>
+                  <p className="text-sm leading-tight font-semibold">
+                    Get a Rec
+                  </p>
                   <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     AI-picked just for you
                   </p>
@@ -125,7 +129,7 @@ export default async function HomePage() {
               <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <BookIllustration />
                 <div>
-                  <p className="text-sm font-semibold leading-tight">Learn</p>
+                  <p className="text-sm leading-tight font-semibold">Learn</p>
                   <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     Classical &amp; jazz 101
                   </p>
@@ -136,7 +140,9 @@ export default async function HomePage() {
               <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <TrophyIllustration />
                 <div>
-                  <p className="text-sm font-semibold leading-tight">My Badges</p>
+                  <p className="text-sm leading-tight font-semibold">
+                    My Badges
+                  </p>
                   <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     See what you&apos;ve earned
                   </p>

@@ -3,12 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import posthog from "posthog-js";
 
 import type { VisualAnswers } from "@acme/validators";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
-
-import posthog from "posthog-js";
 
 import { useTRPC } from "~/trpc/react";
 import { ClipsPhase } from "./clips-phase";

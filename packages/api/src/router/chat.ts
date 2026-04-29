@@ -219,8 +219,15 @@ export const chatRouter = {
             }
             eventCtx = liveEventToContext(liveEvent);
           } else {
+            const eventId = input.eventId;
+            if (!eventId) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Learning mode requires eventId when liveEventId is not set",
+              });
+            }
             const event = await ctx.db.query.Event.findFirst({
-              where: eq(Event.id, input.eventId!),
+              where: eq(Event.id, eventId),
             });
             if (!event) {
               throw new TRPCError({

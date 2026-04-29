@@ -4,11 +4,10 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import posthog from "posthog-js";
 
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
-
-import posthog from "posthog-js";
 
 import { formatLongDateOnly } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
