@@ -77,7 +77,14 @@ async function fetchPageImage(url: string): Promise<string | undefined> {
 }
 
 function stripHtml(html: string): string {
-  return load(html).text().replace(/\s+/g, " ").trim();
+  // Preserve block-element boundaries as newlines before stripping tags
+  const withBreaks = html.replace(/<\/?(p|br|li|div|h[1-6])[^>]*>/gi, "\n");
+  return load(withBreaks)
+    .text()
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n[ \t]*/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function slugToTitle(slug: string): string {
@@ -664,9 +671,11 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
     const posterImageUrl = e.image?.url?.trim()
       ? e.image.url.trim()
       : undefined;
-    const programText =
-      e.description_program ? stripHtml(e.description_program) : undefined;
-    const program = programText && programText.length > 3 ? programText : undefined;
+    const programText = e.description_program
+      ? stripHtml(e.description_program)
+      : undefined;
+    const program =
+      programText && programText.length > 3 ? programText : undefined;
 
     events.push({
       source: "juilliard",
@@ -683,6 +692,56 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
   }
 
   return events;
+}
+
+/**
+ * Fetch an MSM individual event page and extract program text.
+ * MSM pages are WordPress-based; we look for a "Program" heading section
+ * first, then fall back to og:description.
+ */
+async function scrapeMsmEventProgram(url: string): Promise<string | undefined> {
+  try {
+    const html = await fetchHtml(url);
+    if (isBlockedHtml(html)) return undefined;
+    const $ = load(html);
+
+    // Look for a "Program" section heading followed by sibling content
+    let programText: string | undefined;
+    $("h2, h3, h4, strong").each((_, el) => {
+      if (programText) return;
+      if (!/\bprogram\b/i.test($(el).text())) return;
+      let text = "";
+      $(el)
+        .nextUntil("h2, h3, h4")
+        .each((_, sib) => {
+          text += "\n" + $(sib).text();
+        });
+      const cleaned = text
+        .replace(/[ \t]+/g, " ")
+        .replace(/\n[ \t]*/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+      if (cleaned.length > 5) programText = cleaned;
+    });
+    if (programText) return programText;
+
+    // Grab the main article body — enough for the AI formatter to work with
+    const entryText = $(".entry-content, .post-content, article")
+      .first()
+      .text()
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n[ \t]*/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    if (entryText.length > 10) return entryText.slice(0, 800);
+
+    const og = $('meta[property="og:description"]').attr("content")?.trim();
+    if (og && og.length > 10) return og;
+
+    return undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function scrapeMSM(): Promise<ScrapedEvent[]> {
@@ -796,7 +855,25 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
     }
   }
 
-  return [...byKey.values()];
+  const events = [...byKey.values()];
+
+  // Batch-fetch individual event pages for program info (4 at a time)
+  const withPrograms: ScrapedEvent[] = [...events];
+  const batchSize = 4;
+  for (let i = 0; i < withPrograms.length; i += batchSize) {
+    const chunk = withPrograms.slice(i, i + batchSize);
+    const programs = await Promise.all(
+      chunk.map((ev) => scrapeMsmEventProgram(ev.eventUrl)),
+    );
+    for (let j = 0; j < chunk.length; j++) {
+      const program = programs[j];
+      if (program) {
+        withPrograms[i + j] = { ...withPrograms[i + j]!, program };
+      }
+    }
+  }
+
+  return withPrograms;
 }
 
 /**
@@ -1041,7 +1118,8 @@ export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
         return metaParts ? `${balletTitle} (${metaParts})` : balletTitle;
       })
       .filter(Boolean);
-    const program = programLines.length > 0 ? programLines.join("\n") : undefined;
+    const program =
+      programLines.length > 0 ? programLines.join("\n") : undefined;
 
     events.push({
       source: "nycballet",
@@ -1054,10 +1132,52 @@ export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
       buyUrl: bookingLink ?? eventPage,
       posterImageUrl: image,
       genreHint: "ballet",
-    });
+      // Store production page for fallback program fetch (stripped below)
+      _productionPage: program ? undefined : eventPage,
+    } as ScrapedEvent & { _productionPage?: string });
   }
 
-  return events.sort((a, b) => {
+  // For events without a program, fetch the production page og:description
+  // Deduplicate by production URL — many performances share one page.
+  const needsProgram = events.filter(
+    (e) => !e.program && (e as ScrapedEvent & { _productionPage?: string })._productionPage,
+  ) as (ScrapedEvent & { _productionPage: string })[];
+  const uniqueProductions = [
+    ...new Map(needsProgram.map((e) => [e._productionPage, e])).keys(),
+  ];
+  const productionPrograms = new Map<string, string>();
+  const batchSize = 4;
+  for (let i = 0; i < uniqueProductions.length; i += batchSize) {
+    const chunk = uniqueProductions.slice(i, i + batchSize);
+    const results = await Promise.all(
+      chunk.map(async (prodUrl) => {
+        try {
+          const html = await fetchHtml(prodUrl);
+          if (isBlockedHtml(html)) return [prodUrl, undefined] as const;
+          const $p = load(html);
+          const desc = $p('meta[property="og:description"]').attr("content")?.trim();
+          return [prodUrl, desc && desc.length > 5 ? desc : undefined] as const;
+        } catch {
+          return [prodUrl, undefined] as const;
+        }
+      }),
+    );
+    for (const [prodUrl, prog] of results) {
+      if (prog) productionPrograms.set(prodUrl, prog);
+    }
+  }
+
+  // Apply fetched programs and strip the temp field
+  const final = events.map((e) => {
+    const ev = e as ScrapedEvent & { _productionPage?: string };
+    const { _productionPage, ...rest } = ev;
+    const fallback = _productionPage
+      ? productionPrograms.get(_productionPage)
+      : undefined;
+    return fallback ? { ...rest, program: fallback } : rest;
+  });
+
+  return final.sort((a, b) => {
     const ta = a.dateText ? new Date(a.dateText).getTime() : 0;
     const tb = b.dateText ? new Date(b.dateText).getTime() : 0;
     return ta - tb;

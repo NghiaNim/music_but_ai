@@ -1,6 +1,7 @@
-import { and, eq, isNull, notInArray, sql } from "@acme/db";
+import { and, eq, inArray, isNull, notInArray, sql } from "@acme/db";
 import { db } from "@acme/db/client";
 import { Event, LiveEvent } from "@acme/db/schema";
+import { formatConcertProgram } from "@acme/ai";
 
 import type { ScrapedEvent, ScrapedVenue } from "./venue-scraper";
 import { tagCatalog } from "./catalog-tagger";
@@ -125,6 +126,50 @@ export interface SyncAllVenuesSummary {
 }
 
 /**
+ * Fire-and-forget: format raw program text for events in `eventUrls` using AI.
+ * Only runs on single-line (garbled) programs — multi-line programs are already
+ * readable. Errors are swallowed so this never blocks a sync.
+ */
+async function formatProgramsInBackground(
+  source: ScrapedVenue,
+  eventUrls: string[],
+  database: Database,
+): Promise<void> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey || eventUrls.length === 0) return;
+
+  let rows: { id: string; program: string | null }[];
+  try {
+    rows = await database
+      .select({ id: LiveEvent.id, program: LiveEvent.program })
+      .from(LiveEvent)
+      .where(
+        and(eq(LiveEvent.source, source), inArray(LiveEvent.eventUrl, eventUrls)),
+      );
+  } catch {
+    return;
+  }
+
+  for (const row of rows) {
+    if (!row.program) continue;
+    // Skip programs that already have line breaks — they're readable as-is
+    if (row.program.includes("\n")) continue;
+
+    try {
+      const formatted = await formatConcertProgram(apiKey, row.program);
+      if (formatted && formatted !== row.program) {
+        await database
+          .update(LiveEvent)
+          .set({ program: formatted, updatedAt: new Date() })
+          .where(eq(LiveEvent.id, row.id));
+      }
+    } catch {
+      // swallow — formatting is best-effort
+    }
+  }
+}
+
+/**
  * Upsert one venue's scraped events into LiveEvent and delete rows for that
  * source that were not seen in the latest scrape. If the scraper returns zero
  * rows we treat it as "skip" rather than wiping the table — protects against
@@ -214,6 +259,12 @@ export async function syncVenueToLiveEvents(
       and(eq(LiveEvent.source, source), notInArray(LiveEvent.eventUrl, urls)),
     )
     .returning({ id: LiveEvent.id });
+
+  // Format garbled programs in the background — fire-and-forget
+  const urlsWithProgram = scraped.filter((s) => s.program).map((s) => s.eventUrl);
+  if (urlsWithProgram.length > 0) {
+    void formatProgramsInBackground(source, urlsWithProgram, database);
+  }
 
   return {
     source,

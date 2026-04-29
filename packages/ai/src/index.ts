@@ -51,3 +51,5 @@ export type { OnboardingReplyInput } from "./onboarding";
 
 export { textToSpeech } from "./tts";
 export type { TTSOptions } from "./tts";
+
+export { formatConcertProgram } from "./program-formatter";

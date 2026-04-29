@@ -212,7 +212,7 @@ export function LiveEventDetail({
           <h2 className="mb-2 text-base font-semibold">Program</h2>
           <div className="bg-card rounded-xl border p-3">
             {event.program ? (
-              <p className="text-foreground whitespace-pre-line text-sm leading-relaxed">
+              <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">
                 {event.program}
               </p>
             ) : (

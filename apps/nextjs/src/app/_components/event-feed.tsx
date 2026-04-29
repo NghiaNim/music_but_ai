@@ -82,46 +82,39 @@ const SOURCE_FILTER_LABELS: Record<SourceFilter, string> = {
 };
 
 const LIVE_PAGE_SIZE = 15;
-const TAG_BASE_CLASS =
-  "rounded-full px-3 py-1 text-[10px] font-medium";
+const TAG_BASE_CLASS = "rounded-full px-3 py-1 text-[10px] font-medium";
 
 const GENRE_TAG_COLORS: Partial<
   Record<(typeof GENRE_OPTIONS)[number], string>
 > = {
-  orchestral:
-    "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200",
+  orchestral: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200",
   opera:
     "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/30 dark:text-fuchsia-200",
   chamber:
     "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-200",
   solo_recital:
     "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-200",
-  choral:
-    "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-200",
-  ballet:
-    "bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-200",
+  choral: "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-200",
+  ballet: "bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-200",
   jazz: "bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-200",
 };
 
 const SOURCE_TAG_COLORS: Partial<Record<VenueSource, string>> = {
   msm: "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-200",
-  juilliard:
-    "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200",
+  juilliard: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200",
   met_opera:
     "bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-200",
   carnegie_hall:
     "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-200",
-  ny_phil:
-    "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200",
-  nycballet:
-    "bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-200",
+  ny_phil: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200",
+  nycballet: "bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-200",
 };
 
 function genreTagClass(genre?: string | null): string {
   return genre
-        ? (GENRE_TAG_COLORS[genre as (typeof GENRE_OPTIONS)[number]] ??
-            "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200")
-        : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200";
+    ? (GENRE_TAG_COLORS[genre as (typeof GENRE_OPTIONS)[number]] ??
+        "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200")
+    : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200";
 }
 
 function sourceTagClass(source?: VenueSource | null): string {
@@ -357,57 +350,59 @@ export function EventFeed() {
 
       <div className="-mx-4 mb-3 overflow-x-auto px-4">
         <div className="flex w-max min-w-full flex-nowrap gap-1.5 pb-1">
-        <FilterChip
-          label={SOURCE_FILTER_LABELS.all}
-          active={sourceFilter === "all"}
-          onClick={() => {
-            setSourceFilter("all");
-            resetVisibleCount();
-          }}
-        />
-        <FilterChip
-          label={SOURCE_FILTER_LABELS.community}
-          active={sourceFilter === "community"}
-          onClick={() => {
-            setSourceFilter(sourceFilter === "community" ? "all" : "community");
-            resetVisibleCount();
-          }}
-        />
-        {VENUE_SOURCES.map((s) => (
           <FilterChip
-            key={s}
-            label={SOURCE_FILTER_LABELS[s]}
-            active={sourceFilter === s}
+            label={SOURCE_FILTER_LABELS.all}
+            active={sourceFilter === "all"}
             onClick={() => {
-              setSourceFilter(sourceFilter === s ? "all" : s);
+              setSourceFilter("all");
               resetVisibleCount();
             }}
           />
-        ))}
+          <FilterChip
+            label={SOURCE_FILTER_LABELS.community}
+            active={sourceFilter === "community"}
+            onClick={() => {
+              setSourceFilter(
+                sourceFilter === "community" ? "all" : "community",
+              );
+              resetVisibleCount();
+            }}
+          />
+          {VENUE_SOURCES.map((s) => (
+            <FilterChip
+              key={s}
+              label={SOURCE_FILTER_LABELS[s]}
+              active={sourceFilter === s}
+              onClick={() => {
+                setSourceFilter(sourceFilter === s ? "all" : s);
+                resetVisibleCount();
+              }}
+            />
+          ))}
         </div>
       </div>
 
       <div className="-mx-4 mb-3 overflow-x-auto px-4">
         <div className="flex w-max min-w-full flex-nowrap gap-1.5 pb-1">
-        <FilterChip
-          label="All Categories"
-          active={!genreFilter}
-          onClick={() => {
-            setGenreFilter(undefined);
-            resetVisibleCount();
-          }}
-        />
-        {GENRE_OPTIONS.map((g) => (
           <FilterChip
-            key={g}
-            label={GENRE_LABELS[g] ?? g}
-            active={genreFilter === g}
+            label="All Categories"
+            active={!genreFilter}
             onClick={() => {
-              setGenreFilter(genreFilter === g ? undefined : g);
+              setGenreFilter(undefined);
               resetVisibleCount();
             }}
           />
-        ))}
+          {GENRE_OPTIONS.map((g) => (
+            <FilterChip
+              key={g}
+              label={GENRE_LABELS[g] ?? g}
+              active={genreFilter === g}
+              onClick={() => {
+                setGenreFilter(genreFilter === g ? undefined : g);
+                resetVisibleCount();
+              }}
+            />
+          ))}
         </div>
       </div>
 
