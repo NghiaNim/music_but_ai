@@ -71,9 +71,9 @@ export default async function HomePage() {
         {/* Ask Tanny */}
         <section className="px-4 pb-6">
           <Link href="/chat" className="group block">
-            <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-[#ffffff] p-4 transition-all group-hover:border-neutral-300 group-hover:shadow-md">
+            <div className="bg-card relative overflow-hidden rounded-2xl border p-4 transition-all group-hover:shadow-md">
               <div className="relative flex items-center gap-4">
-                <div className="relative grid size-[4.75rem] shrink-0 place-items-center rounded-full bg-[#F5E6DC]">
+                <div className="relative grid size-[4.75rem] shrink-0 place-items-center rounded-full bg-[#F5E6DC] dark:bg-rose-950/30">
                   <Image
                     src="/tanny-cat-cutout.png"
                     alt="Tanny the cat"

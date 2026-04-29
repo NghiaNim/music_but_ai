@@ -188,7 +188,7 @@ export function ChatInterface() {
       <div className="sticky bottom-0 z-20 mt-auto shrink-0 bg-amber-50/95 px-4 pt-2 pb-[max(env(safe-area-inset-bottom),1.5rem)] backdrop-blur supports-backdrop-filter:bg-amber-50/80 dark:bg-amber-950/90 dark:supports-backdrop-filter:bg-amber-950/70">
         <form
           onSubmit={handleSubmit}
-          className="mx-auto flex max-w-lg items-end gap-2 rounded-xl border bg-[#ffffffff] px-2 py-2 dark:bg-[#ffffffff]"
+          className="bg-card mx-auto flex max-w-lg items-end gap-2 rounded-xl border px-2 py-2"
         >
           <textarea
             ref={composerRef}
@@ -210,7 +210,7 @@ export function ChatInterface() {
             }
             disabled={sendMessage.isPending}
             rows={1}
-            className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-h-40 min-h-10 flex-1 resize-none overflow-y-auto rounded-md bg-[#ffffffff] px-3 py-2 text-sm leading-5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-h-40 min-h-10 flex-1 resize-none overflow-y-auto rounded-md bg-transparent px-3 py-2 text-sm leading-5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           />
           <Button
             type="submit"
@@ -232,7 +232,7 @@ function TypingIndicator() {
       <div className="bg-primary/10 flex size-8 shrink-0 items-center justify-center rounded-full">
         <MusicIcon />
       </div>
-      <div className="max-w-[80%] rounded-2xl rounded-tl-sm border bg-white px-4 py-3 dark:bg-white">
+      <div className="bg-card max-w-[80%] rounded-2xl rounded-tl-sm border px-4 py-3">
         <div className="flex gap-1">
           <span className="bg-foreground/20 size-2 animate-bounce rounded-full" />
           <span className="bg-foreground/20 size-2 animate-bounce rounded-full [animation-delay:150ms]" />
@@ -288,7 +288,7 @@ function ChatBubble({ message }: { message: Message }) {
             "rounded-2xl px-4 py-3",
             isUser
               ? "bg-primary text-primary-foreground rounded-tr-sm"
-              : "rounded-tl-sm border bg-white dark:bg-white",
+              : "bg-card rounded-tl-sm border",
           )}
         >
           <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -415,7 +415,7 @@ function EmptyState({
           <button
             key={s}
             onClick={() => onSuggestionClick(s)}
-            className="rounded-lg border bg-[#ffffffff] px-4 py-3 text-left text-sm transition-colors hover:bg-zinc-50 dark:bg-[#ffffffff] dark:hover:bg-zinc-100"
+            className="bg-card hover:bg-muted rounded-lg border px-4 py-3 text-left text-sm transition-colors"
           >
             {s}
           </button>

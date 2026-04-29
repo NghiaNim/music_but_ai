@@ -525,7 +525,7 @@ function EventCard({ event }: { event: EventItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap gap-1">
-            <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium">
+            <span className="rounded-full bg-[#ffffff] px-2 py-0.5 text-[10px] font-medium text-zinc-900">
               {GENRE_LABELS[event.genre] ?? event.genre}
             </span>
             <span
@@ -582,10 +582,10 @@ function LiveEventCard({ event }: { event: LiveEventItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap gap-1">
-            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-800 dark:bg-sky-900/30 dark:text-sky-200">
+            <span className="rounded-full bg-[#ffffff] px-2 py-0.5 text-[10px] font-medium text-zinc-900">
               {sourceLabel}
             </span>
-            <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium">
+            <span className="rounded-full bg-[#ffffff] px-2 py-0.5 text-[10px] font-medium text-zinc-900">
               {GENRE_LABELS[event.genre] ?? event.genre}
             </span>
           </div>
