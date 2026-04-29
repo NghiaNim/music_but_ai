@@ -9,19 +9,24 @@ import "../styles.css";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   return (
     <QueryClientProvider client={queryClient}>
       <Stack
         screenOptions={{
-          headerStyle: {
-            backgroundColor: "#9C1738",
-          },
+          headerStyle: { backgroundColor: isDark ? "#111" : "#FFFFFF" },
+          headerTintColor: isDark ? "#FFFFFF" : "#000000",
           contentStyle: {
-            backgroundColor: colorScheme === "dark" ? "#09090B" : "#FFFFFF",
+            backgroundColor: isDark ? "#09090B" : "#FFFFFF",
           },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="live-event/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="event/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="post/[id]" options={{ title: "Post" }} />
+        <Stack.Screen name="waitlist" options={{ title: "Waitlist" }} />
       </Stack>
       <StatusBar />
     </QueryClientProvider>
