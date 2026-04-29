@@ -639,7 +639,7 @@ export function ProfileContent() {
               </div>
             </button>
 
-            <div className="flex gap-2 mt-16">
+            <div className="mt-16 flex gap-2">
               <div className="bg-card flex min-w-[78px] flex-col items-center rounded-2xl border px-3 py-2.5 shadow-sm">
                 <p className="text-muted-foreground flex items-center gap-1 text-[10px] font-medium">
                   🎵 Concerts

@@ -103,7 +103,9 @@ export default async function HomePage() {
               <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <SeedlingIllustration />
                 <div>
-                  <p className="text-sm font-semibold leading-tight">For Beginners</p>
+                  <p className="text-sm leading-tight font-semibold">
+                    For Beginners
+                  </p>
                   <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     First concert? Start here
                   </p>
@@ -114,7 +116,9 @@ export default async function HomePage() {
               <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <SparkleIllustration />
                 <div>
-                  <p className="text-sm font-semibold leading-tight">Get a Rec</p>
+                  <p className="text-sm leading-tight font-semibold">
+                    Get a Rec
+                  </p>
                   <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     AI-picked just for you
                   </p>
@@ -125,7 +129,7 @@ export default async function HomePage() {
               <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <BookIllustration />
                 <div>
-                  <p className="text-sm font-semibold leading-tight">Learn</p>
+                  <p className="text-sm leading-tight font-semibold">Learn</p>
                   <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     Classical &amp; jazz 101
                   </p>
@@ -136,7 +140,9 @@ export default async function HomePage() {
               <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
                 <TrophyIllustration />
                 <div>
-                  <p className="text-sm font-semibold leading-tight">My Badges</p>
+                  <p className="text-sm leading-tight font-semibold">
+                    My Badges
+                  </p>
                   <p className="text-muted-foreground mt-1 text-xs leading-snug">
                     See what you&apos;ve earned
                   </p>

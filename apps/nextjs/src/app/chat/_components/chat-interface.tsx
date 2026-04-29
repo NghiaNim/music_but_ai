@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import posthog from "posthog-js";
 
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
-
-import posthog from "posthog-js";
 
 import { formatShortMonthDayLocal } from "~/lib/format-event-date";
 import { useTRPC } from "~/trpc/react";
@@ -51,22 +50,29 @@ export function ChatInterface() {
     enabled: !!liveEventId,
   });
 
-  const activeEvent = contextEvent
-    ? {
-        id: contextEvent.id,
-        title: contextEvent.title,
-        date: contextEvent.date,
-        venue: contextEvent.venue,
-      }
-    : contextLiveEvent
-      ? {
-          id: contextLiveEvent.id,
-          title: contextLiveEvent.title,
-          date: contextLiveEvent.date ?? contextLiveEvent.dateText ?? "",
-          venue:
-            contextLiveEvent.venueName ?? contextLiveEvent.location ?? "",
-        }
-      : undefined;
+  const activeEvent = useMemo(
+    () =>
+      contextEvent
+        ? {
+            id: contextEvent.id,
+            title: contextEvent.title,
+            date: contextEvent.date,
+            venue: contextEvent.venue,
+          }
+        : contextLiveEvent
+          ? {
+              id: contextLiveEvent.id,
+              title: contextLiveEvent.title,
+              date:
+                contextLiveEvent.date ?? contextLiveEvent.dateText ?? "",
+              venue:
+                contextLiveEvent.venueName ??
+                contextLiveEvent.location ??
+                "",
+            }
+          : undefined,
+    [contextEvent, contextLiveEvent],
+  );
 
   const sendMessage = useMutation(
     trpc.chat.send.mutationOptions({

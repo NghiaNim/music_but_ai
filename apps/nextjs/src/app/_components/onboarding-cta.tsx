@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "~/trpc/react";
 
-
 export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
   const trpc = useTRPC();
 
@@ -67,7 +66,6 @@ export function OnboardingCTA({ isSignedIn }: { isSignedIn: boolean }) {
     </div>
   );
 }
-
 
 function WaveformIcon() {
   return (

@@ -32,7 +32,7 @@ export async function formatConcertProgram(
       temperature: 0,
     });
 
-    return res.choices[0]?.message?.content?.trim() ?? null;
+    return res.choices[0]?.message.content?.trim() ?? null;
   } catch {
     return null;
   }

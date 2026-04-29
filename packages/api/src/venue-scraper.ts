@@ -867,8 +867,9 @@ export async function scrapeMSM(): Promise<ScrapedEvent[]> {
     );
     for (let j = 0; j < chunk.length; j++) {
       const program = programs[j];
-      if (program) {
-        withPrograms[i + j] = { ...withPrograms[i + j]!, program };
+      const row = chunk[j];
+      if (program && row) {
+        withPrograms[i + j] = { ...row, program };
       }
     }
   }
@@ -1140,7 +1141,9 @@ export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
   // For events without a program, fetch the production page og:description
   // Deduplicate by production URL — many performances share one page.
   const needsProgram = events.filter(
-    (e) => !e.program && (e as ScrapedEvent & { _productionPage?: string })._productionPage,
+    (e) =>
+      !e.program &&
+      (e as ScrapedEvent & { _productionPage?: string })._productionPage,
   ) as (ScrapedEvent & { _productionPage: string })[];
   const uniqueProductions = [
     ...new Map(needsProgram.map((e) => [e._productionPage, e])).keys(),
@@ -1155,7 +1158,9 @@ export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
           const html = await fetchHtml(prodUrl);
           if (isBlockedHtml(html)) return [prodUrl, undefined] as const;
           const $p = load(html);
-          const desc = $p('meta[property="og:description"]').attr("content")?.trim();
+          const desc = $p('meta[property="og:description"]')
+            .attr("content")
+            ?.trim();
           return [prodUrl, desc && desc.length > 5 ? desc : undefined] as const;
         } catch {
           return [prodUrl, undefined] as const;

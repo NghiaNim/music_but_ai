@@ -80,9 +80,9 @@ export default function LandingPage() {
               </h1>
               <p className="text-muted-foreground mt-4 max-w-xl text-base leading-7 sm:text-lg">
                 Classica helps you discover live classical and jazz music
-                through a fun taste profile, thoughtful recommendations, and
-                Ton Ton-guided moments that make the whole experience feel
-                welcoming from the very first tap.
+                through a fun taste profile, thoughtful recommendations, and Ton
+                Ton-guided moments that make the whole experience feel welcoming
+                from the very first tap.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {HERO_TAGS.map((tag) => (

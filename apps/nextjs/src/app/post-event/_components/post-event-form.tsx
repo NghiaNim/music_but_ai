@@ -8,14 +8,13 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import posthog from "posthog-js";
 
 import type { RouterOutputs } from "@acme/api";
 import { Button } from "@acme/ui/button";
 import { Input } from "@acme/ui/input";
 import { Label } from "@acme/ui/label";
 import { toast } from "@acme/ui/toast";
-
-import posthog from "posthog-js";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -343,7 +342,7 @@ function HostEventFormShell({
                 <button
                   type="button"
                   onClick={() => imageFileInputRef.current?.click()}
-                  className="bg-muted/20 relative aspect-square w-full overflow-hidden rounded-2xl border border-dashed text-center shadow-none transition-colors hover:bg-muted/30 active:bg-muted/40 dark:bg-zinc-900/50"
+                  className="bg-muted/20 hover:bg-muted/30 active:bg-muted/40 relative aspect-square w-full overflow-hidden rounded-2xl border border-dashed text-center shadow-none transition-colors dark:bg-zinc-900/50"
                 >
                   {imageUrl ? (
                     <Image
@@ -558,7 +557,7 @@ function HostEventFormShell({
             </div>
 
             {mode === "edit" && event ? (
-              <label className="flex cursor-pointer flex-row items-start gap-3 rounded-lg border bg-muted/30 p-3 text-sm">
+              <label className="bg-muted/30 flex cursor-pointer flex-row items-start gap-3 rounded-lg border p-3 text-sm">
                 <input
                   type="checkbox"
                   checked={notifySubscribers}

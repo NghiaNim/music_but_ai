@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import posthog from "posthog-js";
 
 import { Button } from "@acme/ui/button";
 import { Input } from "@acme/ui/input";
-
-import posthog from "posthog-js";
 
 import { useTRPC } from "~/trpc/react";
 

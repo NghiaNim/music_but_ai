@@ -6,15 +6,12 @@ type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
 // Active state: filled variant. Inactive: outline variant.
 // These map as closely as possible to the Next.js SVG icon shapes.
-const ICONS: Record<
-  string,
-  { filled: IoniconsName; outline: IoniconsName }
-> = {
-  home:       { filled: "home",              outline: "home-outline" },
-  learn:      { filled: "book",              outline: "book-outline" },
-  events:     { filled: "calendar-clear",    outline: "calendar-clear-outline" },
-  postEvent:  { filled: "add-circle",        outline: "add-circle-outline" },
-  profile:    { filled: "person-circle",     outline: "person-circle-outline" },
+const ICONS: Record<string, { filled: IoniconsName; outline: IoniconsName }> = {
+  home: { filled: "home", outline: "home-outline" },
+  learn: { filled: "book", outline: "book-outline" },
+  events: { filled: "calendar-clear", outline: "calendar-clear-outline" },
+  postEvent: { filled: "add-circle", outline: "add-circle-outline" },
+  profile: { filled: "person-circle", outline: "person-circle-outline" },
 };
 
 function TabIcon(
@@ -23,8 +20,10 @@ function TabIcon(
   color: string,
   size: number,
 ) {
-  const { filled, outline } = ICONS[name]!;
-  return <Ionicons name={focused ? filled : outline} size={size} color={color} />;
+  const { filled, outline } = ICONS[name];
+  return (
+    <Ionicons name={focused ? filled : outline} size={size} color={color} />
+  );
 }
 
 export default function TabLayout() {
@@ -90,10 +89,7 @@ export default function TabLayout() {
         }}
       />
       {/* chat is a valid route but hidden from the tab bar */}
-      <Tabs.Screen
-        name="chat"
-        options={{ href: null }}
-      />
+      <Tabs.Screen name="chat" options={{ href: null }} />
     </Tabs>
   );
 }

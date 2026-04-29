@@ -1,4 +1,11 @@
-import { Image, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -44,7 +51,7 @@ export default function LiveEventDetailScreen() {
   const router = useRouter();
 
   const { data: event, isPending } = useQuery({
-    ...trpc.liveEvent.byId.queryOptions({ id: id ?? "" }),
+    ...trpc.liveEvent.byId.queryOptions({ id }),
     enabled: !!id,
   });
 
@@ -65,7 +72,10 @@ export default function LiveEventDetailScreen() {
           <Text className="text-foreground text-lg font-semibold">
             Event not found
           </Text>
-          <Pressable onPress={() => router.back()} className="mt-4 active:opacity-70">
+          <Pressable
+            onPress={() => router.back()}
+            className="mt-4 active:opacity-70"
+          >
             <Text className="text-primary">Go back</Text>
           </Pressable>
         </View>
@@ -126,20 +136,26 @@ export default function LiveEventDetailScreen() {
           </View>
 
           {/* Title */}
-          <Text className="text-foreground mb-4 text-xl font-bold leading-snug">
+          <Text className="text-foreground mb-4 text-xl leading-snug font-bold">
             {event.title}
           </Text>
 
           {/* Date & venue */}
           <View className="mb-4 gap-2">
             <View className="flex-row items-start gap-2">
-              <View className="mt-0.5"><Ionicons name="calendar-outline" size={16} color="#6B7280" /></View>
+              <View className="mt-0.5">
+                <Ionicons name="calendar-outline" size={16} color="#6B7280" />
+              </View>
               <Text className="text-foreground flex-1 text-sm">{when}</Text>
             </View>
             {venueLine ? (
               <View className="flex-row items-start gap-2">
-                <View className="mt-0.5"><Ionicons name="location-outline" size={16} color="#6B7280" /></View>
-                <Text className="text-foreground flex-1 text-sm">{venueLine}</Text>
+                <View className="mt-0.5">
+                  <Ionicons name="location-outline" size={16} color="#6B7280" />
+                </View>
+                <Text className="text-foreground flex-1 text-sm">
+                  {venueLine}
+                </Text>
               </View>
             ) : null}
           </View>

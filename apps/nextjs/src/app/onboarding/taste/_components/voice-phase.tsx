@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useMutation } from "@tanstack/react-query";
+import posthog from "posthog-js";
 
 import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 import { toast } from "@acme/ui/toast";
-
-import posthog from "posthog-js";
 
 import { useTRPC } from "~/trpc/react";
 

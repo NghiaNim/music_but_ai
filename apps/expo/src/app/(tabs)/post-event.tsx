@@ -115,9 +115,7 @@ export default function PostEventScreen() {
                     >
                       <Text
                         className={`text-xs font-medium capitalize ${
-                          genre === g
-                            ? "text-white"
-                            : "text-muted-foreground"
+                          genre === g ? "text-white" : "text-muted-foreground"
                         }`}
                       >
                         {g.replace("_", " ")}
@@ -148,7 +146,9 @@ export default function PostEventScreen() {
                     >
                       <Text
                         className={`text-xs font-medium capitalize ${
-                          difficulty === d ? "text-white" : "text-muted-foreground"
+                          difficulty === d
+                            ? "text-white"
+                            : "text-muted-foreground"
                         }`}
                       >
                         {d}
@@ -179,7 +179,9 @@ export default function PostEventScreen() {
                     >
                       <Text
                         className={`text-xs font-medium capitalize ${
-                          category === c ? "text-white" : "text-muted-foreground"
+                          category === c
+                            ? "text-white"
+                            : "text-muted-foreground"
                         }`}
                       >
                         {c}
@@ -211,7 +213,7 @@ export default function PostEventScreen() {
               }}
               className="active:opacity-80"
             >
-              <View className="flex-row items-center justify-center gap-2 rounded-2xl bg-primary py-4">
+              <View className="bg-primary flex-row items-center justify-center gap-2 rounded-2xl py-4">
                 <Ionicons name="add-circle-outline" size={18} color="white" />
                 <Text className="text-base font-semibold text-white">
                   Post Event
