@@ -45,29 +45,8 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Onboarding */}
-        <OnboardingCTA isSignedIn={!!session} />
-
-        {/* Upcoming Events */}
-        <section className="px-4 pb-6">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarSparkle />
-              <h2 className="text-lg font-semibold">Upcoming Events</h2>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/events" className="text-xs">
-                See all
-              </Link>
-            </Button>
-          </div>
-          <Suspense fallback={<EventFeedSkeleton count={3} />}>
-            <FeaturedEvents />
-          </Suspense>
-        </section>
-
         {/* Ask Ton Ton */}
-        <section className="px-4 pb-6">
+        <section className="px-4 pb-4">
           <Link href="/chat" className="group block">
             <div className="bg-card relative overflow-hidden rounded-2xl border p-3.5 transition-all group-hover:shadow-md">
               <div className="relative flex items-center gap-3">
@@ -90,6 +69,27 @@ export default async function HomePage() {
               </div>
             </div>
           </Link>
+        </section>
+
+        {/* Onboarding */}
+        <OnboardingCTA isSignedIn={!!session} />
+
+        {/* Upcoming Events */}
+        <section className="px-4 pb-6">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarSparkle />
+              <h2 className="text-lg font-semibold">Upcoming Events</h2>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/events" className="text-xs">
+                See all
+              </Link>
+            </Button>
+          </div>
+          <Suspense fallback={<EventFeedSkeleton count={3} />}>
+            <FeaturedEvents />
+          </Suspense>
         </section>
 
         {/* Quick Start */}
