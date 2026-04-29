@@ -7,6 +7,12 @@ import { LiveEvent } from "@acme/db/schema";
 
 import { publicProcedure } from "../trpc";
 
+const DIFFICULTY_TO_COMPLEXITY = {
+  beginner: "accessible",
+  intermediate: "layered",
+  advanced: "challenging",
+} as const;
+
 const LiveEventFilters = z.object({
   search: z.string().optional(),
   source: z
@@ -30,6 +36,7 @@ const LiveEventFilters = z.object({
       "jazz",
     ])
     .optional(),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
   upcomingOnly: z.boolean().default(true),
 });
 
@@ -58,6 +65,12 @@ function buildLiveEventWhere(
       ilike(LiveEvent.venueName, `%${input.search}%`),
     );
     if (searchCond) conditions.push(searchCond);
+  }
+  if (input.difficulty) {
+    const complexity = DIFFICULTY_TO_COMPLEXITY[input.difficulty];
+    conditions.push(
+      sql`${LiveEvent.taste}->>'complexity' = ${complexity}`,
+    );
   }
 
   conditions.push(eq(LiveEvent.cancelled, false));

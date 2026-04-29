@@ -267,6 +267,11 @@ export function EventFeed() {
         search: search || undefined,
         genre: genreArg,
         source: liveSource,
+        difficulty: difficultyFilter as
+          | "beginner"
+          | "intermediate"
+          | "advanced"
+          | undefined,
       },
       {
         getNextPageParam: (last) => last.nextCursor ?? undefined,
