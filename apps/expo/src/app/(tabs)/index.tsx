@@ -387,35 +387,8 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* ── Onboarding / Taste Profile ── */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}>
-          <OnboardingCTA session={!!session} tasteProfile={tasteProfile ?? null} isDark={isDark} />
-        </View>
-
-        {/* ── Upcoming Events ── */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 20 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="calendar-outline" size={20} color="#F59E0B" />
-              <Text style={{ fontSize: 18, fontWeight: "600", color: textPrimary }}>Upcoming Events</Text>
-            </View>
-            <Pressable onPress={() => router.push("/(tabs)/events" as never)}>
-              <Text style={{ fontSize: 14, fontWeight: "500", color: "#9C1738" }}>See all</Text>
-            </Pressable>
-          </View>
-          {loading ? (
-            <EventsSkeleton isDark={isDark} />
-          ) : featured.length === 0 ? (
-            <Text style={{ fontSize: 14, color: "#6B7280" }}>No upcoming events</Text>
-          ) : (
-            featured.map((row) => (
-              <EventCard key={`${row.kind}-${row.event.id}`} row={row} isDark={isDark} />
-            ))
-          )}
-        </View>
-
-        {/* ── Ask Ton Ton ── */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
+        {/* ── Ask Ton Ton (top priority) ── */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 }}>
           <Pressable onPress={() => router.push("/(tabs)/chat" as never)}>
             <View style={{
               flexDirection: "row", alignItems: "center", gap: 16,
@@ -444,6 +417,33 @@ export default function HomeScreen() {
               <Text style={{ color: "#9CA3AF", fontSize: 18 }}>›</Text>
             </View>
           </Pressable>
+        </View>
+
+        {/* ── Onboarding / Taste Profile ── */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}>
+          <OnboardingCTA session={!!session} tasteProfile={tasteProfile ?? null} isDark={isDark} />
+        </View>
+
+        {/* ── Upcoming Events ── */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 20 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Ionicons name="calendar-outline" size={20} color="#F59E0B" />
+              <Text style={{ fontSize: 18, fontWeight: "600", color: textPrimary }}>Upcoming Events</Text>
+            </View>
+            <Pressable onPress={() => router.push("/(tabs)/events" as never)}>
+              <Text style={{ fontSize: 14, fontWeight: "500", color: "#9C1738" }}>See all</Text>
+            </Pressable>
+          </View>
+          {loading ? (
+            <EventsSkeleton isDark={isDark} />
+          ) : featured.length === 0 ? (
+            <Text style={{ fontSize: 14, color: "#6B7280" }}>No upcoming events</Text>
+          ) : (
+            featured.map((row) => (
+              <EventCard key={`${row.kind}-${row.event.id}`} row={row} isDark={isDark} />
+            ))
+          )}
         </View>
 
         {/* ── Explore ── */}
