@@ -1,0 +1,49 @@
+---
+description: >-
+  Quality metrics and checklist for code-review / hygiene passes: dead code,
+  real duplication, maintainability. Use when refactoring, reviewing diffs, or
+  hunting technical debt — not for micro-optimizations.
+alwaysApply: false
+---
+
+# Code review quality metrics (AI-oriented)
+
+Use this when assessing refactors, cleanup PRs, or “is this file still needed?” — **not** as a license to tweak style everywhere.
+
+## Primary metrics (pick improvements that move at least one)
+
+| Metric | What “good” means | How to approximate |
+|--------|-------------------|---------------------|
+| **Dead surface** | No exported symbols, files, or deps that nothing imports (except intentional public API). | `knip`, `ts-prune`, or repo-wide search for the export name; verify Next.js `page.tsx` / route segments are linked. |
+| **Single source of truth** | One canonical place for labels, enums, and copy that product/UI must keep consistent. | Same literal or map appears in 3+ files → extract or document why not. |
+| **Contract clarity** | Boundaries (tRPC input/output, DB shapes) don’t drift from validators/schema. | Unused Zod fields, schema fields only read in one legacy path — flag or remove. |
+| **Failure cost** | Risky or duplicated pre-checks match the full scope of work they guard (see `defensive-programming.md`). | Grep the function body when tightening early returns. |
+| **Bundle / graph** | No import pulls a heavy module only for types or a one-off constant. | Prefer `import type` or colocate tiny shared modules. |
+
+## Anti-goals (do not “optimize” for these alone)
+
+- Shorter line count with **no** change to bugs, duplication, or clarity.
+- Renames or micro-extraction that **increases** indirection without removing duplication or dead code.
+- “DRY” that merges **different** concepts because strings look similar (e.g. difficulty badge vs journal status unless product says they stay identical).
+
+## Checklist before deleting or merging
+
+1. **Dead code**: Is every export referenced outside tests? Dynamic imports / `glob` discovery / scripts?
+2. **Lockfile**: Read `.claude/rules/file-locks.md` — don’t collide with active work.
+3. **Public API**: Package `exports` and `packages/*/src/index.ts` — removal may break Expo or scripts.
+4. **Next.js**: Unused `page.tsx` or `_components` only referenced by orphaned parents?
+5. **DB / cron**: Removing a route or secret — still referenced in Supabase cron or docs?
+
+## Workspace package `exports` (types hygiene)
+
+Private packages under `packages/*` use **`package.json` `"exports"`** with `types` + `default`. **`types` must resolve to real files** (`./src/...`) so `tsc` and editors work without a prior `build` (declaration emit to `dist/` is still produced by `pnpm build` / Turbo, but is gitignored). Pointing `types` only at missing `./dist/*.d.ts` breaks standalone `pnpm -F @acme/<pkg> typecheck`.
+
+## Suggested tooling (when available)
+
+- **Typecheck**: `pnpm typecheck` — must stay green after cleanup.
+- **Lint**: Unused vars/import rules — fix real violations, not stylistic churn.
+- **Knip / ts-prune**: Unused files and exports — triage false positives (barrel files, codegen).
+
+## Output expectation for a quality pass
+
+Summarize: **which metric moved**, **what was removed or unified**, and **what was intentionally left** (with one line why). Skip the pass if there’s no measurable win.

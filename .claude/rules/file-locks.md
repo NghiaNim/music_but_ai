@@ -1,0 +1,35 @@
+---
+description: Coordination protocol — files the AI agent is actively editing
+alwaysApply: true
+---
+
+# File locks (parallel work coordination)
+
+Multiple engineers (human + AI) may work on this repo at the same time. Use this file as the single source of truth for "what is the AI agent touching right now".
+
+## Protocol for the AI agent
+
+1. **Before** you start editing files for a task, append them to the **Locked files** section below with: a short task label, the file paths, and the ISO timestamp you started.
+2. **After** you finish a coherent unit of work (a step ships, the task is paused, or you hand back to the user), remove your entry from Locked files.
+3. If you're only **reading** files, do NOT lock them. Only lock files you intend to **write** to.
+4. If you find a stale entry (>2h old) and you're confident the previous task is done, you may clear it.
+5. Keep entries small and scannable — paths only, no prose.
+
+## Protocol for other engineers
+
+- Before you start editing, read the **Locked files** section. Avoid paths listed there.
+- If you must edit a locked file, ping the AI agent's owner first or wait for the lock to clear.
+- If a lock looks stale (>2h, or the related PR is merged), it's safe to clear it.
+
+## Format
+
+```markdown
+### <task name> — <ISO timestamp> — <agent or engineer name>
+- packages/api/src/router/recommendations.ts
+- packages/api/src/recommendations/score.ts
+```
+
+## Locked files
+
+<!-- LOCKED-FILES-START -->
+<!-- LOCKED-FILES-END -->

@@ -26,11 +26,7 @@ function getLevel(points: number) {
   return { current, next, currentIndex };
 }
 
-export function LearningProgress({
-  compact = false,
-}: {
-  compact?: boolean;
-}) {
+export function LearningProgress({ compact = false }: { compact?: boolean }) {
   const [points] = useState(() =>
     typeof window === "undefined" ? 0 : getStoredNumber(POINTS_KEY),
   );
@@ -78,13 +74,15 @@ export function LearningProgress({
           <h3
             className={
               compact
-                ? "text-foreground mt-1 text-base font-bold leading-tight"
-                : "text-foreground mt-1 text-xl font-bold leading-tight"
+                ? "text-foreground mt-1 text-base leading-tight font-bold"
+                : "text-foreground mt-1 text-xl leading-tight font-bold"
             }
           >
             {current.name}
           </h3>
-          <p className="text-muted-foreground mt-1 text-xs">⭐ {points} XP total</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            ⭐ {points} XP total
+          </p>
         </div>
       </div>
 
@@ -118,10 +116,14 @@ export function LearningProgress({
               <span className="text-muted-foreground">
                 {xpIntoLevel} / {xpForLevel} XP
               </span>
-              <span className="text-foreground font-medium">+{xpForLevel - xpIntoLevel} XP to go</span>
+              <span className="text-foreground font-medium">
+                +{xpForLevel - xpIntoLevel} XP to go
+              </span>
             </>
           ) : (
-            <span className="text-muted-foreground">All milestones complete</span>
+            <span className="text-muted-foreground">
+              All milestones complete
+            </span>
           )}
         </div>
       </div>

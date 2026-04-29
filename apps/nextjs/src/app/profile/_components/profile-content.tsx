@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "@acme/api";
 
-import { authClient } from "~/auth/client";
 import {
   getCompletedSet,
   getStoredNumber,
   POINTS_KEY,
 } from "~/app/learn/_lib/progress";
+import { authClient } from "~/auth/client";
 import { useTRPC } from "~/trpc/react";
 
 type UserEventWithEvent = RouterOutputs["userEvent"]["myEvents"][number];
@@ -103,7 +104,9 @@ function getLearningLevel(points: number) {
   for (const level of LEARNING_LEVELS) {
     if (points >= level.min) current = level;
   }
-  const currentIndex = LEARNING_LEVELS.findIndex((l) => l.name === current.name);
+  const currentIndex = LEARNING_LEVELS.findIndex(
+    (l) => l.name === current.name,
+  );
   const next = LEARNING_LEVELS[currentIndex + 1];
   return { current, currentIndex, next };
 }
@@ -430,8 +433,11 @@ export function ProfileContent() {
           ),
         )
       : 0;
-  const { current: learningLevel, currentIndex: learningLevelIndex, next: nextLearningLevel } =
-    getLearningLevel(learningPoints);
+  const {
+    current: learningLevel,
+    currentIndex: learningLevelIndex,
+    next: nextLearningLevel,
+  } = getLearningLevel(learningPoints);
   const learningLevelNumber = learningLevelIndex + 1;
   const levelStart = learningLevel.min;
   const levelEnd = nextLearningLevel?.min ?? levelStart;
@@ -471,7 +477,9 @@ export function ProfileContent() {
   );
   const [previewBadgeId, setPreviewBadgeId] = useState<string | null>(null);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoUrlByUser, setPhotoUrlByUser] = useState<
+    Record<string, string | null>
+  >({});
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [isPhotoSheetOpen, setIsPhotoSheetOpen] = useState(false);
   const [overlayFlipped, setOverlayFlipped] = useState(false);
@@ -501,12 +509,14 @@ export function ProfileContent() {
     };
   }, [overlayBadgeId]);
 
-  useEffect(() => {
-    if (!session?.user.id) return;
-    const key = `classica-profile-photo:${session.user.id}`;
-    const stored = window.localStorage.getItem(key);
-    setPhotoUrl(stored);
-  }, [session?.user.id]);
+  const photoUrl = useMemo(() => {
+    const userId = session?.user.id;
+    if (!userId) return null;
+    const inMemory = photoUrlByUser[userId];
+    if (inMemory !== undefined) return inMemory;
+    const key = `classica-profile-photo:${userId}`;
+    return window.localStorage.getItem(key);
+  }, [photoUrlByUser, session?.user.id]);
 
   function handlePhotoPick() {
     fileInputRef.current?.click();
@@ -514,9 +524,10 @@ export function ProfileContent() {
 
   function handleRemovePhoto() {
     if (!session?.user.id) return;
+    const userId = session.user.id;
     const key = `classica-profile-photo:${session.user.id}`;
     window.localStorage.removeItem(key);
-    setPhotoUrl(null);
+    setPhotoUrlByUser((prev) => ({ ...prev, [userId]: null }));
     setPhotoError(null);
     setIsPhotoSheetOpen(false);
   }
@@ -544,7 +555,7 @@ export function ProfileContent() {
       }
       const key = `classica-profile-photo:${session.user.id}`;
       window.localStorage.setItem(key, next);
-      setPhotoUrl(next);
+      setPhotoUrlByUser((prev) => ({ ...prev, [session.user.id]: next }));
       setPhotoError(null);
       setIsPhotoSheetOpen(false);
     };
@@ -724,10 +735,10 @@ export function ProfileContent() {
                         {quest.icon}
                       </span>
                       <div>
-                      <p className="text-sm font-semibold">{quest.title}</p>
-                      <p className="text-muted-foreground text-[11px]">
-                        {quest.subtitle}
-                      </p>
+                        <p className="text-sm font-semibold">{quest.title}</p>
+                        <p className="text-muted-foreground text-[11px]">
+                          {quest.subtitle}
+                        </p>
                       </div>
                     </div>
                     <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide">

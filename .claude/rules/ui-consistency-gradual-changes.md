@@ -1,0 +1,18 @@
+---
+description: Keep UI changes minimal, consistent, and incremental
+globs: ["apps/nextjs/src/**/*.{ts,tsx}", "packages/ui/src/**/*.{ts,tsx}"]
+alwaysApply: false
+---
+
+# UI Consistency and Gradual Change
+
+- Treat the current UI as the baseline. Prefer small, local improvements over redesigns.
+- Keep the mobile-first shell intact (`max-w-[430px]`, top header, bottom nav, card-based sections) unless explicitly requested.
+- Reuse existing primitives from `@acme/ui` (`Button`, `Input`, `toast`, `cn`, theme tokens) before adding custom patterns.
+- Match established visual language: rounded cards (`rounded-2xl`), subtle borders/shadows, compact spacing, and short labels.
+- Use semantic theme tokens (`bg-card`, `text-muted-foreground`, `bg-background`, `text-foreground`) instead of introducing new ad-hoc colors.
+- Preserve dark-mode parity for every UI change; no light-only styles.
+- Keep motion subtle and brief (existing `animate-in`, fade/slide, short transitions). Avoid flashy or long-running animations.
+- For new features, compose existing layout and interaction patterns from nearby pages/components instead of inventing a new style system.
+- Avoid changing global chrome (layout container, header, bottom nav) as part of feature work unless directly requested.
+- If a UI change is broad, ship it incrementally: behavior first, visual polish second, and keep each diff easy to review.

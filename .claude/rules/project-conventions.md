@@ -1,0 +1,46 @@
+---
+description: Core project conventions for Classica
+alwaysApply: true
+---
+
+# Project Conventions
+
+## No Documentation Outside the PRD
+
+- The ONLY documentation file is `classical-music-connect-plan.md` at the repo root.
+- Do NOT create README.md, CHANGELOG.md, ARCHITECTURE.md, or any other markdown docs.
+- Update `classical-music-connect-plan.md` as features are built to reflect current state.
+- Code comments should be minimal and only explain non-obvious intent.
+
+## Monorepo File Structure
+
+```
+apps/
+  nextjs/          → Next.js web app (App Router)
+  expo/            → Expo mobile app
+packages/
+  api/             → tRPC routers (shared backend logic)
+  db/              → Drizzle ORM + schema (PostgreSQL)
+  ai/              → AI concierge logic (Anthropic Claude)
+  auth/            → Better Auth
+  ui/              → Shared UI components (shadcn/ui)
+  validators/      → Shared Zod schemas
+tooling/
+  eslint/
+  typescript/
+  tailwind/
+  prettier/
+```
+
+- New tRPC routers go in `packages/api/src/router/`.
+- New DB tables go in `packages/db/src/schema.ts`.
+- Shared Zod validators go in `packages/validators/src/`.
+- AI logic (prompts, streaming) lives in `packages/ai/src/`.
+- Next.js pages use App Router conventions in `apps/nextjs/src/app/`.
+- Colocate page-specific components in `_components/` directories.
+
+## External venue events (testing)
+
+- Scraped venue events (Carnegie, Met, Juilliard, MSM) are stored in `ExternalEvent` in `packages/db/src/schema.ts`.
+- Scraper logic lives in `packages/api/src/venue-scraper.ts` and is exercised locally via `pnpm -C packages/api exec tsx scripts/test-venue-scraper.mjs` (from repo root).
+- Schema changes are pushed with `pnpm -C packages/db push` (drizzle-kit) pointing at the Supabase URL in `.env`.
