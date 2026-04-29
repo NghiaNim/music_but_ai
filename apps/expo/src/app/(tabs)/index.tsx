@@ -557,7 +557,7 @@ export default function HomeScreen() {
   const { data: session } = authClient.useSession();
   const rawName = session?.user.name ?? "";
   const firstName =
-    rawName.length > 0 ? rawName.split(" ")[0] ?? "friend" : "friend";
+    rawName.length > 0 ? (rawName.split(" ")[0] ?? "friend") : "friend";
 
   const { data: communityData, isPending: communityPending } = useQuery(
     trpc.event.all.queryOptions({}),

@@ -63,12 +63,9 @@ export function ChatInterface() {
           ? {
               id: contextLiveEvent.id,
               title: contextLiveEvent.title,
-              date:
-                contextLiveEvent.date ?? contextLiveEvent.dateText ?? "",
+              date: contextLiveEvent.date ?? contextLiveEvent.dateText ?? "",
               venue:
-                contextLiveEvent.venueName ??
-                contextLiveEvent.location ??
-                "",
+                contextLiveEvent.venueName ?? contextLiveEvent.location ?? "",
             }
           : undefined,
     [contextEvent, contextLiveEvent],
