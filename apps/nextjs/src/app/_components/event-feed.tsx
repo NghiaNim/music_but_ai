@@ -45,19 +45,6 @@ const GENRE_OPTIONS = [
   "jazz",
 ] as const;
 
-const CITY_OPTIONS = [
-  "New York",
-  "Boston",
-  "Chicago",
-  "San Francisco",
-  "Los Angeles",
-  "Philadelphia",
-  "Washington D.C.",
-  "London",
-  "Vienna",
-  "Berlin",
-] as const;
-
 const VENUE_SOURCES = [
   "msm",
   "juilliard",
@@ -154,22 +141,6 @@ function unifiedRowSortTime(row: UnifiedRow): number {
     : liveSortTime(row.event);
 }
 
-function matchesCityFilter(row: UnifiedRow, city: string): boolean {
-  const q = city.toLowerCase();
-  if (row.kind === "created") {
-    const e = row.event;
-    return (
-      e.venue.toLowerCase().includes(q) ||
-      (e.venueAddress?.toLowerCase().includes(q) ?? false)
-    );
-  }
-  const e = row.event;
-  return (
-    (e.venueName?.toLowerCase().includes(q) ?? false) ||
-    (e.location?.toLowerCase().includes(q) ?? false)
-  );
-}
-
 function matchesTicketedFilter(
   row: UnifiedRow,
   filter: "ticketed" | "non_ticketed",
@@ -228,11 +199,9 @@ export function EventFeed() {
   const [difficultyFilter, setDifficultyFilter] = useState<string | undefined>(
     initialDifficulty,
   );
-  const [cityFilter, setCityFilter] = useState<string | undefined>();
   const [ticketedFilter, setTicketedFilter] = useState<
     "ticketed" | "non_ticketed" | undefined
   >();
-  const [sortBy, setSortBy] = useState<"day_asc" | "day_desc">("day_asc");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [visibleCount, setVisibleCount] = useState(LIVE_PAGE_SIZE);
   const resetVisibleCount = () => setVisibleCount(LIVE_PAGE_SIZE);
@@ -297,13 +266,11 @@ export function EventFeed() {
     ...liveEvents.map((event) => ({ kind: "live" as const, event })),
   ];
 
-  const mergedSorted = [...merged].sort((a, b) => {
-    const diff = unifiedRowSortTime(a) - unifiedRowSortTime(b);
-    return sortBy === "day_asc" ? diff : -diff;
-  });
+  const mergedSorted = [...merged].sort(
+    (a, b) => unifiedRowSortTime(a) - unifiedRowSortTime(b),
+  );
 
   const filteredEvents = mergedSorted.filter((row) => {
-    if (cityFilter && !matchesCityFilter(row, cityFilter)) return false;
     if (ticketedFilter && !matchesTicketedFilter(row, ticketedFilter))
       return false;
     return true;
@@ -312,8 +279,8 @@ export function EventFeed() {
 
   return (
     <div>
-      <div className="mb-4 flex gap-2">
-        <div className="relative flex-1">
+      <div className="mb-3">
+        <div className="relative w-full">
           <SearchIcon />
           <Input
             placeholder="Search"
@@ -325,34 +292,7 @@ export function EventFeed() {
             className="h-9 w-full rounded-full border-zinc-300 bg-white pl-9 text-sm text-zinc-900 placeholder:text-zinc-900 md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-100"
           />
         </div>
-        <select
-          value={cityFilter ?? ""}
-          onChange={(e) => {
-            setCityFilter(e.target.value || undefined);
-            resetVisibleCount();
-          }}
-          className="h-9 w-[88px] rounded-full border border-zinc-300 bg-white px-2.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-        >
-          <option value="">All Cities</option>
-          {CITY_OPTIONS.map((city) => (
-            <option key={city} value={city}>
-              {city}
-            </option>
-          ))}
-        </select>
-        <select
-          value={sortBy}
-          onChange={(e) => {
-            setSortBy(e.target.value as "day_asc" | "day_desc");
-            resetVisibleCount();
-          }}
-          className="h-9 w-[80px] rounded-full border border-zinc-300 bg-white px-2.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-        >
-          <option value="day_asc">By Date</option>
-          <option value="day_desc">Latest Day</option>
-        </select>
       </div>
-
       <div className="-mx-4 mb-3 overflow-x-auto px-4">
         <div className="flex w-max min-w-full flex-nowrap gap-1.5 pb-1">
           <FilterChip
