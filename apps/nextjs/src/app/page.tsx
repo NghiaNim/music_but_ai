@@ -71,14 +71,14 @@ export default async function HomePage() {
         {/* Ask Tanny */}
         <section className="px-4 pb-6">
           <Link href="/chat" className="group block">
-            <div className="bg-card relative overflow-hidden rounded-2xl border p-4 transition-all group-hover:shadow-md">
-              <div className="relative flex items-center gap-4">
-                <div className="relative grid size-[4.75rem] shrink-0 place-items-center rounded-full bg-[#F5E6DC] dark:bg-rose-950/30">
+            <div className="bg-card relative overflow-hidden rounded-2xl border p-3.5 transition-all group-hover:shadow-md">
+              <div className="relative flex items-center gap-3">
+                <div className="relative grid size-[4.25rem] shrink-0 place-items-center rounded-full bg-[#F5E6DC] dark:bg-rose-950/30">
                   <Image
                     src="/tanny-cat-cutout.png"
                     alt="Tanny the cat"
-                    width={76}
-                    height={76}
+                    width={68}
+                    height={68}
                     className="h-full w-full object-contain object-bottom"
                   />
                 </div>
@@ -96,7 +96,10 @@ export default async function HomePage() {
 
         {/* Quick Start */}
         <section className="px-4 pb-8">
-          <h2 className="mb-3 text-lg font-semibold">Explore</h2>
+          <div className="mb-3 flex items-center gap-2">
+            <CompassIcon />
+            <h2 className="text-lg font-semibold">Explore</h2>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <Link href="/events?difficulty=beginner" className="group">
               <div className="flex flex-col items-center gap-2 rounded-2xl border bg-emerald-50 p-5 text-center transition-all group-hover:border-emerald-300 group-hover:shadow-sm dark:bg-emerald-950/30">
@@ -242,6 +245,29 @@ function CalendarSparkle() {
         strokeLinecap="round"
         strokeLinejoin="round"
         opacity="0.6"
+      />
+    </svg>
+  );
+}
+
+function CompassIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      className="text-violet-500 dark:text-violet-400"
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M16.24 7.76l-3.53 5.3-1.41 1.41 1.41-4.24 3.53-2.47z"
+        fill="currentColor"
+      />
+      <path
+        d="M7.76 16.24l3.53-5.3 1.41-1.41-1.41 4.24-3.53 2.47z"
+        fill="currentColor"
+        opacity="0.35"
       />
     </svg>
   );
