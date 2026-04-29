@@ -71,7 +71,7 @@ type VenueSource = (typeof VENUE_SOURCES)[number];
 type SourceFilter = "all" | "community" | VenueSource;
 
 const SOURCE_FILTER_LABELS: Record<SourceFilter, string> = {
-  all: "All sources",
+  all: "All Sources",
   community: "Community",
   msm: "MSM",
   juilliard: "Juilliard",
@@ -82,6 +82,54 @@ const SOURCE_FILTER_LABELS: Record<SourceFilter, string> = {
 };
 
 const LIVE_PAGE_SIZE = 15;
+const TAG_BASE_CLASS =
+  "rounded-full px-3 py-1 text-[10px] font-medium";
+
+const GENRE_TAG_COLORS: Partial<
+  Record<(typeof GENRE_OPTIONS)[number], string>
+> = {
+  orchestral:
+    "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200",
+  opera:
+    "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/30 dark:text-fuchsia-200",
+  chamber:
+    "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-200",
+  solo_recital:
+    "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-200",
+  choral:
+    "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-200",
+  ballet:
+    "bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-200",
+  jazz: "bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-200",
+};
+
+const SOURCE_TAG_COLORS: Partial<Record<VenueSource, string>> = {
+  msm: "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-200",
+  juilliard:
+    "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200",
+  met_opera:
+    "bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-200",
+  carnegie_hall:
+    "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-200",
+  ny_phil:
+    "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200",
+  nycballet:
+    "bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-200",
+};
+
+function genreTagClass(genre?: string | null): string {
+  return genre
+        ? (GENRE_TAG_COLORS[genre as (typeof GENRE_OPTIONS)[number]] ??
+            "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200")
+        : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200";
+}
+
+function sourceTagClass(source?: VenueSource | null): string {
+  return source
+    ? (SOURCE_TAG_COLORS[source] ??
+        "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200")
+    : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200";
+}
 
 function dateTextSortTime(dateText: string | null | undefined): number {
   if (!dateText?.trim()) return Number.MAX_SAFE_INTEGER;
@@ -307,7 +355,8 @@ export function EventFeed() {
         </select>
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div className="-mx-4 mb-3 overflow-x-auto px-4">
+        <div className="flex w-max min-w-full flex-nowrap gap-1.5 pb-1">
         <FilterChip
           label={SOURCE_FILTER_LABELS.all}
           active={sourceFilter === "all"}
@@ -335,11 +384,13 @@ export function EventFeed() {
             }}
           />
         ))}
+        </div>
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div className="-mx-4 mb-3 overflow-x-auto px-4">
+        <div className="flex w-max min-w-full flex-nowrap gap-1.5 pb-1">
         <FilterChip
-          label="All"
+          label="All Categories"
           active={!genreFilter}
           onClick={() => {
             setGenreFilter(undefined);
@@ -357,6 +408,7 @@ export function EventFeed() {
             }}
           />
         ))}
+        </div>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -525,12 +577,12 @@ function EventCard({ event }: { event: EventItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap gap-1">
-            <span className="rounded-full bg-[#ffffff] px-2 py-0.5 text-[10px] font-medium text-zinc-900">
+            <span className={cn(TAG_BASE_CLASS, genreTagClass(event.genre))}>
               {GENRE_LABELS[event.genre] ?? event.genre}
             </span>
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                TAG_BASE_CLASS,
                 DIFFICULTY_COLORS[event.difficulty],
               )}
             >
@@ -582,10 +634,10 @@ function LiveEventCard({ event }: { event: LiveEventItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap gap-1">
-            <span className="rounded-full bg-[#ffffff] px-2 py-0.5 text-[10px] font-medium text-zinc-900">
+            <span className={cn(TAG_BASE_CLASS, sourceTagClass(event.source))}>
               {sourceLabel}
             </span>
-            <span className="rounded-full bg-[#ffffff] px-2 py-0.5 text-[10px] font-medium text-zinc-900">
+            <span className={cn(TAG_BASE_CLASS, genreTagClass(event.genre))}>
               {GENRE_LABELS[event.genre] ?? event.genre}
             </span>
           </div>
