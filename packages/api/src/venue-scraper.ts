@@ -24,6 +24,8 @@ export interface ScrapedEvent {
   dateText?: string;
   venueName?: string;
   location?: string;
+  /** Program notes (repertoire + performers) when the source provides them. */
+  program?: string;
   eventUrl: string;
   buyUrl: string;
   posterImageUrl?: string;
@@ -72,6 +74,10 @@ async function fetchPageImage(url: string): Promise<string | undefined> {
   } catch {
     return undefined;
   }
+}
+
+function stripHtml(html: string): string {
+  return load(html).text().replace(/\s+/g, " ").trim();
 }
 
 function slugToTitle(slug: string): string {
@@ -608,6 +614,7 @@ interface JuilliardApiEvent {
   id: number;
   title: string;
   date_start_time: string;
+  description_program?: string;
   purchase_url?: string;
   video_url?: string;
   image?: { url?: string | null };
@@ -657,6 +664,9 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
     const posterImageUrl = e.image?.url?.trim()
       ? e.image.url.trim()
       : undefined;
+    const programText =
+      e.description_program ? stripHtml(e.description_program) : undefined;
+    const program = programText && programText.length > 3 ? programText : undefined;
 
     events.push({
       source: "juilliard",
@@ -665,6 +675,7 @@ export async function scrapeJuilliard(): Promise<ScrapedEvent[]> {
       dateText: e.date_start_time,
       venueName,
       location,
+      program,
       eventUrl,
       buyUrl,
       posterImageUrl,
@@ -844,6 +855,14 @@ function nyPhilDateHintFromDescription(desc: string): string | undefined {
   return undefined;
 }
 
+/** Extract program from NY Phil og:description (strip "Official Box Office." + date suffix). */
+function nyPhilProgramFromDescription(desc: string): string | undefined {
+  const idx = desc.indexOf("Official Box Office");
+  const raw = idx !== -1 ? desc.slice(0, idx) : desc;
+  const program = raw.replace(/\.\s*$/, "").trim();
+  return program.length > 4 ? program : undefined;
+}
+
 function nyPhilSortTime(ev: ScrapedEvent): number {
   if (!ev.dateText?.trim()) return Number.MAX_SAFE_INTEGER;
   const hint = nyPhilDateHintFromDescription(ev.dateText) ?? ev.dateText;
@@ -878,6 +897,10 @@ async function scrapeNyPhilProductionPage(
         ? description.slice(0, 240)
         : undefined);
 
+    const program = description
+      ? nyPhilProgramFromDescription(description)
+      : undefined;
+
     const canonical = (ogUrl ?? eventUrl).split("?")[0] ?? eventUrl;
     const posterImageUrl = ogImage?.startsWith("http") ? ogImage : undefined;
 
@@ -885,6 +908,7 @@ async function scrapeNyPhilProductionPage(
       source: "ny_phil",
       title,
       dateText,
+      program,
       venueName: "New York Philharmonic",
       location: "New York, NY",
       eventUrl: canonical,
@@ -994,10 +1018,36 @@ export async function scrapeNycBallet(): Promise<ScrapedEvent[]> {
       pickText(record, "related_listing_image");
     const prefix = pickText(record, "prefix");
 
+    const performedWith = Array.isArray(record.performed_with)
+      ? record.performed_with
+      : [];
+    const programLines = performedWith
+      .map((b: unknown) => {
+        if (!b || typeof b !== "object") return null;
+        const ballet = b as Record<string, unknown>;
+        const balletTitle = pickText(ballet, "title");
+        if (!balletTitle) return null;
+        const metaArr = Array.isArray(ballet.meta_data) ? ballet.meta_data : [];
+        const metaParts = metaArr
+          .map((m: unknown) => {
+            if (!m || typeof m !== "object") return null;
+            const entry = m as Record<string, unknown>;
+            const k = pickText(entry, "title");
+            const v = pickText(entry, "content");
+            return k && v ? `${k}: ${v}` : null;
+          })
+          .filter(Boolean)
+          .join(", ");
+        return metaParts ? `${balletTitle} (${metaParts})` : balletTitle;
+      })
+      .filter(Boolean);
+    const program = programLines.length > 0 ? programLines.join("\n") : undefined;
+
     events.push({
       source: "nycballet",
       title: prefix ? `${prefix}: ${title}` : title,
       dateText: perfDate,
+      program,
       venueName: "New York City Ballet",
       location: "David H. Koch Theater, New York, NY",
       eventUrl,

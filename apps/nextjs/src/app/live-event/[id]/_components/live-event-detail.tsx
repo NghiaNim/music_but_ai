@@ -211,10 +211,16 @@ export function LiveEventDetail({
         <section className="px-4 pb-4">
           <h2 className="mb-2 text-base font-semibold">Program</h2>
           <div className="bg-card rounded-xl border p-3">
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Full program information is published by the venue. Open the
-              official listing for repertoire, performers, and any updates.
-            </p>
+            {event.program ? (
+              <p className="text-foreground whitespace-pre-line text-sm leading-relaxed">
+                {event.program}
+              </p>
+            ) : (
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Full program information is published by the venue. Open the
+                official listing for repertoire, performers, and any updates.
+              </p>
+            )}
             <Button variant="outline" size="sm" className="mt-3" asChild>
               <a href={event.eventUrl} target="_blank" rel="noreferrer">
                 Official event page

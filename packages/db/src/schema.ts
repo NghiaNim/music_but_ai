@@ -368,6 +368,8 @@ export const LiveEvent = pgTable("live_event", (t) => ({
   location: t.varchar({ length: 256 }),
   imageUrl: t.text(),
   genre: genreEnum().notNull().default("solo_recital"),
+  /** Scraped program notes (repertoire + performers) when the source provides them. */
+  program: t.text(),
   eventUrl: t.text().notNull().unique(),
   buyUrl: t.text().notNull(),
   raw: t.jsonb().$type<unknown>(),
