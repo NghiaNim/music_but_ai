@@ -33,7 +33,7 @@ export default function LearnPage() {
           Ask Tanny anything about classical or jazz music
         </p>
         <Link
-          href="/chat?mode=learning"
+          href="/chat?mode=discovery"
           className="text-primary mt-3 inline-block text-sm font-medium"
         >
           Ask Tanny →
