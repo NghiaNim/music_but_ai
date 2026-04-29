@@ -599,13 +599,26 @@ export function ProfileContent() {
   return (
     <>
       {/* Profile Card */}
-      <div className="bg-card mt-5 rounded-2xl border p-6 shadow-sm">
-        <div className="flex items-start gap-6">
-          <div className="flex flex-col items-center">
+      <div className="bg-card mt-5 overflow-hidden rounded-2xl border shadow-sm">
+        {/* Gradient hero banner */}
+        <div className="relative h-24 bg-gradient-to-br from-[#9C1738] via-rose-800 to-pink-700">
+          <div
+            className="absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, white 1px, transparent 1px)",
+              backgroundSize: "14px 14px",
+            }}
+          />
+        </div>
+
+        <div className="px-5 pb-5">
+          {/* Avatar row overlapping banner */}
+          <div className="-mt-12 mb-3 flex items-end justify-between gap-3">
             <button
               type="button"
               onClick={() => setIsPhotoSheetOpen(true)}
-              className="relative flex h-28 w-28 items-center justify-center overflow-visible rounded-full bg-[#F8E8EE] ring-1 ring-black/5"
+              className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-visible rounded-full bg-[#F8E8EE] shadow-md ring-4 ring-white dark:ring-zinc-950"
               aria-label="Open profile photo options"
             >
               <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full">
@@ -625,143 +638,150 @@ export function ProfileContent() {
                 LV {learningLevelNumber}
               </div>
             </button>
-            <p className="text-foreground mt-3 text-xl font-bold">{name}</p>
-            <p className="text-muted-foreground mt-1 text-[11px]">
-              {learningLevel.name}
-            </p>
-            {photoError ? (
-              <p className="mt-1 text-center text-[10px] text-rose-500">
-                {photoError}
-              </p>
-            ) : null}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              className="hidden"
-            />
-          </div>
 
-          <div className="grid w-full flex-1 grid-cols-2 gap-3">
-            <div className="bg-muted/35 flex min-h-[86px] flex-col justify-between rounded-2xl border p-3">
-              <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
-                <span
-                  aria-hidden
-                  className="bg-background inline-flex size-6 items-center justify-center rounded-full border text-sm"
-                >
-                  🎵
-                </span>
-                Concerts attended
-              </p>
-              <p className="text-foreground text-2xl leading-none font-bold">
-                {concertsAttended}
-              </p>
-            </div>
-            <div className="bg-muted/35 flex min-h-[86px] flex-col justify-between rounded-2xl border p-3">
-              <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
-                <span
-                  aria-hidden
-                  className="bg-background inline-flex size-6 items-center justify-center rounded-full border text-sm"
-                >
-                  🔥
-                </span>
-                Streak
-              </p>
-              <p className="text-foreground text-2xl leading-none font-bold">
-                {daysOnApp}
-              </p>
+            <div className="flex gap-2">
+              <div className="bg-card flex min-w-[78px] flex-col items-center rounded-2xl border px-3 py-2.5 shadow-sm">
+                <p className="text-muted-foreground flex items-center gap-1 text-[10px] font-medium">
+                  🎵 Concerts
+                </p>
+                <p className="mt-0.5 text-xl leading-none font-bold">
+                  {concertsAttended}
+                </p>
+              </div>
+              <div className="bg-card flex min-w-[78px] flex-col items-center rounded-2xl border px-3 py-2.5 shadow-sm">
+                <p className="text-muted-foreground flex items-center gap-1 text-[10px] font-medium">
+                  🔥 Streak
+                </p>
+                <p className="mt-0.5 text-xl leading-none font-bold">
+                  {daysOnApp}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-4 rounded-xl border bg-linear-to-r from-amber-50/70 via-orange-50/70 to-rose-50/70 p-3 dark:from-amber-900/20 dark:via-orange-900/20 dark:to-rose-900/20">
-          <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px]">
-            <span className="flex items-center gap-1.5 font-semibold">
-              <span aria-hidden>✨</span>
-              {`LV ${learningLevelNumber}`}
-            </span>
-            <span className="text-muted-foreground tabular-nums">
+          {/* Name + title */}
+          <p className="text-foreground text-xl font-bold">{name}</p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            {learningLevel.name}
+          </p>
+          {photoError ? (
+            <p className="mt-1 text-[10px] text-rose-500">{photoError}</p>
+          ) : null}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            className="hidden"
+          />
+
+          {/* XP progress */}
+          <div className="mt-4 rounded-2xl border bg-linear-to-r from-amber-50/70 via-orange-50/70 to-rose-50/70 p-4 dark:from-amber-900/20 dark:via-orange-900/20 dark:to-rose-900/20">
+            <div className="mb-2 flex items-center justify-between gap-2 text-[11px]">
+              <span className="flex items-center gap-1.5 font-bold">
+                <span aria-hidden>✨</span>
+                {`LV ${learningLevelNumber} · ${learningLevel.name}`}
+              </span>
+              <span className="text-muted-foreground tabular-nums">
+                {nextLearningLevel
+                  ? `${xpIntoLevel}/${xpForNext} XP`
+                  : `${learningPoints} XP`}
+              </span>
+            </div>
+            <div className="bg-background/70 h-2.5 w-full overflow-hidden rounded-full border">
+              <div
+                className="h-full rounded-full bg-linear-to-r from-amber-400 via-orange-500 to-rose-500 transition-all"
+                style={{ width: `${levelProgressPercent}%` }}
+              />
+            </div>
+            <p className="text-muted-foreground mt-1.5 text-[10px]">
               {nextLearningLevel
-                ? `${xpIntoLevel}/${xpForNext} XP`
-                : `${learningPoints} XP`}
-            </span>
+                ? `${Math.max(0, xpForNext - xpIntoLevel)} XP left to level up to LV ${learningLevelNumber + 1} ${nextLearningLevel.name}`
+                : "You have unlocked every learning level."}
+            </p>
           </div>
-          <div className="bg-background/70 h-2.5 w-full overflow-hidden rounded-full border">
-            <div
-              className="h-full rounded-full bg-linear-to-r from-amber-400 via-orange-500 to-rose-500 transition-all"
-              style={{ width: `${levelProgressPercent}%` }}
-            />
-          </div>
-          <p className="text-muted-foreground mt-1.5 text-[10px]">
-            {nextLearningLevel
-              ? `${Math.max(0, xpForNext - xpIntoLevel)} XP left to level up to LV ${learningLevelNumber + 1} ${nextLearningLevel.name}`
-              : "You have unlocked every learning level."}
-          </p>
-        </div>
 
-        <div className="bg-border mt-5 h-px" />
+          <div className="bg-border mt-5 h-px" />
 
-        <div className="mt-5">
-          <h2 className="text-foreground flex items-center gap-2 text-base font-bold">
-            <span
-              aria-hidden
-              className="bg-muted inline-flex size-6 items-center justify-center rounded-full border text-xs"
-            >
-              🎯
-            </span>
-            Daily quests
-          </h2>
-          <p className="text-muted-foreground mt-1 text-xs">
-            Complete these daily quests to earn points and level up.
-          </p>
-          <div className="mt-3 space-y-2.5">
-            {quests.map((quest) => {
-              const clamped = Math.min(quest.progress, quest.target);
-              const percent = Math.round((clamped / quest.target) * 100);
-              const complete = quest.progress >= quest.target;
-              return (
-                <Link
-                  key={quest.id}
-                  href={quest.href}
-                  className="bg-muted/40 hover:bg-muted/60 block rounded-xl border p-3 transition-colors"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-start gap-2.5">
-                      <span
-                        aria-hidden
-                        className="bg-background inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-sm"
-                      >
-                        {quest.icon}
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold">{quest.title}</p>
-                        <p className="text-muted-foreground text-[11px]">
-                          {quest.subtitle}
-                        </p>
+          {/* Daily quests */}
+          <div className="mt-5">
+            <h2 className="text-foreground flex items-center gap-2 text-base font-bold">
+              <span
+                aria-hidden
+                className="inline-flex size-7 items-center justify-center rounded-full bg-rose-100 text-sm dark:bg-rose-900/40"
+              >
+                🎯
+              </span>
+              Daily quests
+            </h2>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Complete these daily quests to earn points and level up.
+            </p>
+            <div className="mt-3 space-y-2.5">
+              {quests.map((quest, idx) => {
+                const clamped = Math.min(quest.progress, quest.target);
+                const percent = Math.round((clamped / quest.target) * 100);
+                const complete = quest.progress >= quest.target;
+                const isFirst = idx === 0;
+                return (
+                  <Link
+                    key={quest.id}
+                    href={quest.href}
+                    className={`block rounded-2xl border p-4 transition-opacity active:opacity-75 ${
+                      isFirst
+                        ? "border-rose-100 bg-rose-50 dark:border-rose-900/30 dark:bg-rose-950/20"
+                        : "border-violet-100 bg-violet-50 dark:border-violet-900/30 dark:bg-violet-950/20"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <span
+                          aria-hidden
+                          className={`inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base ${
+                            isFirst
+                              ? "bg-rose-100 dark:bg-rose-900/40"
+                              : "bg-violet-100 dark:bg-violet-900/40"
+                          }`}
+                        >
+                          {quest.icon}
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold">{quest.title}</p>
+                          <p className="text-muted-foreground mt-0.5 text-[11px]">
+                            {quest.subtitle}
+                          </p>
+                        </div>
                       </div>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white ${
+                          isFirst ? "bg-rose-600" : "bg-violet-600"
+                        }`}
+                      >
+                        +{quest.reward} XP
+                      </span>
                     </div>
-                    <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide">
-                      +{quest.reward} XP
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-[11px]">
-                    <span className="text-muted-foreground">
-                      {clamped}/{quest.target} complete
-                    </span>
-                    <span className="font-medium">
-                      {complete ? "Completed" : quest.cta}
-                    </span>
-                  </div>
-                  <div className="bg-background mt-1.5 h-1.5 w-full overflow-hidden rounded-full">
-                    <div
-                      className="h-full rounded-full bg-linear-to-r from-emerald-400 to-emerald-600 transition-all"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                </Link>
-              );
-            })}
+                    <div className="mt-2.5 flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">
+                        {clamped}/{quest.target} complete
+                      </span>
+                      <span className="font-semibold">
+                        {complete ? "✓ Completed" : quest.cta}
+                      </span>
+                    </div>
+                    <div className="bg-background/60 mt-1.5 h-1.5 w-full overflow-hidden rounded-full">
+                      <div
+                        className={`h-full rounded-full bg-linear-to-r transition-all ${
+                          isFirst
+                            ? "from-rose-400 to-pink-500"
+                            : "from-violet-400 to-purple-500"
+                        }`}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
