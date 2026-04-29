@@ -11,7 +11,9 @@ import { getBaseUrl } from "./base-url";
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // ...
+      retry: 1,
+      retryDelay: 2000,
+      staleTime: 30_000,
     },
   },
 });
@@ -24,8 +26,8 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
     links: [
       loggerLink({
         enabled: (opts) =>
-          process.env.NODE_ENV === "development" ||
-          (opts.direction === "down" && opts.result instanceof Error),
+          process.env.NODE_ENV === "development" &&
+          opts.direction === "up",
         colorMode: "ansi",
       }),
       httpBatchLink({

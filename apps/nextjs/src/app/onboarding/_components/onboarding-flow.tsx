@@ -195,7 +195,7 @@ export function OnboardingFlow() {
     const greeting = `Hi there! Welcome to Classica. Quick question — ${data.questions[0]}`;
 
     setPhase("ai-speaking");
-    setStatusText("Tanny is speaking...");
+    setStatusText("Ton Ton is speaking...");
     await playTTS(greeting);
 
     // Start listening
@@ -224,7 +224,7 @@ export function OnboardingFlow() {
       });
 
       setPhase("ai-speaking");
-      setStatusText("Tanny is speaking...");
+      setStatusText("Ton Ton is speaking...");
       await playTTS(result.text);
 
       // Single question — go straight to music
@@ -333,7 +333,7 @@ export function OnboardingFlow() {
           </div>
         </div>
         <div>
-          <h1 className="text-xl font-bold">Ask Tanny</h1>
+          <h1 className="text-xl font-bold">Ask Ton Ton</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             A quick voice chat to learn your taste
           </p>
@@ -515,7 +515,7 @@ export function OnboardingFlow() {
               ? `Track ${musicIndex + 1} of 3`
               : isUserSpeaking
                 ? "Listening..."
-                : "Ask Tanny"}
+                : "Ask Ton Ton"}
           </h2>
           {isMusicPlaying && (
             <p className="text-muted-foreground mt-1 text-xs">
@@ -549,8 +549,8 @@ export function OnboardingFlow() {
 function AIMentorAvatar({ size = 24 }: { size?: number }) {
   return (
     <Image
-      src="/tanny-cat-cutout.png"
-      alt="Tanny the cat"
+      src="/ton-ton-cat-cutout.png"
+      alt="Ton Ton the cat"
       width={size}
       height={size}
       className="object-contain"

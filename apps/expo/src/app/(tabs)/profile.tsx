@@ -165,8 +165,7 @@ function BadgeCard({
   return (
     <Pressable
       onPress={onFlip}
-      style={[cardShadow, { width: badgeCardWidth, marginBottom: 14 }]}
-      className="bg-card items-center rounded-2xl pt-5 pb-4"
+      style={[cardShadow, { width: badgeCardWidth, marginBottom: 14, alignItems: "center", borderRadius: 16, paddingTop: 20, paddingBottom: 16, backgroundColor: "#FFFFFF" }]}
     >
       <View style={{ width: 116, height: 116 }}>
         {/* Front */}
@@ -303,11 +302,11 @@ function BadgeCard({
         </Animated.View>
       </View>
 
-      <Text className="text-foreground mt-3 text-center text-sm font-semibold">
+      <Text style={{ fontSize: 14, fontWeight: "600", color: "#111827", textAlign: "center", marginTop: 12 }}>
         {badge.label}
       </Text>
       {!earned && (
-        <Text className="text-muted-foreground mt-1 text-center text-[10px] uppercase">
+        <Text style={{ fontSize: 10, color: "#6B7280", textAlign: "center", marginTop: 4, textTransform: "uppercase" }}>
           Locked
         </Text>
       )}
@@ -469,45 +468,44 @@ export default function ProfileScreen() {
     });
   }, [colorScheme, navigation, overlayBadgeId]);
 
+  const isDark = colorScheme === "dark";
+  const bg = isDark ? "#111111" : "#FFFAEF";
+  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const border = isDark ? "#2D2D2D" : "#E5E7EB";
+  const textPrimary = isDark ? "#F9FAFB" : "#111827";
+
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         scrollEnabled={!overlayBadge}
       >
-        <Text className="text-foreground mt-4 px-5 text-3xl font-bold">
+        <Text style={{ fontSize: 28, fontWeight: "700", color: textPrimary, marginTop: 16, paddingHorizontal: 20 }}>
           Profile
         </Text>
 
-        <View className="bg-card mx-5 mt-5 rounded-2xl p-6" style={cardShadow}>
+        <View style={[cardShadow, { backgroundColor: cardBg, borderWidth: 1, borderColor: border, marginHorizontal: 20, marginTop: 20, borderRadius: 16, padding: 24 }]}>
           <View className="flex-row">
-            <View className="mr-6 items-center">
-              <View
-                className="h-28 w-28 items-center justify-center overflow-hidden rounded-full"
-                style={{ backgroundColor: "#F8E8EE" }}
-              >
+            <View style={{ marginRight: 24, alignItems: "center" }}>
+              <View style={{ width: 112, height: 112, borderRadius: 56, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: "#F8E8EE" }}>
                 <Text style={{ fontSize: 48 }}>🎵</Text>
               </View>
-              <Text className="text-foreground mt-3 text-xl font-bold">
+              <Text style={{ fontSize: 18, fontWeight: "700", color: textPrimary, marginTop: 12 }}>
                 {name}
               </Text>
             </View>
 
-            <View className="flex-1 justify-center">
+            <View style={{ flex: 1, justifyContent: "center" }}>
               {STATS.map((stat, index) => (
                 <View key={stat.label}>
-                  <View className="py-2.5">
-                    <Text className="text-foreground text-2xl font-bold">
-                      {stat.value}
-                    </Text>
-                    <Text className="text-muted-foreground text-xs">
-                      {stat.label}
-                    </Text>
+                  <View style={{ paddingVertical: 10 }}>
+                    <Text style={{ fontSize: 24, fontWeight: "700", color: textPrimary }}>{stat.value}</Text>
+                    <Text style={{ fontSize: 12, color: "#6B7280" }}>{stat.label}</Text>
                   </View>
                   {index < STATS.length - 1 && (
-                    <View className="bg-border h-px" />
+                    <View style={{ height: 1, backgroundColor: isDark ? "#2D2D2D" : "#E5E7EB" }} />
                   )}
                 </View>
               ))}
@@ -515,20 +513,10 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <Text className="text-foreground mt-8 px-5 text-xl font-bold">
+        <Text style={{ fontSize: 20, fontWeight: "700", color: textPrimary, marginTop: 32, paddingHorizontal: 20 }}>
           Badges
         </Text>
-        <View className="px-5 pt-4">
-          <Pressable
-            className="items-center rounded-xl bg-[#9C1738] px-4 py-3"
-            onPress={() => router.push("/waitlist" as Href)}
-          >
-            <Text className="text-base font-semibold text-white">
-              Join Waitlist
-            </Text>
-          </Pressable>
-        </View>
-        <Text className="text-muted-foreground mb-4 px-5 text-xs">
+        <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 8, marginBottom: 16, paddingHorizontal: 20 }}>
           Tap a badge to flip it
         </Text>
         <View className="flex-row flex-wrap justify-between px-5">

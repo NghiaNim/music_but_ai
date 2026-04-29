@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Image,
   Pressable,
@@ -10,22 +8,24 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "~/utils/api";
 import { trpc } from "~/utils/api";
 import { authClient } from "~/utils/auth";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 type EventItem = RouterOutputs["event"]["all"][number];
 type LiveEventItem = RouterOutputs["liveEvent"]["page"]["items"][number];
+type TasteProfile = RouterOutputs["tasteProfile"]["get"];
 
 type UnifiedRow =
   | { kind: "created"; event: EventItem; sortTime: number }
   | { kind: "live"; event: LiveEventItem; sortTime: number };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseLiveSortTime(ev: LiveEventItem): number {
   if (ev.date) return new Date(ev.date).getTime();
@@ -105,18 +105,18 @@ const VENUE_SHORT: Record<string, string> = {
   nycballet: "NYC Ballet",
 };
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function DateThumb({ date }: { date: Date }) {
   return (
-    <View className="h-full w-full items-center justify-center bg-amber-100 dark:bg-amber-900/30">
-      <Text className="text-[10px] font-semibold uppercase text-orange-600 dark:text-orange-300">
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#FEF3C7" }}>
+      <Text style={{ fontSize: 10, fontWeight: "600", textTransform: "uppercase", color: "#EA580C" }}>
         {date.toLocaleDateString("en-US", { month: "short" })}
       </Text>
-      <Text className="text-xl font-bold leading-none text-orange-700 dark:text-orange-200">
+      <Text style={{ fontSize: 20, fontWeight: "700", lineHeight: 24, color: "#C2410C" }}>
         {date.getDate()}
       </Text>
-      <Text className="mt-0.5 text-[9px] font-medium text-orange-500 dark:text-orange-400">
+      <Text style={{ fontSize: 9, fontWeight: "500", color: "#F97316", marginTop: 2 }}>
         {date.toLocaleDateString("en-US", { weekday: "short" })}
       </Text>
     </View>
@@ -125,10 +125,7 @@ function DateThumb({ date }: { date: Date }) {
 
 function Tag({ label, color }: { label: string; color: string }) {
   return (
-    <View
-      className="rounded-full px-2 py-0.5"
-      style={{ backgroundColor: color + "22" }}
-    >
+    <View style={{ backgroundColor: color + "22", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
       <Text style={{ color, fontSize: 10, fontWeight: "600" }}>{label}</Text>
     </View>
   );
@@ -144,60 +141,44 @@ const GENRE_COLORS: Record<string, string> = {
   jazz: "#6D28D9",
 };
 
-function EventCard({ row }: { row: UnifiedRow }) {
+function EventCard({ row, isDark }: { row: UnifiedRow; isDark: boolean }) {
   const router = useRouter();
+  const cardStyle = {
+    flexDirection: "row" as const,
+    gap: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: isDark ? "#2D2D2D" : "#E5E7EB",
+    backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
+    padding: 12,
+    marginBottom: 12,
+  };
 
   if (row.kind === "created") {
     const ev = row.event;
     const date = new Date(ev.date);
-    const dateStr = friendlyDate(date);
     const genreColor = GENRE_COLORS[ev.genre] ?? "#6B7280";
-
     return (
-      <Pressable
-        onPress={() =>
-          router.push({ pathname: "/event/[id]", params: { id: ev.id } })
-        }
-        className="active:opacity-70"
-      >
-        <View className="bg-card mb-3 flex-row gap-3 rounded-xl border p-3">
-          <View className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+      <Pressable onPress={() => router.push({ pathname: "/event/[id]", params: { id: ev.id } })}>
+        <View style={cardStyle}>
+          <View style={{ width: 80, height: 80, borderRadius: 8, overflow: "hidden", flexShrink: 0 }}>
             {ev.imageUrl ? (
-              <Image
-                source={{ uri: ev.imageUrl }}
-                style={{ width: 80, height: 80 }}
-                resizeMode="cover"
-              />
+              <Image source={{ uri: ev.imageUrl }} style={{ width: 80, height: 80 }} resizeMode="cover" />
             ) : (
               <DateThumb date={date} />
             )}
           </View>
-          <View className="min-w-0 flex-1">
-            <View className="mb-1 flex-row flex-wrap gap-1">
-              <Tag
-                label={GENRE_LABELS[ev.genre] ?? ev.genre}
-                color={genreColor}
-              />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginBottom: 4 }}>
+              <Tag label={GENRE_LABELS[ev.genre] ?? ev.genre} color={genreColor} />
             </View>
-            <Text
-              className="text-sm font-semibold"
-              style={{ color: "#9C1738" }}
-              numberOfLines={1}
-            >
+            <Text style={{ fontSize: 14, fontWeight: "600", color: "#9C1738" }} numberOfLines={1}>
               {ev.title}
             </Text>
-            <Text
-              className="text-muted-foreground mt-0.5 text-xs"
-              numberOfLines={1}
-            >
-              {dateStr}
+            <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }} numberOfLines={1}>
+              {friendlyDate(date)}
             </Text>
-            <Text
-              className="text-muted-foreground text-xs"
-              numberOfLines={1}
-            >
-              {ev.venue}
-            </Text>
+            <Text style={{ fontSize: 12, color: "#6B7280" }} numberOfLines={1}>{ev.venue}</Text>
           </View>
         </View>
       </Pressable>
@@ -206,52 +187,32 @@ function EventCard({ row }: { row: UnifiedRow }) {
 
   const ev = row.event;
   const date = parseLiveDate(ev);
-  const dateStr = date ? friendlyDate(date) : ev.dateText ?? "";
   const sourceLabel = VENUE_SHORT[ev.source] ?? ev.source;
   const genreColor = GENRE_COLORS[ev.genre] ?? "#6B7280";
-
   return (
-    <Pressable
-      onPress={() =>
-        router.push({ pathname: "/live-event/[id]", params: { id: ev.id } })
-      }
-      className="active:opacity-70"
-    >
-      <View className="bg-card mb-3 flex-row gap-3 rounded-xl border p-3">
-        <View className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+    <Pressable onPress={() => router.push({ pathname: "/live-event/[id]", params: { id: ev.id } })}>
+      <View style={cardStyle}>
+        <View style={{ width: 80, height: 80, borderRadius: 8, overflow: "hidden", flexShrink: 0 }}>
           {ev.imageUrl ? (
-            <Image
-              source={{ uri: ev.imageUrl }}
-              style={{ width: 80, height: 80 }}
-              resizeMode="cover"
-            />
+            <Image source={{ uri: ev.imageUrl }} style={{ width: 80, height: 80 }} resizeMode="cover" />
           ) : date ? (
             <DateThumb date={date} />
           ) : (
-            <View className="h-full w-full items-center justify-center bg-amber-100 dark:bg-amber-900/30">
-              <Text className="text-[10px] font-semibold text-orange-700 dark:text-orange-200">
-                Live
-              </Text>
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#FEF3C7" }}>
+              <Text style={{ fontSize: 10, fontWeight: "600", color: "#C2410C" }}>Live</Text>
             </View>
           )}
         </View>
-        <View className="min-w-0 flex-1">
-          <View className="mb-1 flex-row flex-wrap gap-1">
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginBottom: 4 }}>
             <Tag label={sourceLabel} color="#0369A1" />
             <Tag label={GENRE_LABELS[ev.genre] ?? ev.genre} color={genreColor} />
           </View>
-          <Text
-            className="text-sm font-semibold"
-            style={{ color: "#9C1738" }}
-            numberOfLines={1}
-          >
+          <Text style={{ fontSize: 14, fontWeight: "600", color: "#9C1738" }} numberOfLines={1}>
             {ev.title}
           </Text>
-          <Text
-            className="text-muted-foreground mt-0.5 text-xs"
-            numberOfLines={1}
-          >
-            {dateStr}
+          <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }} numberOfLines={1}>
+            {date ? friendlyDate(date) : ev.dateText ?? ""}
           </Text>
         </View>
       </View>
@@ -259,16 +220,24 @@ function EventCard({ row }: { row: UnifiedRow }) {
   );
 }
 
-function EventsSkeleton() {
+function EventsSkeleton({ isDark }: { isDark: boolean }) {
   return (
     <>
       {[0, 1, 2].map((i) => (
-        <View key={i} className="bg-card mb-3 flex-row gap-3 rounded-xl border p-3">
-          <View className="bg-muted h-20 w-20 animate-pulse rounded-lg" />
-          <View className="flex-1 gap-2 py-1">
-            <View className="bg-muted h-4 w-16 animate-pulse rounded-full" />
-            <View className="bg-muted h-4 w-3/4 animate-pulse rounded" />
-            <View className="bg-muted h-3 w-1/2 animate-pulse rounded" />
+        <View
+          key={i}
+          style={{
+            flexDirection: "row", gap: 12, borderRadius: 12,
+            borderWidth: 1, borderColor: isDark ? "#2D2D2D" : "#E5E7EB",
+            backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
+            padding: 12, marginBottom: 12,
+          }}
+        >
+          <View style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: isDark ? "#2D2D2D" : "#F3F4F6" }} />
+          <View style={{ flex: 1, gap: 8, paddingVertical: 4 }}>
+            <View style={{ height: 12, width: 64, borderRadius: 999, backgroundColor: isDark ? "#2D2D2D" : "#F3F4F6" }} />
+            <View style={{ height: 14, width: "75%", borderRadius: 4, backgroundColor: isDark ? "#2D2D2D" : "#F3F4F6" }} />
+            <View style={{ height: 12, width: "50%", borderRadius: 4, backgroundColor: isDark ? "#2D2D2D" : "#F3F4F6" }} />
           </View>
         </View>
       ))}
@@ -276,40 +245,99 @@ function EventsSkeleton() {
   );
 }
 
-function ExploreCard({
-  label,
-  subtitle,
-  bgColor,
-  icon,
-  onPress,
+function OnboardingCTA({
+  session,
+  tasteProfile,
+  isDark,
 }: {
-  label: string;
-  subtitle: string;
-  bgColor: string;
-  icon: string;
-  onPress: () => void;
+  session: boolean;
+  tasteProfile: TasteProfile;
+  isDark: boolean;
 }) {
+  const router = useRouter();
+
+  if (!session) {
+    return (
+      <Pressable onPress={() => router.push("/sign-in" as never)}>
+        <View style={{
+          flexDirection: "row", alignItems: "center", gap: 12,
+          borderRadius: 16, borderWidth: 1,
+          borderColor: isDark ? "rgba(120,53,15,0.4)" : "#FDE68A",
+          backgroundColor: isDark ? "rgba(120,53,15,0.15)" : "#FFFBEB",
+          padding: 16,
+        }}>
+          <Text style={{ fontSize: 28 }}>🎵</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#F9FAFB" : "#111827" }}>
+              Discover your sound
+            </Text>
+            <Text style={{ fontSize: 12, color: "#6B7280" }}>
+              2 min taste quiz — find concerts you'll love
+            </Text>
+          </View>
+          <Text style={{ color: "#D97706", fontWeight: "600", fontSize: 14 }}>Start →</Text>
+        </View>
+      </Pressable>
+    );
+  }
+
+  if (tasteProfile?.archetype) {
+    return (
+      <Pressable onPress={() => router.push("/profile/taste" as never)}>
+        <View style={{
+          flexDirection: "row", alignItems: "center", gap: 12,
+          borderRadius: 16, borderWidth: 1,
+          borderColor: isDark ? "rgba(6,78,59,0.4)" : "#A7F3D0",
+          backgroundColor: isDark ? "rgba(6,78,59,0.15)" : "#ECFDF5",
+          padding: 16,
+        }}>
+          <Text style={{ fontSize: 32 }}>{tasteProfile.badgeEmoji ?? "🎵"}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#F9FAFB" : "#111827" }}>
+              {tasteProfile.archetype}
+            </Text>
+            <Text style={{ fontSize: 12, color: "#6B7280" }} numberOfLines={1}>
+              {(tasteProfile.tags ?? []).slice(0, 3).join(" · ")}
+            </Text>
+          </View>
+          <Text style={{ color: "#9CA3AF", fontSize: 18 }}>›</Text>
+        </View>
+      </Pressable>
+    );
+  }
+
   return (
-    <Pressable onPress={onPress} className="active:opacity-70" style={{ width: "48%" }}>
-      <View
-        className="items-center gap-2 rounded-2xl border p-5"
-        style={{ backgroundColor: bgColor }}
-      >
-        <Text style={{ fontSize: 28 }}>{icon}</Text>
-        <View>
-          <Text className="text-center text-sm font-semibold text-foreground">
-            {label}
+    <Pressable onPress={() => router.push("/onboarding/taste" as never)}>
+      <View style={{
+        flexDirection: "row", alignItems: "center", gap: 12,
+        borderRadius: 16, borderWidth: 1,
+        borderColor: isDark ? "rgba(120,53,15,0.4)" : "#FDE68A",
+        backgroundColor: isDark ? "rgba(120,53,15,0.15)" : "#FFFBEB",
+        padding: 16,
+      }}>
+        <Text style={{ fontSize: 28 }}>✨</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#F9FAFB" : "#111827" }}>
+            Discover your sound
           </Text>
-          <Text className="text-muted-foreground mt-0.5 text-center text-[11px]">
-            {subtitle}
+          <Text style={{ fontSize: 12, color: "#6B7280" }}>
+            2 min taste quiz — find concerts you'll love
           </Text>
         </View>
+        <Text style={{ color: "#D97706", fontWeight: "600", fontSize: 14 }}>Start →</Text>
       </View>
     </Pressable>
   );
 }
 
-// ─── Screen ──────────────────────────────────────────────────────────────────
+const EXPLORE_CARDS = [
+  { label: "For Beginners", subtitle: "First concert? Start here", bgLight: "#ECFDF5", bgDark: "rgba(6,78,59,0.2)", icon: "🌱", href: "/(tabs)/events" },
+  { label: "Get a Rec", subtitle: "AI-picked just for you", bgLight: "#F5F3FF", bgDark: "rgba(76,29,149,0.2)", icon: "✨", href: "/(tabs)/chat" },
+  { label: "Learn", subtitle: "Classical & jazz 101", bgLight: "#FFFBEB", bgDark: "rgba(120,53,15,0.2)", icon: "📖", href: "/(tabs)/learn" },
+  { label: "My Badges", subtitle: "See what you've earned", bgLight: "#F0F9FF", bgDark: "rgba(12,74,110,0.2)", icon: "🏆", href: "/(tabs)/profile" },
+] as const;
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -317,172 +345,139 @@ export default function HomeScreen() {
   const { data: session } = authClient.useSession();
   const firstName = session?.user.name?.split(" ")[0] ?? "friend";
 
-  const { data: communityData, isPending: communityPending } = useQuery({
-    ...trpc.event.all.queryOptions({}),
-  });
-
-  const { data: liveData, isPending: livePending } = useQuery({
-    ...trpc.liveEvent.page.queryOptions({
-      upcomingOnly: true,
-      limit: 20,
-      cursor: 0,
-    }),
+  const { data: communityData, isPending: communityPending } = useQuery(
+    trpc.event.all.queryOptions({}),
+  );
+  const { data: liveData, isPending: livePending } = useQuery(
+    trpc.liveEvent.page.queryOptions({ upcomingOnly: true, limit: 20, cursor: 0 }),
+  );
+  const { data: tasteProfile } = useQuery({
+    ...trpc.tasteProfile.get.queryOptions(),
+    enabled: !!session,
   });
 
   const loading = communityPending || livePending;
-
   const featured = loading
     ? []
     : mergeEvents(communityData ?? [], liveData?.items ?? []).slice(0, 4);
 
+  const bg = isDark ? "#111111" : "#FFFAEF";
+  const textPrimary = isDark ? "#F9FAFB" : "#111827";
+
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 24 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Hero ── */}
-        <View
-          className="px-4 pt-5 pb-4"
-          style={{
-            backgroundColor: isDark
-              ? "rgba(120,53,15,0.08)"
-              : "rgba(254,243,199,0.6)",
-          }}
-        >
-          <Text className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+        <View style={{
+          paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16,
+          backgroundColor: isDark ? "rgba(120,53,15,0.08)" : "rgba(254,243,199,0.7)",
+        }}>
+          <Text style={{ fontSize: 13, fontWeight: "600", color: "#D97706", marginBottom: 4 }}>
             {session ? `Hey ${firstName} ~` : "Welcome to Classica"}
           </Text>
-          <Text className="text-foreground text-2xl font-bold tracking-tight">
-            {session
-              ? "What shall we listen to today?"
-              : "Your next favorite concert is waiting"}
+          <Text style={{ fontSize: 24, fontWeight: "700", color: textPrimary, letterSpacing: -0.5 }}>
+            {session ? "What shall we listen to today?" : "Your next favorite concert is waiting"}
           </Text>
-          <Text className="text-muted-foreground mt-1.5 text-sm">
+          <Text style={{ fontSize: 14, color: "#6B7280", marginTop: 6 }}>
             Discover classical & jazz, powered by curiosity
           </Text>
         </View>
 
-        {/* ── Onboarding CTA ── */}
-        {!session && (
-          <View className="mx-4 mt-4">
-            <Pressable
-              onPress={() => router.push("/sign-in" as never)}
-              className="active:opacity-80"
-            >
-              <View className="flex-row items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
-                <Text style={{ fontSize: 28 }}>🎵</Text>
-                <View className="flex-1">
-                  <Text className="text-sm font-semibold text-foreground">
-                    Discover your sound
-                  </Text>
-                  <Text className="text-muted-foreground text-xs">
-                    2 min taste quiz — find concerts you'll love
-                  </Text>
-                </View>
-                <Text className="text-amber-600 text-sm font-semibold">
-                  Start →
-                </Text>
-              </View>
-            </Pressable>
-          </View>
-        )}
+        {/* ── Onboarding / Taste Profile ── */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}>
+          <OnboardingCTA session={!!session} tasteProfile={tasteProfile ?? null} isDark={isDark} />
+        </View>
 
         {/* ── Upcoming Events ── */}
-        <View className="mt-5 px-4">
-          <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-foreground text-lg font-semibold">
-              Upcoming Events
-            </Text>
-            <Pressable
-              onPress={() => router.push("/(tabs)/events" as never)}
-              className="active:opacity-60"
-            >
-              <Text className="text-primary text-sm font-medium">See all</Text>
+        <View style={{ paddingHorizontal: 16, paddingTop: 20 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Ionicons name="calendar-outline" size={20} color="#F59E0B" />
+              <Text style={{ fontSize: 18, fontWeight: "600", color: textPrimary }}>Upcoming Events</Text>
+            </View>
+            <Pressable onPress={() => router.push("/(tabs)/events" as never)}>
+              <Text style={{ fontSize: 14, fontWeight: "500", color: "#9C1738" }}>See all</Text>
             </Pressable>
           </View>
-
           {loading ? (
-            <EventsSkeleton />
+            <EventsSkeleton isDark={isDark} />
           ) : featured.length === 0 ? (
-            <Text className="text-muted-foreground text-sm">
-              No upcoming events
-            </Text>
+            <Text style={{ fontSize: 14, color: "#6B7280" }}>No upcoming events</Text>
           ) : (
             featured.map((row) => (
-              <EventCard
-                key={`${row.kind}-${row.event.id}`}
-                row={row}
-              />
+              <EventCard key={`${row.kind}-${row.event.id}`} row={row} isDark={isDark} />
             ))
           )}
         </View>
 
-        {/* ── Ask Tanny ── */}
-        <View className="mt-1 px-4">
-          <Pressable
-            onPress={() => router.push("/(tabs)/chat" as never)}
-            className="active:opacity-70"
-          >
-            <View className="bg-card flex-row items-center gap-4 rounded-2xl border p-4">
-              <View
-                className="h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-full"
-                style={{ backgroundColor: "#F5E6DC" }}
-              >
+        {/* ── Ask Ton Ton ── */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
+          <Pressable onPress={() => router.push("/(tabs)/chat" as never)}>
+            <View style={{
+              flexDirection: "row", alignItems: "center", gap: 16,
+              borderRadius: 16, borderWidth: 1,
+              borderColor: isDark ? "#2D2D2D" : "#E5E7EB",
+              backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
+              padding: 14,
+            }}>
+              <View style={{
+                width: 68, height: 68, borderRadius: 34, overflow: "hidden",
+                backgroundColor: "#F5E6DC", alignItems: "center", justifyContent: "center",
+              }}>
                 <Image
                   // eslint-disable-next-line @typescript-eslint/no-require-imports
-                  source={require("../../../assets/tanny.png")}
-                  style={{ width: 76, height: 76 }}
+                  source={require("../../../assets/ton-ton.png")}
+                  style={{ width: 68, height: 68 }}
                   resizeMode="contain"
                 />
               </View>
-              <View className="min-w-0 flex-1">
-                <Text className="text-foreground font-semibold">Ask Tanny</Text>
-                <Text className="text-muted-foreground text-xs">
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontWeight: "600", color: textPrimary }}>Ask Ton Ton</Text>
+                <Text style={{ fontSize: 12, color: "#6B7280" }}>
                   Your musical sidekick — recs, trivia, anything!
                 </Text>
               </View>
-              <Text className="text-muted-foreground text-lg">›</Text>
+              <Text style={{ color: "#9CA3AF", fontSize: 18 }}>›</Text>
             </View>
           </Pressable>
         </View>
 
-        {/* ── Explore Grid ── */}
-        <View className="mt-5 px-4">
-          <Text className="text-foreground mb-3 text-lg font-semibold">
-            Explore
-          </Text>
-          <View className="flex-row flex-wrap justify-between gap-y-3">
-            <ExploreCard
-              label="For Beginners"
-              subtitle="First concert? Start here"
-              bgColor={isDark ? "rgba(6,78,59,0.2)" : "#ECFDF5"}
-              icon="🌱"
-              onPress={() => router.push("/(tabs)/events" as never)}
-            />
-            <ExploreCard
-              label="Get a Rec"
-              subtitle="AI-picked just for you"
-              bgColor={isDark ? "rgba(76,29,149,0.2)" : "#F5F3FF"}
-              icon="✨"
-              onPress={() => router.push("/(tabs)/chat" as never)}
-            />
-            <ExploreCard
-              label="Learn"
-              subtitle="Classical & jazz 101"
-              bgColor={isDark ? "rgba(120,53,15,0.2)" : "#FFFBEB"}
-              icon="📖"
-              onPress={() => router.push("/(tabs)/learn" as never)}
-            />
-            <ExploreCard
-              label="My Badges"
-              subtitle="See what you've earned"
-              bgColor={isDark ? "rgba(12,74,110,0.2)" : "#F0F9FF"}
-              icon="🏆"
-              onPress={() => router.push("/(tabs)/profile" as never)}
-            />
+        {/* ── Explore ── */}
+        <View style={{ paddingTop: 20 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, marginBottom: 12 }}>
+            <Ionicons name="navigate-circle-outline" size={20} color="#F59E0B" />
+            <Text style={{ fontSize: 18, fontWeight: "600", color: textPrimary }}>Explore</Text>
           </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+          >
+            {EXPLORE_CARDS.map((card) => (
+              <Pressable key={card.label} onPress={() => router.push(card.href as never)}>
+                <View style={{
+                  width: 160, height: 176, borderRadius: 16, borderWidth: 1,
+                  borderColor: isDark ? "#2D2D2D" : "#E5E7EB",
+                  backgroundColor: isDark ? card.bgDark : card.bgLight,
+                  padding: 16, gap: 12,
+                }}>
+                  <Text style={{ fontSize: 32 }}>{card.icon}</Text>
+                  <View>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: textPrimary, lineHeight: 20 }}>
+                      {card.label}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 4, lineHeight: 16 }}>
+                      {card.subtitle}
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
       </ScrollView>
     </SafeAreaView>

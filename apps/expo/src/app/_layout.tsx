@@ -15,10 +15,11 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: isDark ? "#111" : "#FFFFFF" },
+          headerStyle: { backgroundColor: isDark ? "#1C0A00" : "#FFFBEB" },
           headerTintColor: isDark ? "#FFFFFF" : "#000000",
+          headerTitleStyle: { fontWeight: "700" },
           contentStyle: {
-            backgroundColor: isDark ? "#09090B" : "#FFFFFF",
+            backgroundColor: isDark ? "#09090B" : "#FAFAF9",
           },
         }}
       >
