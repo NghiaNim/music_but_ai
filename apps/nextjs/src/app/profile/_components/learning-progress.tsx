@@ -26,7 +26,11 @@ function getLevel(points: number) {
   return { current, next, currentIndex };
 }
 
-export function LearningProgress() {
+export function LearningProgress({
+  compact = false,
+}: {
+  compact?: boolean;
+}) {
   const [points] = useState(() =>
     typeof window === "undefined" ? 0 : getStoredNumber(POINTS_KEY),
   );
@@ -41,47 +45,84 @@ export function LearningProgress() {
   const levelNumber = currentIndex + 1;
   const xpIntoLevel = points - levelStart;
   const xpForLevel = (next?.min ?? levelEnd) - levelStart;
+  const progressPercent = Math.round(levelProgress * 100);
 
   return (
     <Link
       href="/learn"
-      className="bg-card block rounded-2xl border p-5 shadow-sm transition-transform active:scale-[0.995]"
+      className={
+        compact
+          ? "bg-muted/40 hover:bg-muted/60 block rounded-2xl border p-4 transition-colors active:scale-[0.995]"
+          : "bg-card hover:bg-muted/40 block rounded-2xl border p-5 shadow-sm transition-colors active:scale-[0.995]"
+      }
     >
-      <div className="flex items-center gap-4">
-        <div className="bg-muted flex size-16 shrink-0 items-center justify-center rounded-full text-3xl">
+      <div className="flex items-start gap-3.5">
+        <div
+          className={
+            compact
+              ? "bg-background mt-0.5 flex size-12 shrink-0 items-center justify-center rounded-full border text-2xl"
+              : "bg-muted mt-0.5 flex size-14 shrink-0 items-center justify-center rounded-full border text-3xl"
+          }
+        >
           {current.emoji}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Level {levelNumber}
-          </p>
-          <h3 className="text-foreground text-xl font-bold">{current.name}</h3>
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            ⭐ {points} XP total
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+              Learning level
+            </p>
+            <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide">
+              LV {levelNumber}
+            </span>
+          </div>
+          <h3
+            className={
+              compact
+                ? "text-foreground mt-1 text-base font-bold leading-tight"
+                : "text-foreground mt-1 text-xl font-bold leading-tight"
+            }
+          >
+            {current.name}
+          </h3>
+          <p className="text-muted-foreground mt-1 text-xs">⭐ {points} XP total</p>
         </div>
       </div>
 
-      <div className="mt-4">
-        <div className="text-muted-foreground mb-1.5 flex items-center justify-between text-[11px] font-medium">
+      <div className="mt-3.5">
+        <div className="text-muted-foreground mb-2 flex items-center justify-between text-[11px] font-medium">
           {next != null ? (
             <>
-              <span>
-                {next.emoji} Next: {next.name}
+              <span className="truncate pr-2">
+                Next: {next.emoji} {next.name}
               </span>
-              <span className="tabular-nums">
-                {xpIntoLevel} / {xpForLevel} XP
-              </span>
+              <span className="tabular-nums">{progressPercent}%</span>
             </>
           ) : (
-            <span>🎉 Max level reached!</span>
+            <>
+              <span>🎉 Max level reached!</span>
+              <span className="tabular-nums">100%</span>
+            </>
           )}
         </div>
-        <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+
+        <div className="bg-muted h-2.5 w-full overflow-hidden rounded-full">
           <div
-            className="h-full bg-linear-to-r from-amber-400 to-orange-500 transition-all"
-            style={{ width: `${Math.round(levelProgress * 100)}%` }}
+            className="h-full rounded-full bg-linear-to-r from-amber-400 via-orange-500 to-rose-500 transition-all"
+            style={{ width: `${progressPercent}%` }}
           />
+        </div>
+
+        <div className="mt-2.5 flex items-center justify-between text-[11px]">
+          {next != null ? (
+            <>
+              <span className="text-muted-foreground">
+                {xpIntoLevel} / {xpForLevel} XP
+              </span>
+              <span className="text-foreground font-medium">+{xpForLevel - xpIntoLevel} XP to go</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">All milestones complete</span>
+          )}
         </div>
       </div>
     </Link>

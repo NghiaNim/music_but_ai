@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -8,74 +8,63 @@ import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@acme/api";
 
 import { authClient } from "~/auth/client";
+import {
+  getCompletedSet,
+  getStoredNumber,
+  POINTS_KEY,
+} from "~/app/learn/_lib/progress";
 import { useTRPC } from "~/trpc/react";
-import { LearningProgress } from "./learning-progress";
 
 type UserEventWithEvent = RouterOutputs["userEvent"]["myEvents"][number];
 
 const BADGES = [
   {
     id: "beethoven",
-    label: "Beethoven Lover",
+    baseLabel: "Beethoven Lover",
     image: "/badges/badge_beethoven.png",
-    achievement: "Attended 3 concerts featuring Beethoven pieces",
+    category: "attended" as const,
     composer: "Beethoven",
-    required: 3,
   },
   {
     id: "mozart",
-    label: "Mozart Lover",
+    baseLabel: "Mozart Lover",
     image: "/badges/badge_mozart.png",
-    achievement: "Attended 3 concerts featuring Mozart pieces",
+    category: "attended" as const,
     composer: "Mozart",
-    required: 3,
   },
   {
     id: "bach",
-    label: "Bach Lover",
+    baseLabel: "Bach Lover",
     image: "/badges/badge_bach_v2.png",
-    achievement: "Attended 3 concerts featuring Bach pieces",
+    category: "attended" as const,
     composer: "Bach",
-    required: 3,
   },
   {
     id: "chopin",
-    label: "Chopin Lover",
+    baseLabel: "Chopin Lover",
     image: "/badges/badge_chopin.png",
-    achievement: "Attended 3 concerts featuring Chopin pieces",
+    category: "attended" as const,
     composer: "Chopin",
-    required: 3,
   },
   {
     id: "baroque",
-    label: "Baroque Era Enthusiast",
+    baseLabel: "Baroque Era Enthusiast",
     image: "/badges/badge_baroque.png",
-    achievement: "Listened to 10 pieces written in the Baroque era",
+    category: "listened" as const,
   },
   {
     id: "romantic",
-    label: "Romantic Era Enthusiast",
+    baseLabel: "Romantic Era Enthusiast",
     image: "/badges/badge_romantic_v3.png",
-    achievement: "Listened to 10 pieces written in the Romantic era",
+    category: "listened" as const,
   },
   {
     id: "classical",
-    label: "Classical Era Enthusiast",
+    baseLabel: "Classical Era Enthusiast",
     image: "/badges/badge_classical_v3.png",
-    achievement: "Listened to 10 pieces written in the Classical era",
+    category: "listened" as const,
   },
 ] as const;
-
-function lockedRequirementText(input: { achievement: string }): string {
-  const text = input.achievement.trim();
-  if (text.startsWith("Attended ")) {
-    return `Attend ${text.slice("Attended ".length)} to unlock this badge.`;
-  }
-  if (text.startsWith("Listened to ")) {
-    return `Listen to ${text.slice("Listened to ".length)} to unlock this badge.`;
-  }
-  return "Complete requirements to unlock this badge.";
-}
 
 type ComposerBadge = Extract<(typeof BADGES)[number], { composer: string }>;
 
@@ -83,15 +72,78 @@ function isComposerBadge(b: (typeof BADGES)[number]): b is ComposerBadge {
   return "composer" in b;
 }
 
+const BADGE_LEVELS = [
+  { level: 1, numeral: "I", requirement: 3 },
+  { level: 2, numeral: "II", requirement: 6 },
+  { level: 3, numeral: "III", requirement: 9 },
+] as const;
+
+type BadgeLevel = (typeof BADGE_LEVELS)[number];
+
+const LEARNING_LEVELS = [
+  { min: 0, name: "Newcomer" },
+  { min: 20, name: "Curious Listener" },
+  { min: 50, name: "Music Explorer" },
+  { min: 100, name: "Seasoned Ear" },
+  { min: 160, name: "Music Connoisseur" },
+] as const;
+
+type LearningLevel = (typeof LEARNING_LEVELS)[number];
+
+function getBadgeLevel(progress: number): BadgeLevel {
+  let current: BadgeLevel = BADGE_LEVELS[0];
+  for (const level of BADGE_LEVELS) {
+    if (progress >= level.requirement) current = level;
+  }
+  return current;
+}
+
+function getLearningLevel(points: number) {
+  let current: LearningLevel = LEARNING_LEVELS[0];
+  for (const level of LEARNING_LEVELS) {
+    if (points >= level.min) current = level;
+  }
+  const currentIndex = LEARNING_LEVELS.findIndex((l) => l.name === current.name);
+  const next = LEARNING_LEVELS[currentIndex + 1];
+  return { current, currentIndex, next };
+}
+
+function buildAchievementText(input: {
+  badge: (typeof BADGES)[number];
+  requirement: number;
+}): string {
+  if (input.badge.category === "attended") {
+    const composerText = isComposerBadge(input.badge)
+      ? `${input.badge.composer} pieces`
+      : "featured pieces";
+    return `Attend ${input.requirement} concerts featuring ${composerText}`;
+  }
+
+  const eraName = input.badge.baseLabel.replace(" Era Enthusiast", "");
+  return `Listen to ${input.requirement} ${eraName} era pieces`;
+}
+
+function lockedRequirementText(input: {
+  badge: (typeof BADGES)[number];
+  nextLevel: BadgeLevel;
+}): string {
+  return `${buildAchievementText({
+    badge: input.badge,
+    requirement: input.nextLevel.requirement,
+  })} to unlock Level ${input.nextLevel.numeral}.`;
+}
+
 function BadgeCard({
   badge,
   isFlipped,
   earned,
+  levelNumeral,
   onFlip,
 }: {
-  badge: (typeof BADGES)[number];
+  badge: (typeof BADGES)[number] & { achievement: string; label: string };
   isFlipped: boolean;
   earned: boolean;
+  levelNumeral: string;
   onFlip: () => void;
 }) {
   return (
@@ -291,6 +343,9 @@ function BadgeCard({
       >
         {badge.label}
       </p>
+      <p className="text-muted-foreground mt-1 text-center text-[10px] tracking-[0.22em] uppercase">
+        Level {levelNumeral}
+      </p>
       {!earned && (
         <p className="text-muted-foreground mt-1 text-center text-[10px] tracking-wide uppercase">
           Locked
@@ -304,6 +359,7 @@ export function ProfileContent() {
   const { data: session } = authClient.useSession();
   const name = session?.user.name ?? "Guest";
   const isSignedIn = !!session?.user;
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const trpc = useTRPC();
   const { data: userEvents } = useQuery({
@@ -325,14 +381,26 @@ export function ProfileContent() {
   }
 
   const badgesWithState = BADGES.map((badge) => {
-    if (badge.id === "bach") {
-      return { ...badge, earned: true };
-    }
-    if (isComposerBadge(badge)) {
-      const count = composerCounts.get(badge.composer) ?? 0;
-      return { ...badge, earned: count >= badge.required };
-    }
-    return { ...badge, earned: false };
+    const progress = isComposerBadge(badge)
+      ? (composerCounts.get(badge.composer) ?? 0)
+      : 0;
+    const currentLevel = getBadgeLevel(progress);
+    const nextLevel =
+      BADGE_LEVELS.find((level) => level.level === currentLevel.level + 1) ??
+      currentLevel;
+
+    return {
+      ...badge,
+      progress,
+      currentLevel,
+      nextLevel,
+      earned: progress >= currentLevel.requirement,
+      label: `${badge.baseLabel} ${currentLevel.numeral}`,
+      achievement: buildAchievementText({
+        badge,
+        requirement: currentLevel.requirement,
+      }),
+    };
   });
 
   // Days on app: from user profile createdAt if available, otherwise from first attended event
@@ -347,6 +415,12 @@ export function ProfileContent() {
     (attended[0] ? new Date(attended[0].createdAt) : undefined);
 
   const [asOf] = useState(() => new Date());
+  const [learningPoints] = useState(() =>
+    typeof window === "undefined" ? 0 : getStoredNumber(POINTS_KEY),
+  );
+  const [completedQuizzes] = useState(() =>
+    typeof window === "undefined" ? 0 : getCompletedSet().size,
+  );
   const daysOnApp =
     createdAt != null
       ? Math.max(
@@ -356,12 +430,50 @@ export function ProfileContent() {
           ),
         )
       : 0;
+  const { current: learningLevel, currentIndex: learningLevelIndex, next: nextLearningLevel } =
+    getLearningLevel(learningPoints);
+  const learningLevelNumber = learningLevelIndex + 1;
+  const levelStart = learningLevel.min;
+  const levelEnd = nextLearningLevel?.min ?? levelStart;
+  const xpIntoLevel = learningPoints - levelStart;
+  const xpForNext = nextLearningLevel ? levelEnd - levelStart : 0;
+  const levelProgressPercent = nextLearningLevel
+    ? Math.max(0, Math.min(100, Math.round((xpIntoLevel / xpForNext) * 100)))
+    : 100;
+
+  const quests = [
+    {
+      id: "concert-streak",
+      icon: "🎟️",
+      title: "Concert Explorer",
+      subtitle: "Attend concerts to sharpen your profile",
+      progress: concertsAttended,
+      target: 1,
+      reward: 30,
+      href: "/events",
+      cta: "Find concerts",
+    },
+    {
+      id: "quiz-master",
+      icon: "🧠",
+      title: "Quiz Collector",
+      subtitle: "Complete Learn quizzes to earn XP",
+      progress: completedQuizzes,
+      target: 5,
+      reward: 25,
+      href: "/learn",
+      cta: "Continue learning",
+    },
+  ] as const;
 
   const [newlyEarnedBadgeId, setNewlyEarnedBadgeId] = useState<string | null>(
     null,
   );
   const [previewBadgeId, setPreviewBadgeId] = useState<string | null>(null);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isPhotoSheetOpen, setIsPhotoSheetOpen] = useState(false);
   const [overlayFlipped, setOverlayFlipped] = useState(false);
   const overlayBadgeId = newlyEarnedBadgeId ?? previewBadgeId;
 
@@ -388,6 +500,56 @@ export function ProfileContent() {
       document.body.style.overflow = previousOverflow;
     };
   }, [overlayBadgeId]);
+
+  useEffect(() => {
+    if (!session?.user.id) return;
+    const key = `classica-profile-photo:${session.user.id}`;
+    const stored = window.localStorage.getItem(key);
+    setPhotoUrl(stored);
+  }, [session?.user.id]);
+
+  function handlePhotoPick() {
+    fileInputRef.current?.click();
+  }
+
+  function handleRemovePhoto() {
+    if (!session?.user.id) return;
+    const key = `classica-profile-photo:${session.user.id}`;
+    window.localStorage.removeItem(key);
+    setPhotoUrl(null);
+    setPhotoError(null);
+    setIsPhotoSheetOpen(false);
+  }
+
+  function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !session?.user.id) return;
+
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      setPhotoError("Please upload an image file.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setPhotoError("Image is too large. Use 2MB or smaller.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const next = typeof reader.result === "string" ? reader.result : null;
+      if (!next) {
+        setPhotoError("Could not read that image.");
+        return;
+      }
+      const key = `classica-profile-photo:${session.user.id}`;
+      window.localStorage.setItem(key, next);
+      setPhotoUrl(next);
+      setPhotoError(null);
+      setIsPhotoSheetOpen(false);
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function handleShareBadge() {
     if (!newlyEarnedBadge) return;
@@ -429,27 +591,218 @@ export function ProfileContent() {
       <div className="bg-card mt-5 rounded-2xl border p-6 shadow-sm">
         <div className="flex items-start gap-6">
           <div className="flex flex-col items-center">
-            <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-[#F8E8EE]">
-              <span className="text-5xl">🎵</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsPhotoSheetOpen(true)}
+              className="relative flex h-28 w-28 items-center justify-center overflow-visible rounded-full bg-[#F8E8EE] ring-1 ring-black/5"
+              aria-label="Open profile photo options"
+            >
+              <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full">
+                {photoUrl ? (
+                  <Image
+                    src={photoUrl}
+                    alt={`${name} profile photo`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="text-5xl">🎵</span>
+                )}
+              </div>
+              <div className="bg-card/95 absolute right-0 bottom-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide shadow-sm backdrop-blur">
+                LV {learningLevelNumber}
+              </div>
+            </button>
             <p className="text-foreground mt-3 text-xl font-bold">{name}</p>
+            <p className="text-muted-foreground mt-1 text-[11px]">
+              {learningLevel.name}
+            </p>
+            {photoError ? (
+              <p className="mt-1 text-center text-[10px] text-rose-500">
+                {photoError}
+              </p>
+            ) : null}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
           </div>
 
-          <div className="flex flex-1 flex-col justify-center">
-            <div className="py-2.5">
-              <p className="text-foreground text-2xl font-bold">
+          <div className="grid w-full flex-1 grid-cols-2 gap-3">
+            <div className="bg-muted/35 flex min-h-[86px] flex-col justify-between rounded-2xl border p-3">
+              <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
+                <span
+                  aria-hidden
+                  className="bg-background inline-flex size-6 items-center justify-center rounded-full border text-sm"
+                >
+                  🎵
+                </span>
+                Concerts attended
+              </p>
+              <p className="text-foreground text-2xl leading-none font-bold">
                 {concertsAttended}
               </p>
-              <p className="text-muted-foreground text-xs">Concerts Attended</p>
             </div>
-            <div className="bg-border h-px" />
-            <div className="py-2.5">
-              <p className="text-foreground text-2xl font-bold">{daysOnApp}</p>
-              <p className="text-muted-foreground text-xs">Days on Classica</p>
+            <div className="bg-muted/35 flex min-h-[86px] flex-col justify-between rounded-2xl border p-3">
+              <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
+                <span
+                  aria-hidden
+                  className="bg-background inline-flex size-6 items-center justify-center rounded-full border text-sm"
+                >
+                  🔥
+                </span>
+                Streak
+              </p>
+              <p className="text-foreground text-2xl leading-none font-bold">
+                {daysOnApp}
+              </p>
             </div>
           </div>
         </div>
+
+        <div className="mt-4 rounded-xl border bg-linear-to-r from-amber-50/70 via-orange-50/70 to-rose-50/70 p-3 dark:from-amber-900/20 dark:via-orange-900/20 dark:to-rose-900/20">
+          <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px]">
+            <span className="flex items-center gap-1.5 font-semibold">
+              <span aria-hidden>✨</span>
+              {`LV ${learningLevelNumber}`}
+            </span>
+            <span className="text-muted-foreground tabular-nums">
+              {nextLearningLevel
+                ? `${xpIntoLevel}/${xpForNext} XP`
+                : `${learningPoints} XP`}
+            </span>
+          </div>
+          <div className="bg-background/70 h-2.5 w-full overflow-hidden rounded-full border">
+            <div
+              className="h-full rounded-full bg-linear-to-r from-amber-400 via-orange-500 to-rose-500 transition-all"
+              style={{ width: `${levelProgressPercent}%` }}
+            />
+          </div>
+          <p className="text-muted-foreground mt-1.5 text-[10px]">
+            {nextLearningLevel
+              ? `${Math.max(0, xpForNext - xpIntoLevel)} XP left to level up to LV ${learningLevelNumber + 1} ${nextLearningLevel.name}`
+              : "You have unlocked every learning level."}
+          </p>
+        </div>
+
+        <div className="bg-border mt-5 h-px" />
+
+        <div className="mt-5">
+          <h2 className="text-foreground flex items-center gap-2 text-base font-bold">
+            <span
+              aria-hidden
+              className="bg-muted inline-flex size-6 items-center justify-center rounded-full border text-xs"
+            >
+              🎯
+            </span>
+            Daily quests
+          </h2>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Complete these daily quests to earn points and level up.
+          </p>
+          <div className="mt-3 space-y-2.5">
+            {quests.map((quest) => {
+              const clamped = Math.min(quest.progress, quest.target);
+              const percent = Math.round((clamped / quest.target) * 100);
+              const complete = quest.progress >= quest.target;
+              return (
+                <Link
+                  key={quest.id}
+                  href={quest.href}
+                  className="bg-muted/40 hover:bg-muted/60 block rounded-xl border p-3 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <span
+                        aria-hidden
+                        className="bg-background inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-sm"
+                      >
+                        {quest.icon}
+                      </span>
+                      <div>
+                      <p className="text-sm font-semibold">{quest.title}</p>
+                      <p className="text-muted-foreground text-[11px]">
+                        {quest.subtitle}
+                      </p>
+                      </div>
+                    </div>
+                    <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide">
+                      +{quest.reward} XP
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[11px]">
+                    <span className="text-muted-foreground">
+                      {clamped}/{quest.target} complete
+                    </span>
+                    <span className="font-medium">
+                      {complete ? "Completed" : quest.cta}
+                    </span>
+                  </div>
+                  <div className="bg-background mt-1.5 h-1.5 w-full overflow-hidden rounded-full">
+                    <div
+                      className="h-full rounded-full bg-linear-to-r from-emerald-400 to-emerald-600 transition-all"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </div>
+
+      {isPhotoSheetOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
+          <div className="bg-card w-full max-w-[430px] rounded-2xl border p-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <p className="font-semibold">Profile photo</p>
+              <button
+                type="button"
+                onClick={() => setIsPhotoSheetOpen(false)}
+                className="text-muted-foreground hover:text-foreground text-sm"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-3 flex justify-center">
+              <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-[#F8E8EE]">
+                {photoUrl ? (
+                  <Image
+                    src={photoUrl}
+                    alt={`${name} profile photo preview`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="text-5xl">🎵</span>
+                )}
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handlePhotoPick}
+                className="bg-muted/40 hover:bg-muted/60 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors"
+              >
+                {photoUrl ? "Change photo" : "Upload photo"}
+              </button>
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                disabled={!photoUrl}
+                className="rounded-xl border px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-50"
+              >
+                Remove photo
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Your Taste */}
       <Link
@@ -552,16 +905,11 @@ export function ProfileContent() {
             badge={badge}
             isFlipped={false}
             earned={badge.earned}
+            levelNumeral={badge.currentLevel.numeral}
             onFlip={() => openBadgeOverlay(badge.id)}
           />
         ))}
       </div>
-
-      {/* Learning Progress */}
-      <h2 className="text-foreground mt-8 mb-4 text-xl font-bold">
-        Learning Progress
-      </h2>
-      <LearningProgress />
 
       {newlyEarnedBadge && (
         <div className="fixed inset-0 z-[60] backdrop-blur-md">
@@ -620,7 +968,10 @@ export function ProfileContent() {
                   <p className="text-center text-xs leading-5 font-semibold text-[#4A3820]">
                     {overlayBadgeIsUnlocked
                       ? newlyEarnedBadge.achievement
-                      : lockedRequirementText(newlyEarnedBadge)}
+                      : lockedRequirementText({
+                          badge: newlyEarnedBadge,
+                          nextLevel: newlyEarnedBadge.currentLevel,
+                        })}
                   </p>
                 </div>
               </div>
@@ -634,7 +985,10 @@ export function ProfileContent() {
             <p className="mt-2 max-w-sm text-sm text-zinc-200">
               {overlayBadgeIsUnlocked
                 ? newlyEarnedBadge.achievement
-                : lockedRequirementText(newlyEarnedBadge)}
+                : lockedRequirementText({
+                    badge: newlyEarnedBadge,
+                    nextLevel: newlyEarnedBadge.currentLevel,
+                  })}
             </p>
             {overlayBadgeIsUnlocked ? (
               <p className="mt-2 text-xs text-zinc-300">Tap badge to flip</p>
