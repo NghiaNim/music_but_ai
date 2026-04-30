@@ -631,7 +631,14 @@ export default function HomeScreen() {
         <View
           style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 }}
         >
-          <Pressable onPress={() => router.push("/(tabs)/chat" as never)}>
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/(tabs)/chat",
+                params: { mode: "discovery" },
+              })
+            }
+          >
             <View
               style={{
                 flexDirection: "row",

@@ -2,5 +2,16 @@
   "enabledPlugins": {},
   "permissions": {
     "defaultMode": "auto"
-  }
+  },
+  "allow": [
+      "Bash(curl *)",
+      "Bash(node *)",
+      "Bash(pnpm *)",
+      "Bash(turbo *)",
+      "Bash(tsc *)",
+      "Bash(eslint *)",
+      "Bash(prettier *)",
+      "Bash(tailwind *)",
+      "Bash(typescript *)"
+  ]
 }

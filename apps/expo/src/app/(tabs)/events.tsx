@@ -605,7 +605,7 @@ export default function EventsScreen() {
   const liveQuery = useQuery({
     ...trpc.liveEvent.page.queryOptions({
       upcomingOnly: true,
-      limit: 100,
+      limit: 50,
       cursor: 0,
       search: search || undefined,
       genre: genreArg,

@@ -160,6 +160,28 @@ export default function LiveEventDetailScreen() {
             ) : null}
           </View>
 
+          <View className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/30 dark:bg-amber-950/20">
+            <Text className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+              Ask Ton Ton about this event
+            </Text>
+            <Text className="text-muted-foreground mt-1 text-xs">
+              Get listening tips and context before you go.
+            </Text>
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/chat",
+                  params: { mode: "learning", liveEventId: event.id },
+                })
+              }
+              className="mt-3 items-center rounded-xl bg-[#9C1738] py-3 active:opacity-80"
+            >
+              <Text className="text-sm font-semibold text-white">
+                Ask Ton Ton
+              </Text>
+            </Pressable>
+          </View>
+
           {/* Tickets */}
           <View className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/20">
             <Text className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
