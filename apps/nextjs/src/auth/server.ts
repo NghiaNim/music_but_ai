@@ -15,14 +15,16 @@ const authUrl = env.AUTH_URL?.replace(/\/$/, "");
  * lists `https://getclassica.com/...` but the app uses `https://<project>.vercel.app/...`, login fails.
  */
 const baseUrl =
-  authUrl ??
-  (env.VERCEL_ENV === "production"
-    ? env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : "http://localhost:3000"
-    : env.VERCEL_URL
-      ? `https://${env.VERCEL_URL}`
-      : "http://localhost:3000");
+  env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : authUrl ??
+      (env.VERCEL_ENV === "production"
+        ? env.VERCEL_PROJECT_PRODUCTION_URL
+          ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
+          : "http://localhost:3000"
+        : env.VERCEL_URL
+          ? `https://${env.VERCEL_URL}`
+          : "http://localhost:3000");
 
 const productionUrl = authUrl
   ? undefined
