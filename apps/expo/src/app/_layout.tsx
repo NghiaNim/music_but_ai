@@ -23,8 +23,15 @@ export default function RootLayout() {
           },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="sign-in" options={{ title: "Sign in", headerBackTitle: "" }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "Home" }} />
+        <Stack.Screen
+          name="sign-in"
+          options={{
+            title: "Sign in",
+            headerBackTitle: "Back",
+            headerBackButtonDisplayMode: "minimal",
+          }}
+        />
         <Stack.Screen name="profile/taste" options={{ title: "Your taste" }} />
         <Stack.Screen
           name="onboarding/taste"
