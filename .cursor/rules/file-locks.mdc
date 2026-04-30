@@ -32,4 +32,17 @@ Multiple engineers (human + AI) may work on this repo at the same time. Use this
 ## Locked files
 
 <!-- LOCKED-FILES-START -->
+### Expo learn badge parity — 2026-04-29T22:29:00-04:00 — codex
+- packages/validators/src/learn.ts
+- packages/validators/src/index.ts
+- apps/nextjs/src/app/learn/_lib/modules.ts
+- apps/nextjs/src/app/learn/_lib/progress.ts
+- apps/expo/package.json
+- apps/expo/src/app/(tabs)/learn.tsx
+- apps/expo/src/app/learn/[slug].tsx
+- packages/api/src/router/badges.ts
+- packages/api/src/root.ts
+- apps/expo/src/app/(tabs)/profile.tsx
+- apps/nextjs/src/app/profile/_components/profile-content.tsx
+- .cursor/rules/file-locks.mdc
 <!-- LOCKED-FILES-END -->

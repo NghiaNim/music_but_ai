@@ -24,8 +24,16 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="sign-in" options={{ title: "Sign in", headerBackTitle: "" }} />
+        <Stack.Screen name="profile/taste" options={{ title: "Your taste" }} />
+        <Stack.Screen
+          name="onboarding/taste"
+          options={{ title: "Taste onboarding" }}
+        />
+        <Stack.Screen name="tickets" options={{ title: "My tickets" }} />
         <Stack.Screen name="live-event/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="event/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="learn/[slug]" options={{ headerShown: false }} />
         <Stack.Screen name="post/[id]" options={{ title: "Post" }} />
         <Stack.Screen name="waitlist" options={{ title: "Waitlist" }} />
       </Stack>

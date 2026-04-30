@@ -17,6 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { trpc } from "~/utils/api";
+import { pushSignIn, toSignInHref } from "~/utils/auth-redirect";
+import { authClient } from "~/utils/auth";
 
 const BUY_TICKET_REGEX = /\[BUY_TICKET:([a-f0-9-]+)\]/g;
 
@@ -40,6 +42,7 @@ export default function ChatScreen() {
   const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
+  const { data: session } = authClient.useSession();
   const params = useLocalSearchParams<{
     mode?: "discovery" | "learning";
     eventId?: string;
@@ -176,6 +179,24 @@ export default function ChatScreen() {
                     : "Help me understand this event"}
               </Text>
             </View>
+            <Pressable
+              onPress={() =>
+                session?.user
+                  ? router.push("/tickets")
+                  : router.push(toSignInHref("/tickets"))
+              }
+              style={{
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: border,
+                paddingHorizontal: 9,
+                paddingVertical: 6,
+              }}
+            >
+              <Text style={{ color: textPrimary, fontSize: 11, fontWeight: "600" }}>
+                Tickets
+              </Text>
+            </Pressable>
           </View>
           {!eventId && !liveEventId ? (
             <View
@@ -444,7 +465,13 @@ function ChatBubble({
       },
       onError: (err) => {
         if (err.data?.code === "UNAUTHORIZED") {
-          Alert.alert("Sign in required", "Please sign in to purchase tickets.");
+          Alert.alert("Sign in required", "Please sign in to purchase tickets.", [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Sign in",
+              onPress: () => pushSignIn("/(tabs)/chat"),
+            },
+          ]);
           return;
         }
         Alert.alert("Checkout failed", err.message || "Could not open checkout.");

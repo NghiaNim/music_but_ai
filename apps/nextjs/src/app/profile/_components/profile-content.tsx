@@ -17,69 +17,17 @@ import { authClient } from "~/auth/client";
 import { useTRPC } from "~/trpc/react";
 
 type UserEventWithEvent = RouterOutputs["userEvent"]["myEvents"][number];
+type BadgeForUser = RouterOutputs["badges"]["forUser"][number] & { image: string };
 
-const BADGES = [
-  {
-    id: "beethoven",
-    baseLabel: "Beethoven Lover",
-    image: "/badges/badge_beethoven.png",
-    category: "attended" as const,
-    composer: "Beethoven",
-  },
-  {
-    id: "mozart",
-    baseLabel: "Mozart Lover",
-    image: "/badges/badge_mozart.png",
-    category: "attended" as const,
-    composer: "Mozart",
-  },
-  {
-    id: "bach",
-    baseLabel: "Bach Lover",
-    image: "/badges/badge_bach_v2.png",
-    category: "attended" as const,
-    composer: "Bach",
-  },
-  {
-    id: "chopin",
-    baseLabel: "Chopin Lover",
-    image: "/badges/badge_chopin.png",
-    category: "attended" as const,
-    composer: "Chopin",
-  },
-  {
-    id: "baroque",
-    baseLabel: "Baroque Era Enthusiast",
-    image: "/badges/badge_baroque.png",
-    category: "listened" as const,
-  },
-  {
-    id: "romantic",
-    baseLabel: "Romantic Era Enthusiast",
-    image: "/badges/badge_romantic_v3.png",
-    category: "listened" as const,
-  },
-  {
-    id: "classical",
-    baseLabel: "Classical Era Enthusiast",
-    image: "/badges/badge_classical_v3.png",
-    category: "listened" as const,
-  },
-] as const;
-
-type ComposerBadge = Extract<(typeof BADGES)[number], { composer: string }>;
-
-function isComposerBadge(b: (typeof BADGES)[number]): b is ComposerBadge {
-  return "composer" in b;
-}
-
-const BADGE_LEVELS = [
-  { level: 1, numeral: "I", requirement: 3 },
-  { level: 2, numeral: "II", requirement: 6 },
-  { level: 3, numeral: "III", requirement: 9 },
-] as const;
-
-type BadgeLevel = (typeof BADGE_LEVELS)[number];
+const BADGE_IMAGE_BY_KEY: Record<string, string> = {
+  beethoven: "/badges/badge_beethoven.png",
+  mozart: "/badges/badge_mozart.png",
+  bach: "/badges/badge_bach_v2.png",
+  chopin: "/badges/badge_chopin.png",
+  baroque: "/badges/badge_baroque.png",
+  romantic: "/badges/badge_romantic_v3.png",
+  classical: "/badges/badge_classical_v3.png",
+};
 
 const LEARNING_LEVELS = [
   { min: 0, name: "Newcomer" },
@@ -90,14 +38,6 @@ const LEARNING_LEVELS = [
 ] as const;
 
 type LearningLevel = (typeof LEARNING_LEVELS)[number];
-
-function getBadgeLevel(progress: number): BadgeLevel {
-  let current: BadgeLevel = BADGE_LEVELS[0];
-  for (const level of BADGE_LEVELS) {
-    if (progress >= level.requirement) current = level;
-  }
-  return current;
-}
 
 function getLearningLevel(points: number) {
   let current: LearningLevel = LEARNING_LEVELS[0];
@@ -111,29 +51,8 @@ function getLearningLevel(points: number) {
   return { current, currentIndex, next };
 }
 
-function buildAchievementText(input: {
-  badge: (typeof BADGES)[number];
-  requirement: number;
-}): string {
-  if (input.badge.category === "attended") {
-    const composerText = isComposerBadge(input.badge)
-      ? `${input.badge.composer} pieces`
-      : "featured pieces";
-    return `Attend ${input.requirement} concerts featuring ${composerText}`;
-  }
-
-  const eraName = input.badge.baseLabel.replace(" Era Enthusiast", "");
-  return `Listen to ${input.requirement} ${eraName} era pieces`;
-}
-
-function lockedRequirementText(input: {
-  badge: (typeof BADGES)[number];
-  nextLevel: BadgeLevel;
-}): string {
-  return `${buildAchievementText({
-    badge: input.badge,
-    requirement: input.nextLevel.requirement,
-  })} to unlock Level ${input.nextLevel.numeral}.`;
+function lockedRequirementText(input: { requirementText: string }): string {
+  return input.requirementText;
 }
 
 function BadgeCard({
@@ -143,7 +62,7 @@ function BadgeCard({
   levelNumeral,
   onFlip,
 }: {
-  badge: (typeof BADGES)[number] & { achievement: string; label: string };
+  badge: BadgeForUser;
   isFlipped: boolean;
   earned: boolean;
   levelNumeral: string;
@@ -369,6 +288,10 @@ export function ProfileContent() {
     ...trpc.userEvent.myEvents.queryOptions(),
     enabled: isSignedIn,
   });
+  const { data: badges } = useQuery({
+    ...trpc.badges.forUser.queryOptions(),
+    enabled: isSignedIn,
+  });
 
   const attended =
     userEvents?.filter((ue: UserEventWithEvent) => ue.status === "attended") ??
@@ -376,33 +299,11 @@ export function ProfileContent() {
 
   const concertsAttended = attended.length;
 
-  const composerCounts = new Map<string, number>();
-  for (const ue of attended) {
-    const composer = ue.event.program.split(":")[0]?.trim();
-    if (!composer) continue;
-    composerCounts.set(composer, (composerCounts.get(composer) ?? 0) + 1);
-  }
-
-  const badgesWithState = BADGES.map((badge) => {
-    const progress = isComposerBadge(badge)
-      ? (composerCounts.get(badge.composer) ?? 0)
-      : 0;
-    const currentLevel = getBadgeLevel(progress);
-    const nextLevel =
-      BADGE_LEVELS.find((level) => level.level === currentLevel.level + 1) ??
-      currentLevel;
-
+  const badgesWithState: BadgeForUser[] = (badges ?? []).map((badge) => {
+    const fallbackImage = BADGE_IMAGE_BY_KEY.bach ?? "/badges/badge_bach_v2.png";
     return {
       ...badge,
-      progress,
-      currentLevel,
-      nextLevel,
-      earned: progress >= currentLevel.requirement,
-      label: `${badge.baseLabel} ${currentLevel.numeral}`,
-      achievement: buildAchievementText({
-        badge,
-        requirement: currentLevel.requirement,
-      }),
+      image: BADGE_IMAGE_BY_KEY[badge.imageKey] ?? fallbackImage,
     };
   });
 
@@ -1000,8 +901,7 @@ export function ProfileContent() {
                     {overlayBadgeIsUnlocked
                       ? newlyEarnedBadge.achievement
                       : lockedRequirementText({
-                          badge: newlyEarnedBadge,
-                          nextLevel: newlyEarnedBadge.currentLevel,
+                          requirementText: newlyEarnedBadge.requirementText,
                         })}
                   </p>
                 </div>
@@ -1017,8 +917,7 @@ export function ProfileContent() {
               {overlayBadgeIsUnlocked
                 ? newlyEarnedBadge.achievement
                 : lockedRequirementText({
-                    badge: newlyEarnedBadge,
-                    nextLevel: newlyEarnedBadge.currentLevel,
+                    requirementText: newlyEarnedBadge.requirementText,
                   })}
             </p>
             {overlayBadgeIsUnlocked ? (

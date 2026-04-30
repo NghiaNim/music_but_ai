@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "~/utils/api";
 import { trpc } from "~/utils/api";
+import { toSignInHref } from "~/utils/auth-redirect";
 import { authClient } from "~/utils/auth";
 import tonTonAvatar from "../../../assets/ton-ton.png";
 
@@ -403,7 +404,7 @@ function OnboardingCTA({
 
   if (!session) {
     return (
-      <Pressable onPress={() => router.push("/sign-in" as never)}>
+      <Pressable onPress={() => router.push(toSignInHref("/onboarding/taste"))}>
         <View
           style={{
             flexDirection: "row",
@@ -518,32 +519,32 @@ const EXPLORE_CARDS = [
   {
     label: "For Beginners",
     subtitle: "First concert? Start here",
-    bgLight: "#ECFDF5",
-    bgDark: "rgba(6,78,59,0.2)",
+    iconBgLight: "#D1FAE5",
+    iconBgDark: "rgba(6,78,59,0.3)",
     icon: "🌱",
     href: "/(tabs)/events",
   },
   {
     label: "Get a Rec",
     subtitle: "AI-picked just for you",
-    bgLight: "#F5F3FF",
-    bgDark: "rgba(76,29,149,0.2)",
+    iconBgLight: "#EDE9FE",
+    iconBgDark: "rgba(76,29,149,0.3)",
     icon: "✨",
     href: "/(tabs)/chat",
   },
   {
     label: "Learn",
     subtitle: "Classical & jazz 101",
-    bgLight: "#FFFBEB",
-    bgDark: "rgba(120,53,15,0.2)",
+    iconBgLight: "#FDE68A",
+    iconBgDark: "rgba(120,53,15,0.3)",
     icon: "📖",
     href: "/(tabs)/learn",
   },
   {
     label: "My Badges",
     subtitle: "See what you've earned",
-    bgLight: "#F0F9FF",
-    bgDark: "rgba(12,74,110,0.2)",
+    iconBgLight: "#BAE6FD",
+    iconBgDark: "rgba(12,74,110,0.3)",
     icon: "🏆",
     href: "/(tabs)/profile",
   },
@@ -771,34 +772,50 @@ export default function HomeScreen() {
               >
                 <View
                   style={{
-                    width: 160,
-                    height: 176,
+                    width: 128,
+                    height: 144,
                     borderRadius: 16,
                     borderWidth: 1,
                     borderColor: isDark ? "#2D2D2D" : "#E5E7EB",
-                    backgroundColor: isDark ? card.bgDark : card.bgLight,
-                    padding: 16,
-                    gap: 12,
+                    backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
+                    padding: 12,
+                    gap: 8,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 4,
+                    elevation: 2,
                   }}
                 >
-                  <Text style={{ fontSize: 32 }}>{card.icon}</Text>
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: isDark ? card.iconBgDark : card.iconBgLight,
+                    }}
+                  >
+                    <Text style={{ fontSize: 18 }}>{card.icon}</Text>
+                  </View>
                   <View>
                     <Text
                       style={{
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: "600",
                         color: textPrimary,
-                        lineHeight: 20,
+                        lineHeight: 18,
                       }}
                     >
                       {card.label}
                     </Text>
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: 11,
                         color: "#6B7280",
                         marginTop: 4,
-                        lineHeight: 16,
+                        lineHeight: 15,
                       }}
                     >
                       {card.subtitle}

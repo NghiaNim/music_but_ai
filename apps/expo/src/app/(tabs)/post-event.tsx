@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { trpc } from "~/utils/api";
+import { toSignInHref } from "~/utils/auth-redirect";
 import { authClient } from "~/utils/auth";
 
 const GENRES = [
@@ -30,7 +31,7 @@ const GENRES = [
 ] as const;
 
 const DIFFICULTIES = [
-  { value: "beginner", label: "Beginner Friendly" },
+  { value: "beginner", label: "Beginner" },
   { value: "intermediate", label: "Intermediate" },
   { value: "advanced", label: "Advanced" },
 ] as const;
@@ -72,6 +73,16 @@ export default function PostEventScreen() {
   const [price, setPrice] = useState("");
   const [ticketUrl, setTicketUrl] = useState("");
 
+  // ── Theme tokens ────────────────────────────────────────────────────────────
+  const bg = isDark ? "#09090B" : "#FAFAF9";
+  const card = isDark ? "#1A1A1A" : "#FFFFFF";
+  const cardBorder = isDark ? "#27272A" : "#E4E4E7";
+  const textPrimary = isDark ? "#F9FAFB" : "#111827";
+  const textMuted = "#6B7280";
+  const inputBg = isDark ? "#1C1C1C" : "#FFFFFF";
+  const inputBorder = isDark ? "#3F3F46" : "#D4D4D8";
+  const primary = "#9C1738";
+
   const hostedQuery = useQuery({
     ...trpc.event.myHosted.queryOptions(),
     enabled: isSignedIn,
@@ -92,7 +103,7 @@ export default function PostEventScreen() {
 
   function handleSubmit() {
     if (!isSignedIn) {
-      Alert.alert("Sign in required", "Please sign in to post an event.");
+      router.push(toSignInHref("/(tabs)/post-event"));
       return;
     }
     if (
@@ -138,65 +149,155 @@ export default function PostEventScreen() {
     });
   }
 
-  const inputClass = isDark
-    ? "bg-zinc-800 text-white border-zinc-700"
-    : "bg-white text-zinc-900 border-zinc-200";
-
   const timeLabel =
     TIME_OPTIONS.find((o) => o.value === selectedTime)?.label ?? selectedTime;
 
+  // ── Sign-in gate ────────────────────────────────────────────────────────────
+  if (!isSignedIn) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 32,
+          }}
+        >
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: isDark ? "#27272A" : "#F4F4F5",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 20,
+            }}
+          >
+            <Ionicons name="calendar-outline" size={28} color={primary} />
+          </View>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              color: textPrimary,
+              textAlign: "center",
+              marginBottom: 8,
+            }}
+          >
+            Post an Event
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              color: textMuted,
+              textAlign: "center",
+              lineHeight: 20,
+              marginBottom: 28,
+            }}
+          >
+            Sign in to share a concert with the Classica community.
+          </Text>
+          <Pressable
+            onPress={() => router.push(toSignInHref("/(tabs)/post-event"))}
+            style={{ width: "100%" }}
+          >
+            <View
+              style={{
+                alignItems: "center",
+                borderRadius: 14,
+                backgroundColor: primary,
+                paddingVertical: 14,
+              }}
+            >
+              <Text
+                style={{ fontSize: 15, fontWeight: "600", color: "#FFFFFF" }}
+              >
+                Sign in
+              </Text>
+            </View>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
+        style={{ flex: 1 }}
       >
         <ScrollView
-          className="flex-1"
+          style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View className="px-4 pt-4 pb-3">
-            <Text className="text-foreground text-2xl font-bold tracking-tight">
+          <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "700",
+                color: textPrimary,
+                letterSpacing: -0.5,
+              }}
+            >
               Post an Event
             </Text>
-            <Text className="text-muted-foreground mt-1 text-sm">
+            <Text style={{ fontSize: 13, color: textMuted, marginTop: 4 }}>
               Share a concert with the Classica community
             </Text>
           </View>
 
-          {/* Sign-in banner */}
-          {!isSignedIn && (
-            <View className="mx-4 mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/30">
-              <Text className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                Sign in to post an event
-              </Text>
-            </View>
-          )}
-
           {/* My Hosted Events */}
-          {isSignedIn &&
-            hostedQuery.data &&
+          {hostedQuery.data &&
             hostedQuery.data.length > 0 && (
-              <View className="mx-4 mb-4 rounded-2xl border bg-card p-4 shadow-sm">
-                <Text className="text-foreground mb-3 text-sm font-semibold">
+              <View
+                style={{
+                  marginHorizontal: 16,
+                  marginBottom: 16,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: cardBorder,
+                  backgroundColor: card,
+                  padding: 16,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: textPrimary,
+                    marginBottom: 12,
+                  }}
+                >
                   My Hosted Events
                 </Text>
                 {hostedQuery.data.map((ev) => (
                   <View
                     key={ev.id}
-                    className="mb-2 flex-row items-center justify-between"
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 8,
+                    }}
                   >
-                    <View className="mr-2 flex-1">
+                    <View style={{ flex: 1, marginRight: 8 }}>
                       <Text
-                        className="text-foreground text-sm font-medium"
+                        style={{
+                          fontSize: 13,
+                          fontWeight: "500",
+                          color: textPrimary,
+                        }}
                         numberOfLines={1}
                       >
                         {ev.title}
                       </Text>
-                      <Text className="text-muted-foreground text-xs">
+                      <Text style={{ fontSize: 11, color: textMuted, marginTop: 1 }}>
                         {new Date(ev.date).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -205,8 +306,21 @@ export default function PostEventScreen() {
                       </Text>
                     </View>
                     {ev.publicationStatus === "cancelled" && (
-                      <View className="rounded-full bg-red-100 px-2 py-0.5 dark:bg-red-900/30">
-                        <Text className="text-xs font-medium text-red-700 dark:text-red-300">
+                      <View
+                        style={{
+                          borderRadius: 999,
+                          backgroundColor: isDark ? "#450A0A" : "#FEE2E2",
+                          paddingHorizontal: 8,
+                          paddingVertical: 2,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "500",
+                            color: isDark ? "#FCA5A5" : "#991B1B",
+                          }}
+                        >
                           Cancelled
                         </Text>
                       </View>
@@ -216,94 +330,110 @@ export default function PostEventScreen() {
               </View>
             )}
 
-          <View className="gap-4 px-4">
+          {/* Form fields */}
+          <View style={{ paddingHorizontal: 16, gap: 20 }}>
             {/* Title */}
-            <Field label="Event Title" required>
+            <Field label="Event Title" required textPrimary={textPrimary} primary={primary}>
               <TextInput
                 value={title}
                 onChangeText={setTitle}
                 placeholder="e.g. Senior Piano Recital"
                 placeholderTextColor={isDark ? "#555" : "#aaa"}
-                className={`rounded-xl border px-3 py-3 text-sm ${inputClass}`}
+                style={[inputStyle(inputBg, inputBorder, textPrimary)]}
               />
             </Field>
 
             {/* Date + Time */}
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Field label="Date" required>
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Field label="Date" required textPrimary={textPrimary} primary={primary}>
                   <TextInput
                     value={date}
                     onChangeText={setDate}
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor={isDark ? "#555" : "#aaa"}
                     keyboardType="numbers-and-punctuation"
-                    className={`rounded-xl border px-3 py-3 text-sm ${inputClass}`}
+                    style={inputStyle(inputBg, inputBorder, textPrimary)}
                   />
                 </Field>
               </View>
-              <View className="flex-1">
-                <Field label="Time" required>
-                  <Pressable
-                    onPress={() => setShowTimePicker(true)}
-                    className={`rounded-xl border px-3 py-3 ${isDark ? "border-zinc-700 bg-zinc-800" : "border-zinc-200 bg-white"}`}
-                  >
-                    <Text
-                      className={`text-sm ${isDark ? "text-white" : "text-zinc-900"}`}
+              <View style={{ flex: 1 }}>
+                <Field label="Time" required textPrimary={textPrimary} primary={primary}>
+                  <Pressable onPress={() => setShowTimePicker(true)}>
+                    <View
+                      style={{
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: inputBorder,
+                        backgroundColor: inputBg,
+                        paddingHorizontal: 12,
+                        paddingVertical: 12,
+                      }}
                     >
-                      {timeLabel}
-                    </Text>
+                      <Text style={{ fontSize: 13, color: textPrimary }}>
+                        {timeLabel}
+                      </Text>
+                    </View>
                   </Pressable>
                 </Field>
               </View>
             </View>
 
             {/* Venue */}
-            <Field label="Venue" required>
+            <Field label="Venue" required textPrimary={textPrimary} primary={primary}>
               <TextInput
                 value={venue}
                 onChangeText={setVenue}
                 placeholder="e.g. Weill Recital Hall"
                 placeholderTextColor={isDark ? "#555" : "#aaa"}
-                className={`rounded-xl border px-3 py-3 text-sm ${inputClass}`}
+                style={inputStyle(inputBg, inputBorder, textPrimary)}
               />
             </Field>
 
             {/* Venue Address */}
-            <Field label="Venue Address">
+            <Field label="Venue Address" textPrimary={textPrimary} primary={primary}>
               <TextInput
                 value={venueAddress}
                 onChangeText={setVenueAddress}
                 placeholder="e.g. 154 W 57th St, New York, NY"
                 placeholderTextColor={isDark ? "#555" : "#aaa"}
-                className={`rounded-xl border px-3 py-3 text-sm ${inputClass}`}
+                style={inputStyle(inputBg, inputBorder, textPrimary)}
               />
             </Field>
 
             {/* Genre */}
-            <Field label="Genre" required>
-              <View className="flex-row flex-wrap gap-2">
+            <Field label="Genre" required textPrimary={textPrimary} primary={primary}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {GENRES.map((g) => (
                   <Pressable
                     key={g.value}
                     onPress={() => setGenre(g.value)}
-                    className="active:opacity-70"
+                    style={{ opacity: 1 }}
                   >
                     <View
-                      className={`rounded-full px-3 py-1.5 ${
-                        genre === g.value
-                          ? "bg-primary"
-                          : isDark
-                            ? "border border-zinc-700 bg-zinc-800"
-                            : "border border-zinc-200 bg-white"
-                      }`}
+                      style={{
+                        borderRadius: 999,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        backgroundColor:
+                          genre === g.value
+                            ? primary
+                            : isDark
+                              ? "#27272A"
+                              : "#F4F4F5",
+                        borderWidth: genre === g.value ? 0 : 1,
+                        borderColor: isDark ? "#3F3F46" : "#D4D4D8",
+                      }}
                     >
                       <Text
-                        className={`text-xs font-medium ${
-                          genre === g.value
-                            ? "text-white"
-                            : "text-muted-foreground"
-                        }`}
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "500",
+                          color:
+                            genre === g.value
+                              ? "#FFFFFF"
+                              : textMuted,
+                        }}
                       >
                         {g.label}
                       </Text>
@@ -314,29 +444,36 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Audience Level */}
-            <Field label="Audience Level" required>
-              <View className="flex-row gap-2">
+            <Field label="Audience Level" required textPrimary={textPrimary} primary={primary}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
                 {DIFFICULTIES.map((d) => (
                   <Pressable
                     key={d.value}
                     onPress={() => setDifficulty(d.value)}
-                    className="flex-1 active:opacity-70"
+                    style={{ flex: 1 }}
                   >
                     <View
-                      className={`items-center rounded-xl py-2.5 ${
-                        difficulty === d.value
-                          ? "bg-primary"
-                          : isDark
-                            ? "border border-zinc-700 bg-zinc-800"
-                            : "border border-zinc-200 bg-white"
-                      }`}
+                      style={{
+                        alignItems: "center",
+                        borderRadius: 12,
+                        paddingVertical: 10,
+                        backgroundColor:
+                          difficulty === d.value
+                            ? primary
+                            : isDark
+                              ? "#27272A"
+                              : "#F4F4F5",
+                        borderWidth: difficulty === d.value ? 0 : 1,
+                        borderColor: isDark ? "#3F3F46" : "#D4D4D8",
+                      }}
                     >
                       <Text
-                        className={`text-xs font-medium ${
-                          difficulty === d.value
-                            ? "text-white"
-                            : "text-muted-foreground"
-                        }`}
+                        style={{
+                          fontSize: 11,
+                          fontWeight: "500",
+                          color:
+                            difficulty === d.value ? "#FFFFFF" : textMuted,
+                        }}
                       >
                         {d.label}
                       </Text>
@@ -347,34 +484,41 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Category */}
-            <Field label="Category">
-              <View className="flex-row gap-2">
+            <Field label="Category" textPrimary={textPrimary} primary={primary}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
                 {(
                   [
-                    { value: "local", label: "Local / Community" },
-                    { value: "concert", label: "Concert" },
-                  ] as const
+                    { value: "local" as const, label: "Local" },
+                    { value: "concert" as const, label: "Concert" },
+                  ]
                 ).map((c) => (
                   <Pressable
                     key={c.value}
                     onPress={() => setCategory(c.value)}
-                    className="flex-1 active:opacity-70"
+                    style={{ flex: 1 }}
                   >
                     <View
-                      className={`items-center rounded-xl py-2.5 ${
-                        category === c.value
-                          ? "bg-primary"
-                          : isDark
-                            ? "border border-zinc-700 bg-zinc-800"
-                            : "border border-zinc-200 bg-white"
-                      }`}
+                      style={{
+                        alignItems: "center",
+                        borderRadius: 12,
+                        paddingVertical: 10,
+                        backgroundColor:
+                          category === c.value
+                            ? primary
+                            : isDark
+                              ? "#27272A"
+                              : "#F4F4F5",
+                        borderWidth: category === c.value ? 0 : 1,
+                        borderColor: isDark ? "#3F3F46" : "#D4D4D8",
+                      }}
                     >
                       <Text
-                        className={`text-xs font-medium ${
-                          category === c.value
-                            ? "text-white"
-                            : "text-muted-foreground"
-                        }`}
+                        style={{
+                          fontSize: 11,
+                          fontWeight: "500",
+                          color:
+                            category === c.value ? "#FFFFFF" : textMuted,
+                        }}
                       >
                         {c.label}
                       </Text>
@@ -385,7 +529,7 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Program */}
-            <Field label="Program" required>
+            <Field label="Program" required textPrimary={textPrimary} primary={primary}>
               <TextInput
                 value={program}
                 onChangeText={setProgram}
@@ -396,12 +540,15 @@ export default function PostEventScreen() {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
-                className={`min-h-[100px] rounded-xl border px-3 py-3 text-sm ${inputClass}`}
+                style={[
+                  inputStyle(inputBg, inputBorder, textPrimary),
+                  { minHeight: 100 },
+                ]}
               />
             </Field>
 
             {/* Description */}
-            <Field label="Description" required>
+            <Field label="Description" required textPrimary={textPrimary} primary={primary}>
               <TextInput
                 value={description}
                 onChangeText={setDescription}
@@ -410,36 +557,42 @@ export default function PostEventScreen() {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
-                className={`min-h-[100px] rounded-xl border px-3 py-3 text-sm ${inputClass}`}
+                style={[
+                  inputStyle(inputBg, inputBorder, textPrimary),
+                  { minHeight: 100 },
+                ]}
               />
             </Field>
 
             {/* Tickets */}
-            <Field label="Tickets">
+            <Field label="Tickets" textPrimary={textPrimary} primary={primary}>
               <Pressable
                 onPress={() => setIsFree(!isFree)}
-                className="flex-row items-center gap-2 py-1"
+                style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 }}
               >
                 <View
-                  className={`h-5 w-5 items-center justify-center rounded border ${
-                    isFree
-                      ? "border-primary bg-primary"
-                      : isDark
-                        ? "border-zinc-600 bg-zinc-800"
-                        : "border-zinc-300 bg-white"
-                  }`}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 4,
+                    borderWidth: 1.5,
+                    borderColor: isFree ? primary : inputBorder,
+                    backgroundColor: isFree ? primary : inputBg,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
                   {isFree && (
-                    <Ionicons name="checkmark" size={12} color="white" />
+                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
                   )}
                 </View>
-                <Text className="text-foreground text-sm">
+                <Text style={{ fontSize: 13, color: textPrimary }}>
                   This event is free
                 </Text>
               </Pressable>
               {!isFree && (
-                <View className="mt-2 gap-1.5">
-                  <Text className="text-foreground text-xs font-medium">
+                <View style={{ marginTop: 8, gap: 6 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "500", color: textPrimary }}>
                     Ticket price (USD) *
                   </Text>
                   <TextInput
@@ -448,22 +601,22 @@ export default function PostEventScreen() {
                     placeholder="e.g. 15.00"
                     placeholderTextColor={isDark ? "#555" : "#aaa"}
                     keyboardType="decimal-pad"
-                    className={`rounded-xl border px-3 py-3 text-sm ${inputClass}`}
+                    style={inputStyle(inputBg, inputBorder, textPrimary)}
                   />
-                  <Text className="text-muted-foreground text-xs">
+                  <Text style={{ fontSize: 11, color: textMuted }}>
                     Attendees will pay this price through Classica checkout.
                   </Text>
                 </View>
               )}
               {isFree && (
-                <Text className="text-muted-foreground mt-1 text-xs">
+                <Text style={{ fontSize: 11, color: textMuted, marginTop: 4 }}>
                   Attendees won't see a checkout button — just event details.
                 </Text>
               )}
             </Field>
 
             {/* Ticket URL */}
-            <Field label="Ticket / RSVP Link">
+            <Field label="Ticket / RSVP Link" textPrimary={textPrimary} primary={primary}>
               <TextInput
                 value={ticketUrl}
                 onChangeText={setTicketUrl}
@@ -472,9 +625,9 @@ export default function PostEventScreen() {
                 keyboardType="url"
                 autoCapitalize="none"
                 autoCorrect={false}
-                className={`rounded-xl border px-3 py-3 text-sm ${inputClass}`}
+                style={inputStyle(inputBg, inputBorder, textPrimary)}
               />
-              <Text className="text-muted-foreground text-xs">
+              <Text style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>
                 External link where people can get tickets or RSVP
               </Text>
             </Field>
@@ -483,15 +636,22 @@ export default function PostEventScreen() {
             <Pressable
               onPress={handleSubmit}
               disabled={createEvent.isPending}
-              className="active:opacity-80"
             >
               <View
-                className={`flex-row items-center justify-center gap-2 rounded-2xl py-4 ${
-                  createEvent.isPending ? "bg-primary/60" : "bg-primary"
-                }`}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  borderRadius: 16,
+                  paddingVertical: 16,
+                  backgroundColor: createEvent.isPending
+                    ? primary + "99"
+                    : primary,
+                }}
               >
                 {createEvent.isPending ? (
-                  <Text className="text-base font-semibold text-white">
+                  <Text style={{ fontSize: 15, fontWeight: "600", color: "#FFFFFF" }}>
                     Posting...
                   </Text>
                 ) : (
@@ -499,9 +659,9 @@ export default function PostEventScreen() {
                     <Ionicons
                       name="add-circle-outline"
                       size={18}
-                      color="white"
+                      color="#FFFFFF"
                     />
-                    <Text className="text-base font-semibold text-white">
+                    <Text style={{ fontSize: 15, fontWeight: "600", color: "#FFFFFF" }}>
                       Post Event
                     </Text>
                   </>
@@ -520,25 +680,38 @@ export default function PostEventScreen() {
         onRequestClose={() => setShowTimePicker(false)}
       >
         <Pressable
-          className="flex-1 justify-end bg-black/40"
           onPress={() => setShowTimePicker(false)}
+          style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" }}
         >
           <Pressable onPress={(e) => e.stopPropagation()}>
             <View
-              className={`rounded-t-2xl px-4 pb-8 pt-4 ${isDark ? "bg-zinc-900" : "bg-white"}`}
+              style={{
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                backgroundColor: isDark ? "#18181B" : "#FFFFFF",
+                paddingHorizontal: 16,
+                paddingTop: 16,
+                paddingBottom: 40,
+              }}
             >
-              <View className="mb-3 flex-row items-center justify-between">
-                <Text className="text-foreground text-base font-semibold">
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 12,
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: "600", color: textPrimary }}>
                   Select Time
                 </Text>
                 <Pressable onPress={() => setShowTimePicker(false)}>
-                  <Text className="text-primary text-sm font-medium">Done</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "500", color: primary }}>
+                    Done
+                  </Text>
                 </Pressable>
               </View>
-              <ScrollView
-                style={{ maxHeight: 260 }}
-                showsVerticalScrollIndicator={false}
-              >
+              <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
                 {TIME_OPTIONS.map((opt) => (
                   <Pressable
                     key={opt.value}
@@ -546,21 +719,25 @@ export default function PostEventScreen() {
                       setSelectedTime(opt.value);
                       setShowTimePicker(false);
                     }}
-                    className="active:opacity-60"
                   >
                     <View
-                      className={`rounded-lg px-3 py-3 ${
-                        selectedTime === opt.value
-                          ? "bg-primary/10"
-                          : "bg-transparent"
-                      }`}
+                      style={{
+                        borderRadius: 8,
+                        paddingHorizontal: 12,
+                        paddingVertical: 12,
+                        backgroundColor:
+                          selectedTime === opt.value
+                            ? primary + "18"
+                            : "transparent",
+                      }}
                     >
                       <Text
-                        className={`text-sm font-medium ${
-                          selectedTime === opt.value
-                            ? "text-primary"
-                            : "text-foreground"
-                        }`}
+                        style={{
+                          fontSize: 13,
+                          fontWeight: "500",
+                          color:
+                            selectedTime === opt.value ? primary : textPrimary,
+                        }}
                       >
                         {opt.label}
                       </Text>
@@ -576,20 +753,39 @@ export default function PostEventScreen() {
   );
 }
 
+function inputStyle(bg: string, border: string, color: string) {
+  return {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: border,
+    backgroundColor: bg,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 13,
+    color,
+  };
+}
+
 function Field({
   label,
   required,
+  textPrimary,
+  primary,
   children,
 }: {
   label: string;
   required?: boolean;
+  textPrimary: string;
+  primary: string;
   children: React.ReactNode;
 }) {
   return (
-    <View className="gap-1.5">
-      <Text className="text-foreground text-sm font-medium">
+    <View style={{ gap: 6 }}>
+      <Text style={{ fontSize: 13, fontWeight: "500", color: textPrimary }}>
         {label}
-        {required && <Text className="text-primary"> *</Text>}
+        {required && (
+          <Text style={{ color: primary }}> *</Text>
+        )}
       </Text>
       {children}
     </View>

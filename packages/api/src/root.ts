@@ -1,4 +1,5 @@
 import { authRouter } from "./router/auth";
+import { badgesRouter } from "./router/badges";
 import { chatRouter } from "./router/chat";
 import { eventRouter } from "./router/event";
 import { liveEventRouter } from "./router/live-event";
@@ -14,6 +15,7 @@ import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   auth: authRouter,
+  badges: badgesRouter,
   chat: chatRouter,
   event: eventRouter,
   liveEvent: liveEventRouter,

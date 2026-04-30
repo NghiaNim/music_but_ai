@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Dimensions,
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -10,18 +10,21 @@ import {
   useColorScheme,
   View,
 } from "react-native";
-import Animated, {
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
-import { useNavigation } from "expo-router";
+import { useRouter } from "expo-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+
 import * as SecureStore from "expo-secure-store";
 
+import {
+  COMPLETED_KEY,
+  getLearningLevel,
+  POINTS_KEY,
+  getStoredNumber,
+} from "@acme/validators";
+
+import { trpc } from "~/utils/api";
+import { toSignInHref } from "~/utils/auth-redirect";
 import { authClient } from "~/utils/auth";
 import bachBadgeImage from "../../../assets/badges/badge_bach_v2.png";
 import classicalBadgeImage from "../../../assets/badges/badge_classical_v3.png";
@@ -31,473 +34,172 @@ import beethovenBadgeImage from "../../../assets/badges/beethoven_badge.png";
 import chopinBadgeImage from "../../../assets/badges/chopin_badge.png";
 import mozartBadgeImage from "../../../assets/badges/mozart_badge.png";
 
-const STATS = [
-  { value: "24", label: "Concerts Attended" },
-  { value: "142", label: "Days on the App" },
-  { value: "1,280", label: "Live Pieces Listened" },
-];
 
-const BADGE_IMAGES = {
+const BADGE_IMAGES: Record<string, number> = {
   beethoven: beethovenBadgeImage,
   mozart: mozartBadgeImage,
+  bach: bachBadgeImage,
   chopin: chopinBadgeImage,
   baroque: baroqueBadgeImage,
   romantic: romanticBadgeImage,
   classical: classicalBadgeImage,
-  bach: bachBadgeImage,
 };
 
-interface BadgeData {
-  id: string;
-  label: string;
-  image: number;
-  dateEarned: string;
-  achievement: string;
-}
-
-const BADGES: BadgeData[] = [
-  {
-    id: "beethoven",
-    label: "Beethoven\nLover",
-    image: BADGE_IMAGES.beethoven,
-    dateEarned: "Jan 12, 2026",
-    achievement: "Attended 3 concerts featuring Beethoven pieces",
-  },
-  {
-    id: "mozart",
-    label: "Mozart\nLover",
-    image: BADGE_IMAGES.mozart,
-    dateEarned: "Feb 3, 2026",
-    achievement: "Attended 3 concerts featuring Mozart pieces",
-  },
-  {
-    id: "bach",
-    label: "Bach\nLover",
-    image: BADGE_IMAGES.bach,
-    dateEarned: "Feb 18, 2026",
-    achievement: "Attended 3 concerts featuring Bach pieces",
-  },
-  {
-    id: "chopin",
-    label: "Chopin\nLover",
-    image: BADGE_IMAGES.chopin,
-    dateEarned: "Dec 5, 2025",
-    achievement: "Attended 3 concerts featuring Chopin pieces",
-  },
-  {
-    id: "baroque",
-    label: "Baroque Era\nEnthusiast",
-    image: BADGE_IMAGES.baroque,
-    dateEarned: "Nov 20, 2025",
-    achievement: "Listened to 10 pieces written in the Baroque era",
-  },
-  {
-    id: "romantic",
-    label: "Romantic Era\nEnthusiast",
-    image: BADGE_IMAGES.romantic,
-    dateEarned: "Jan 28, 2026",
-    achievement: "Listened to 10 pieces written in the Romantic era",
-  },
-  {
-    id: "classical",
-    label: "Classical Era\nEnthusiast",
-    image: BADGE_IMAGES.classical,
-    dateEarned: "Feb 10, 2026",
-    achievement: "Listened to 10 pieces written in the Classical era",
-  },
-];
-
-function lockedRequirementText(input: { achievement: string }): string {
-  const text = input.achievement.trim();
-  if (text.startsWith("Attended ")) {
-    return `Attend ${text.slice("Attended ".length)} to unlock this badge.`;
-  }
-  if (text.startsWith("Listened to ")) {
-    return `Listen to ${text.slice("Listened to ".length)} to unlock this badge.`;
-  }
-  return "Complete requirements to unlock this badge.";
-}
-
-const cardShadow = {
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 12,
-  elevation: 3,
-};
-
-const screenWidth = Dimensions.get("window").width;
-const badgeCardWidth = (screenWidth - 20 * 2 - 14) / 2;
-
-function BadgeCard({
-  badge,
-  earned,
-  isFlipped,
-  onFlip,
+function NavCard({
+  title,
+  subtitle,
+  onPress,
+  emoji,
+  isDark,
 }: {
-  badge: BadgeData;
-  earned: boolean;
-  isFlipped: boolean;
-  onFlip: () => void;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  emoji: string;
+  isDark: boolean;
 }) {
-  const rotation = useSharedValue(0);
-  useEffect(() => {
-    rotation.value = withTiming(isFlipped ? 180 : 0, { duration: 700 });
-  }, [isFlipped, rotation]);
-
-  const frontStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 800 },
-      { rotateY: `${interpolate(rotation.value, [0, 180], [0, 180])}deg` },
-    ],
-    backfaceVisibility: "hidden" as const,
-  }));
-
-  const backStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 800 },
-      { rotateY: `${interpolate(rotation.value, [0, 180], [180, 360])}deg` },
-    ],
-    backfaceVisibility: "hidden" as const,
-  }));
-
   return (
     <Pressable
-      onPress={onFlip}
-      style={[
-        cardShadow,
-        {
-          width: badgeCardWidth,
-          marginBottom: 14,
-          alignItems: "center",
-          borderRadius: 16,
-          paddingTop: 20,
-          paddingBottom: 16,
-          backgroundColor: "#FFFFFF",
-        },
-      ]}
+      onPress={onPress}
+      style={{
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: isDark ? "#2D2D2D" : "#E5E7EB",
+        backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
+        padding: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+      }}
     >
-      <View style={{ width: 116, height: 116 }}>
-        {/* Front */}
-        <Animated.View
-          style={[
-            frontStyle,
-            { position: "absolute", width: 116, height: 116 },
-          ]}
-        >
-          <View
-            style={{
-              width: 116,
-              height: 116,
-              borderRadius: 58,
-              borderWidth: 3,
-              borderColor: "#DCBB7D",
-              overflow: "hidden",
-            }}
-          >
-            <Image
-              source={badge.image}
-              style={{ width: 110, height: 110, borderRadius: 55 }}
-              resizeMode="cover"
-            />
-          </View>
-          <View
-            style={{
-              position: "absolute",
-              top: 8,
-              right: 12,
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: "rgba(255,255,255,0.9)",
-            }}
-          />
-          <View
-            style={{
-              position: "absolute",
-              bottom: 16,
-              left: 10,
-              width: 5,
-              height: 5,
-              borderRadius: 2.5,
-              backgroundColor: "rgba(255,255,255,0.7)",
-            }}
-          />
-        </Animated.View>
-
-        {/* Back */}
-        <Animated.View
-          style={[
-            backStyle,
-            {
-              position: "absolute",
-              width: 116,
-              height: 116,
-              borderRadius: 58,
-              backgroundColor: "#DCBB7D",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 20,
-            },
-          ]}
-        >
-          {/* Glare streak top-left */}
-          <View
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 14,
-              width: 28,
-              height: 6,
-              backgroundColor: "rgba(255,255,255,0.35)",
-              borderRadius: 3,
-              transform: [{ rotate: "-40deg" }],
-            }}
-          />
-          {/* Glare dot top-right */}
-          <View
-            style={{
-              position: "absolute",
-              top: 18,
-              right: 20,
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: "rgba(255,255,255,0.4)",
-            }}
-          />
-          {/* Glare arc bottom */}
-          <View
-            style={{
-              position: "absolute",
-              bottom: 8,
-              right: 24,
-              width: 20,
-              height: 4,
-              backgroundColor: "rgba(255,255,255,0.25)",
-              borderRadius: 2,
-              transform: [{ rotate: "30deg" }],
-            }}
-          />
-          <Text
-            style={{
-              color: "#4A3820",
-              fontSize: 10,
-              fontWeight: "700",
-              textAlign: "center",
-              lineHeight: 14,
-            }}
-          >
-            {badge.achievement}
-          </Text>
-          <View
-            style={{
-              width: 30,
-              height: 1,
-              backgroundColor: "#A8894D",
-              marginVertical: 6,
-              borderRadius: 1,
-            }}
-          />
-          <Text
-            style={{
-              color: "#5C4428",
-              fontSize: 9,
-              fontWeight: "600",
-              textAlign: "center",
-            }}
-          >
-            {badge.dateEarned}
-          </Text>
-        </Animated.View>
-      </View>
-
-      <Text
+      <View
         style={{
-          fontSize: 14,
-          fontWeight: "600",
-          color: "#111827",
-          textAlign: "center",
-          marginTop: 12,
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: isDark ? "rgba(6,78,59,0.25)" : "#D1FAE5",
         }}
       >
-        {badge.label}
-      </Text>
-      {!earned && (
-        <Text
-          style={{
-            fontSize: 10,
-            color: "#6B7280",
-            textAlign: "center",
-            marginTop: 4,
-            textTransform: "uppercase",
-          }}
-        >
-          Locked
+        <Text style={{ fontSize: 18 }}>{emoji}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: isDark ? "#F9FAFB" : "#111827", fontSize: 14, fontWeight: "600" }}>
+          {title}
         </Text>
-      )}
+        <Text style={{ marginTop: 2, color: "#6B7280", fontSize: 12 }}>{subtitle}</Text>
+      </View>
+      <Text style={{ color: "#9CA3AF", fontSize: 18 }}>›</Text>
     </Pressable>
   );
 }
 
 export default function ProfileScreen() {
-  const navigation = useNavigation();
-  const colorScheme = useColorScheme();
+  const router = useRouter();
+  const isDark = useColorScheme() === "dark";
   const { data: session } = authClient.useSession();
-  const name = session?.user.name ?? "Guest";
-  const [newlyEarnedBadgeId, setNewlyEarnedBadgeId] = useState<string | null>(
-    null,
-  );
-  const [previewBadgeId, setPreviewBadgeId] = useState<string | null>(null);
-  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
-  const [overlayFlipped, setOverlayFlipped] = useState(false);
-  const popupScale = useSharedValue(0.92);
-  const popupOpacity = useSharedValue(0);
-  const badgeRotation = useSharedValue(0);
-  const overlayFlipRotation = useSharedValue(0);
+  const userName = session?.user.name ?? "Guest";
+  const isSignedIn = !!session?.user;
+
+  const { data: tasteProfile } = useQuery({
+    ...trpc.tasteProfile.get.queryOptions(),
+    enabled: isSignedIn,
+  });
+  const { data: userEvents } = useQuery({
+    ...trpc.userEvent.myEvents.queryOptions(),
+    enabled: isSignedIn,
+  });
+  const { data: orders } = useQuery({
+    ...trpc.ticket.myOrders.queryOptions(),
+    enabled: isSignedIn,
+  });
+  const { data: badges } = useQuery({
+    ...trpc.badges.forUser.queryOptions(),
+    enabled: isSignedIn,
+  });
+  const [activeBadgeId, setActiveBadgeId] = useState<string | null>(null);
+  const [learningPoints, setLearningPoints] = useState(0);
 
   useEffect(() => {
-    const userId = session?.user.id;
-    if (!userId) return;
+    void (async () => {
+      const [pointsRaw, completedRaw] = await Promise.all([
+        SecureStore.getItemAsync(POINTS_KEY),
+        SecureStore.getItemAsync(COMPLETED_KEY),
+      ]);
+      setLearningPoints(getStoredNumber(pointsRaw));
+      void completedRaw;
+    })();
+  }, []);
+  const activeBadge = badges?.find((badge) => badge.id === activeBadgeId) ?? null;
 
-    let cancelled = false;
-    const storageKey = `classica-earned-badges:${userId}`;
-    const earnedNow = BADGES.filter((b) => b.id === "bach").map((b) => b.id);
+  const signOut = useMutation({
+    mutationFn: async () => {
+      await authClient.signOut();
+    },
+    onSuccess: () => {
+      router.replace("/(tabs)");
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : "Could not sign out right now.";
+      Alert.alert("Sign out failed", message);
+    },
+  });
 
-    const checkNewlyEarned = async () => {
-      const prevRaw = await SecureStore.getItemAsync(storageKey);
-      const prev = prevRaw ? (JSON.parse(prevRaw) as string[]) : [];
-      const newlyEarned = earnedNow.find((id) => !prev.includes(id));
+  const attendedCount =
+    userEvents?.filter((event) => event.status === "attended").length ?? 0;
 
-      if (!cancelled && newlyEarned) {
-        setNewlyEarnedBadgeId(newlyEarned);
-        setShareFeedback(null);
-      }
+  // Days on app from first attended event
+  const firstEvent = userEvents?.find((e) => e.status === "attended");
+  const createdAt = firstEvent ? new Date(firstEvent.createdAt) : undefined;
+  const [asOf] = useState(() => Date.now());
+  const daysOnApp = createdAt
+    ? Math.max(1, Math.floor((asOf - createdAt.getTime()) / 86_400_000))
+    : 0;
 
-      await SecureStore.setItemAsync(storageKey, JSON.stringify(earnedNow));
-    };
+  const { current: learningLevel, currentIndex, next: nextLevel } = getLearningLevel(learningPoints);
+  const levelNumber = currentIndex + 1;
+  const xpIntoLevel = learningPoints - learningLevel.min;
+  const xpForNext = nextLevel ? nextLevel.min - learningLevel.min : 0;
+  const levelPct = nextLevel ? Math.round((xpIntoLevel / xpForNext) * 100) : 100;
 
-    void checkNewlyEarned();
-    return () => {
-      cancelled = true;
-    };
-  }, [session?.user.id]);
+  const quests = [
+    {
+      id: "concerts",
+      icon: "🎟️",
+      title: "Concert Explorer",
+      subtitle: "Attend concerts to sharpen your profile",
+      progress: attendedCount,
+      target: 1,
+      reward: 30,
+      href: "/(tabs)/events" as const,
+      cta: "Find concerts",
+      color: "#BE123C",
+      bgColor: isDark ? "rgba(190,18,60,0.12)" : "#FFF1F2",
+      borderColor: isDark ? "rgba(190,18,60,0.3)" : "#FFE4E6",
+    },
+    {
+      id: "quizzes",
+      icon: "🧠",
+      title: "Quiz Collector",
+      subtitle: "Complete Learn quizzes to earn XP",
+      progress: 0,
+      target: 5,
+      reward: 25,
+      href: "/(tabs)/learn" as const,
+      cta: "Continue learning",
+      color: "#7C3AED",
+      bgColor: isDark ? "rgba(124,58,237,0.12)" : "#F5F3FF",
+      borderColor: isDark ? "rgba(124,58,237,0.3)" : "#EDE9FE",
+    },
+  ] as const;
 
-  const overlayBadgeId = newlyEarnedBadgeId ?? previewBadgeId;
-  const isUnlockOverlay = newlyEarnedBadgeId != null;
-  const overlayBadge =
-    BADGES.find((badge) => badge.id === overlayBadgeId) ?? null;
-  const overlayBadgeIsUnlocked = overlayBadge?.id === "bach";
-
-  useEffect(() => {
-    if (!overlayBadgeId) return;
-    popupScale.value = 0.92;
-    popupOpacity.value = 0;
-    popupScale.value = withSpring(1, { damping: 15, stiffness: 180 });
-    popupOpacity.value = withTiming(1, { duration: 220 });
-  }, [overlayBadgeId, popupOpacity, popupScale]);
-
-  useEffect(() => {
-    if (!overlayBadgeId) return;
-    const base = isUnlockOverlay ? 360 : 0;
-    const target = base + (overlayBadgeIsUnlocked && overlayFlipped ? 180 : 0);
-    badgeRotation.value = withTiming(target, {
-      duration: isUnlockOverlay && !overlayFlipped ? 1200 : 700,
-    });
-  }, [
-    badgeRotation,
-    isUnlockOverlay,
-    overlayBadgeId,
-    overlayBadgeIsUnlocked,
-    overlayFlipped,
-  ]);
-
-  const popupStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: popupScale.value }],
-    opacity: popupOpacity.value,
-  }));
-  const badgeSpinStyle = useAnimatedStyle(() => ({
-    transform: [{ perspective: 900 }, { rotateY: `${badgeRotation.value}deg` }],
-  }));
-  const overlayFrontStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 900 },
-      {
-        rotateY: `${interpolate(overlayFlipRotation.value, [0, 180], [0, 180])}deg`,
-      },
-    ],
-    backfaceVisibility: "hidden" as const,
-  }));
-  const overlayBackStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 900 },
-      {
-        rotateY: `${interpolate(overlayFlipRotation.value, [0, 180], [180, 360])}deg`,
-      },
-    ],
-    backfaceVisibility: "hidden" as const,
-  }));
-
-  const handleShareBadge = async () => {
-    if (!overlayBadge) return;
-    const message = `I just earned the "${overlayBadge.label.replace("\n", " ")}" badge on Classica! https://www.getclassica.com`;
-
-    try {
-      await Share.share({
-        message,
-      });
-      setShareFeedback("Shared!");
-    } catch {
-      setShareFeedback("Could not share right now.");
-    }
-  };
-
-  const openBadgeOverlay = (badgeId: string) => {
-    setPreviewBadgeId(badgeId);
-    setOverlayFlipped(false);
-    setShareFeedback(null);
-  };
-
-  const closeBadgeOverlay = () => {
-    setNewlyEarnedBadgeId(null);
-    setPreviewBadgeId(null);
-    setOverlayFlipped(false);
-  };
-
-  const handleOverlayBadgePress = () => {
-    if (!overlayBadgeIsUnlocked) return;
-    setOverlayFlipped((prev) => {
-      const next = !prev;
-      overlayFlipRotation.value = withTiming(next ? 180 : 0, {
-        duration: 700,
-      });
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    const parent = navigation.getParent();
-    if (!parent) return;
-    const isDark = colorScheme === "dark";
-
-    parent.setOptions({
-      tabBarStyle: overlayBadgeId
-        ? { display: "none" }
-        : {
-            backgroundColor: isDark ? "#111" : "#FFFFFF",
-            borderTopColor: isDark ? "#222" : "#F0F0F0",
-            height: 88,
-            paddingBottom: 28,
-            paddingTop: 8,
-          },
-    });
-  }, [colorScheme, navigation, overlayBadgeId]);
-
-  const isDark = colorScheme === "dark";
   const bg = isDark ? "#111111" : "#FFFAEF";
   const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
   const border = isDark ? "#2D2D2D" : "#E5E7EB";
   const textPrimary = isDark ? "#F9FAFB" : "#111827";
+  const textMuted = "#6B7280";
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
@@ -505,227 +207,481 @@ export default function ProfileScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={!overlayBadge}
       >
-        <Text
+        {/* ── Profile card ── */}
+        <View
           style={{
-            fontSize: 28,
-            fontWeight: "700",
-            color: textPrimary,
+            marginHorizontal: 16,
             marginTop: 16,
-            paddingHorizontal: 20,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: border,
+            backgroundColor: cardBg,
+            overflow: "hidden",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 12,
+            elevation: 3,
           }}
         >
-          Profile
-        </Text>
+          {/* Gradient banner */}
+          <View style={{ height: 72, backgroundColor: "#9C1738" }} />
 
-        <View
-          style={[
-            cardShadow,
-            {
-              backgroundColor: cardBg,
-              borderWidth: 1,
-              borderColor: border,
-              marginHorizontal: 20,
-              marginTop: 20,
-              borderRadius: 16,
-              padding: 24,
-            },
-          ]}
-        >
-          <View className="flex-row">
-            <View style={{ marginRight: 24, alignItems: "center" }}>
+          <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+            {/* Avatar + stats row */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginTop: -36,
+                marginBottom: 12,
+              }}
+            >
               <View
                 style={{
-                  width: 112,
-                  height: 112,
-                  borderRadius: 56,
-                  overflow: "hidden",
+                  width: 72,
+                  height: 72,
+                  borderRadius: 36,
                   alignItems: "center",
                   justifyContent: "center",
                   backgroundColor: "#F8E8EE",
+                  borderWidth: 3,
+                  borderColor: cardBg,
                 }}
               >
-                <Text style={{ fontSize: 48 }}>🎵</Text>
+                <Text style={{ fontSize: 30 }}>{tasteProfile?.badgeEmoji ?? "🎵"}</Text>
               </View>
-              <Text
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 44 }}>
+                <View
+                  style={{
+                    alignItems: "center",
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: border,
+                    backgroundColor: cardBg,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    minWidth: 68,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, color: textMuted }}>🎵 Concerts</Text>
+                  <Text style={{ fontSize: 20, fontWeight: "700", color: textPrimary, marginTop: 2 }}>
+                    {attendedCount}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    alignItems: "center",
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: border,
+                    backgroundColor: cardBg,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    minWidth: 68,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, color: textMuted }}>🔥 Streak</Text>
+                  <Text style={{ fontSize: 20, fontWeight: "700", color: textPrimary, marginTop: 2 }}>
+                    {daysOnApp}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Name + level */}
+            <Text style={{ fontSize: 20, fontWeight: "700", color: textPrimary }}>
+              {userName}
+            </Text>
+            <Text style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>
+              {learningLevel.name}
+            </Text>
+
+            {/* Sign out */}
+            {isSignedIn && (
+              <Pressable
+                disabled={signOut.isPending}
+                onPress={() => signOut.mutate()}
                 style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: textPrimary,
-                  marginTop: 12,
+                  marginTop: 8,
+                  alignSelf: "flex-start",
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: border,
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
                 }}
               >
-                {name}
+                <Text style={{ color: textPrimary, fontSize: 11, fontWeight: "600" }}>
+                  {signOut.isPending ? "Signing out..." : "Sign out"}
+                </Text>
+              </Pressable>
+            )}
+
+            {!isSignedIn && (
+              <Pressable
+                onPress={() => router.push(toSignInHref("/(tabs)/profile"))}
+                style={{
+                  marginTop: 10,
+                  borderRadius: 10,
+                  backgroundColor: "#9C1738",
+                  paddingVertical: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>
+                  Sign in
+                </Text>
+              </Pressable>
+            )}
+
+            {/* XP progress bar */}
+            <View
+              style={{
+                marginTop: 16,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: isDark ? "rgba(251,191,36,0.2)" : "#FDE68A",
+                backgroundColor: isDark ? "rgba(120,53,15,0.15)" : "rgba(255,251,235,0.9)",
+                padding: 14,
+              }}
+            >
+              <View
+                style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: "700", color: textPrimary }}>
+                  ✨ LV {levelNumber} · {learningLevel.name}
+                </Text>
+                <Text style={{ fontSize: 11, color: textMuted }}>
+                  {nextLevel ? `${xpIntoLevel}/${xpForNext} XP` : `${learningPoints} XP`}
+                </Text>
+              </View>
+              <View
+                style={{
+                  height: 8,
+                  borderRadius: 999,
+                  backgroundColor: isDark ? "#2D2D2D" : "#F3F4F6",
+                  overflow: "hidden",
+                }}
+              >
+                <View
+                  style={{
+                    height: "100%",
+                    borderRadius: 999,
+                    width: `${levelPct}%`,
+                    backgroundColor: "#F59E0B",
+                  }}
+                />
+              </View>
+              <Text style={{ fontSize: 10, color: textMuted, marginTop: 6 }}>
+                {nextLevel
+                  ? `${Math.max(0, xpForNext - xpIntoLevel)} XP left to reach LV ${levelNumber + 1} ${nextLevel.name}`
+                  : "You have unlocked every learning level."}
               </Text>
             </View>
 
-            <View style={{ flex: 1, justifyContent: "center" }}>
-              {STATS.map((stat, index) => (
-                <View key={stat.label}>
-                  <View style={{ paddingVertical: 10 }}>
-                    <Text
-                      style={{
-                        fontSize: 24,
-                        fontWeight: "700",
-                        color: textPrimary,
-                      }}
-                    >
-                      {stat.value}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: "#6B7280" }}>
-                      {stat.label}
-                    </Text>
-                  </View>
-                  {index < STATS.length - 1 && (
+            {/* Divider */}
+            <View style={{ height: 1, backgroundColor: border, marginVertical: 16 }} />
+
+            {/* Daily quests */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: isDark ? "rgba(190,18,60,0.2)" : "#FFE4E6",
+                }}
+              >
+                <Text style={{ fontSize: 14 }}>🎯</Text>
+              </View>
+              <Text style={{ fontSize: 15, fontWeight: "700", color: textPrimary }}>
+                Daily quests
+              </Text>
+            </View>
+            <Text style={{ fontSize: 12, color: textMuted, marginBottom: 12 }}>
+              Complete these to earn points and level up.
+            </Text>
+
+            {quests.map((quest) => {
+              const clamped = Math.min(quest.progress, quest.target);
+              const pct = Math.round((clamped / quest.target) * 100);
+              const done = quest.progress >= quest.target;
+              return (
+                <Pressable
+                  key={quest.id}
+                  onPress={() => router.push(quest.href as never)}
+                  style={{
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: quest.borderColor,
+                    backgroundColor: quest.bgColor,
+                    padding: 14,
+                    marginBottom: 10,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <View style={{ flexDirection: "row", gap: 12, flex: 1 }}>
+                      <View
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: quest.borderColor,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Text style={{ fontSize: 16 }}>{quest.icon}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 13, fontWeight: "600", color: textPrimary }}>
+                          {quest.title}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>
+                          {quest.subtitle}
+                        </Text>
+                      </View>
+                    </View>
                     <View
                       style={{
-                        height: 1,
-                        backgroundColor: isDark ? "#2D2D2D" : "#E5E7EB",
+                        borderRadius: 999,
+                        backgroundColor: quest.color,
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        alignSelf: "flex-start",
+                      }}
+                    >
+                      <Text style={{ fontSize: 10, fontWeight: "700", color: "#FFFFFF" }}>
+                        +{quest.reward} XP
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}
+                  >
+                    <Text style={{ fontSize: 11, color: textMuted }}>
+                      {clamped}/{quest.target} complete
+                    </Text>
+                    <Text style={{ fontSize: 11, fontWeight: "600", color: textPrimary }}>
+                      {done ? "✓ Completed" : quest.cta}
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      height: 6,
+                      borderRadius: 999,
+                      backgroundColor: isDark ? "#2D2D2D" : "rgba(0,0,0,0.08)",
+                      overflow: "hidden",
+                      marginTop: 6,
+                    }}
+                  >
+                    <View
+                      style={{
+                        height: "100%",
+                        borderRadius: 999,
+                        width: `${pct}%`,
+                        backgroundColor: quest.color,
                       }}
                     />
-                  )}
-                </View>
-              ))}
-            </View>
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 
+        {/* ── Quick-links ── */}
+        <View style={{ marginHorizontal: 16, marginTop: 12, gap: 10 }}>
+          <NavCard
+            isDark={isDark}
+            emoji="🎵"
+            title={tasteProfile?.archetype ?? "Your taste"}
+            subtitle={
+              tasteProfile?.archetype
+                ? (tasteProfile.tags ?? []).slice(0, 3).join(" · ") ||
+                  "Your archetype, dimensions, and sound profile"
+                : "Your archetype, dimensions, and sound profile"
+            }
+            onPress={() =>
+              isSignedIn
+                ? router.push("/profile/taste")
+                : router.push(toSignInHref("/profile/taste"))
+            }
+          />
+          <NavCard
+            isDark={isDark}
+            emoji="🎫"
+            title="My tickets"
+            subtitle={`${orders?.length ?? 0} ticket order${(orders?.length ?? 0) === 1 ? "" : "s"}`}
+            onPress={() =>
+              isSignedIn
+                ? router.push("/tickets")
+                : router.push(toSignInHref("/tickets"))
+            }
+          />
+          <NavCard
+            isDark={isDark}
+            emoji="🧭"
+            title="Retake taste quiz"
+            subtitle="Refresh your archetype and recommendations"
+            onPress={() =>
+              isSignedIn
+                ? router.push({
+                    pathname: "/onboarding/taste",
+                    params: { restart: "1" },
+                  })
+                : router.push(toSignInHref("/onboarding/taste"))
+            }
+          />
+        </View>
+
+        {/* ── Badges ── */}
         <Text
           style={{
-            fontSize: 20,
-            fontWeight: "700",
+            marginTop: 24,
+            marginBottom: 4,
+            paddingHorizontal: 16,
             color: textPrimary,
-            marginTop: 32,
-            paddingHorizontal: 20,
+            fontSize: 18,
+            fontWeight: "700",
           }}
         >
           Badges
         </Text>
-        <Text
-          style={{
-            fontSize: 12,
-            color: "#6B7280",
-            marginTop: 8,
-            marginBottom: 16,
-            paddingHorizontal: 20,
-          }}
-        >
-          Tap a badge to flip it
+        <Text style={{ paddingHorizontal: 16, marginBottom: 12, color: textMuted, fontSize: 12 }}>
+          Earn badges by attending concerts and listening to music.
         </Text>
-        <View className="flex-row flex-wrap justify-between px-5">
-          {BADGES.map((badge) => (
-            <BadgeCard
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
+          {(badges ?? []).map((badge) => (
+            <Pressable
               key={badge.id}
-              badge={badge}
-              earned={badge.id === "bach"}
-              isFlipped={false}
-              onFlip={() => openBadgeOverlay(badge.id)}
-            />
+              onPress={() => setActiveBadgeId(badge.id)}
+              style={{
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: border,
+                backgroundColor: cardBg,
+                padding: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <View
+                style={{
+                  width: 54,
+                  height: 54,
+                  borderRadius: 27,
+                  borderWidth: 2,
+                  borderColor: "#DCBB7D",
+                  overflow: "hidden",
+                }}
+              >
+                <Image
+                  source={BADGE_IMAGES[badge.imageKey] ?? bachBadgeImage}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: textPrimary, fontSize: 14, fontWeight: "600" }}>
+                  {badge.label}
+                </Text>
+                <Text style={{ color: textMuted, fontSize: 12, marginTop: 2 }}>
+                  {badge.earned ? badge.achievement : badge.requirementText}
+                </Text>
+              </View>
+              <Text style={{ color: badge.earned ? "#047857" : "#9CA3AF", fontSize: 11 }}>
+                {badge.earned ? "Unlocked" : "Locked"}
+              </Text>
+            </Pressable>
           ))}
         </View>
       </ScrollView>
 
-      <Modal
-        visible={!!overlayBadge}
-        transparent
-        animationType="none"
-        statusBarTranslucent
-        presentationStyle="overFullScreen"
-      >
-        <View className="flex-1">
-          <BlurView
-            intensity={40}
-            tint="dark"
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              bottom: 0,
-              left: 0,
-            }}
-          />
-          <View className="absolute inset-0 bg-black/45" />
-          {overlayBadge ? (
-            <Animated.View
-              style={[popupStyle, { flex: 1 }]}
-              className="items-center justify-center px-6"
+      <Modal visible={!!activeBadge} transparent animationType="fade">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.55)",
+            justifyContent: "center",
+            paddingHorizontal: 20,
+          }}
+        >
+          {activeBadge ? (
+            <View
+              style={{
+                borderRadius: 18,
+                borderWidth: 1,
+                borderColor: border,
+                backgroundColor: cardBg,
+                padding: 18,
+                alignItems: "center",
+              }}
             >
-              <Pressable
-                className="absolute top-44 right-6 z-10 h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/25"
-                onPress={closeBadgeOverlay}
+              <Image
+                source={BADGE_IMAGES[activeBadge.imageKey] ?? bachBadgeImage}
+                style={{ width: 116, height: 116, borderRadius: 58 }}
+                resizeMode="cover"
+              />
+              <Text
+                style={{
+                  marginTop: 12,
+                  color: textPrimary,
+                  fontSize: 20,
+                  fontWeight: "700",
+                  textAlign: "center",
+                }}
               >
-                <Text className="text-center text-2xl leading-7 text-white">
-                  ×
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={handleOverlayBadgePress}
-                className="relative mb-4 h-36 w-36"
+                {activeBadge.label}
+              </Text>
+              <Text
+                style={{
+                  marginTop: 8,
+                  color: textMuted,
+                  fontSize: 13,
+                  textAlign: "center",
+                  lineHeight: 20,
+                }}
               >
-                <Animated.View
-                  style={badgeSpinStyle}
-                  className="h-36 w-36 items-center justify-center"
-                >
-                  <Animated.View
-                    style={overlayFrontStyle}
-                    className="absolute h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-amber-300 bg-zinc-900"
-                  >
-                    <Image
-                      source={overlayBadge.image}
-                      style={{ width: 128, height: 128, borderRadius: 64 }}
-                      resizeMode="cover"
-                    />
-                  </Animated.View>
-                  <Animated.View
-                    style={overlayBackStyle}
-                    className="absolute h-32 w-32 items-center justify-center rounded-full border-4 border-amber-300 bg-[#DCBB7D] px-4"
-                  >
-                    <Text className="text-center text-[11px] leading-4 font-semibold text-[#4A3820]">
-                      {overlayBadgeIsUnlocked
-                        ? overlayBadge.achievement
-                        : lockedRequirementText(overlayBadge)}
-                    </Text>
-                  </Animated.View>
-                </Animated.View>
-              </Pressable>
+                {activeBadge.earned
+                  ? activeBadge.achievement
+                  : activeBadge.requirementText}
+              </Text>
 
-              <Text className="text-xs font-semibold tracking-[2px] text-amber-300 uppercase">
-                {overlayBadgeIsUnlocked ? "New Badge Unlocked" : "Badge Locked"}
-              </Text>
-              <Text className="mt-2 text-center text-3xl font-bold text-white">
-                {overlayBadge.label}
-              </Text>
-              <Text className="mt-2 max-w-sm text-center text-sm text-zinc-200">
-                {overlayBadgeIsUnlocked
-                  ? overlayBadge.achievement
-                  : lockedRequirementText(overlayBadge)}
-              </Text>
-              {overlayBadgeIsUnlocked ? (
-                <Text className="mt-2 text-xs text-zinc-300">
-                  Tap badge to flip
-                </Text>
+              {activeBadge.earned ? (
+                <Pressable
+                  onPress={async () => {
+                    await Share.share({
+                      message: `I just unlocked "${activeBadge.label}" on Classica.`,
+                    });
+                  }}
+                  style={{
+                    marginTop: 12,
+                    borderRadius: 10,
+                    backgroundColor: "#9C1738",
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                  }}
+                >
+                  <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 13 }}>
+                    Share badge
+                  </Text>
+                </Pressable>
               ) : null}
 
-              <View className="mt-8 w-full max-w-sm">
-                {overlayBadgeIsUnlocked ? (
-                  <Pressable
-                    className="w-full items-center rounded-xl bg-[#9C1738] px-4 py-3"
-                    onPress={handleShareBadge}
-                  >
-                    <Text className="text-sm font-semibold text-white">
-                      Share Badge
-                    </Text>
-                  </Pressable>
-                ) : null}
-              </View>
-
-              {shareFeedback && (
-                <Text className="mt-3 text-xs text-zinc-300">
-                  {shareFeedback}
+              <Pressable onPress={() => setActiveBadgeId(null)} style={{ marginTop: 12 }}>
+                <Text style={{ color: "#9C1738", fontWeight: "600", fontSize: 13 }}>
+                  Close
                 </Text>
-              )}
-            </Animated.View>
+              </Pressable>
+            </View>
           ) : null}
         </View>
       </Modal>

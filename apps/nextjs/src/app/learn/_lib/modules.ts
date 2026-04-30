@@ -32,6 +32,9 @@ export interface LearningModuleDef {
   description: string;
   cardIcon: string;
   cardGradient: string;
+  /** Hex background colors for React Native card icon panels (no Tailwind). */
+  bgLight: string;
+  bgDark: string;
   heroEmoji: string;
   units: Unit[];
 }
@@ -46,6 +49,8 @@ const INSTRUMENTS_MODULE: LearningModuleDef = {
   cardIcon: "🎻",
   cardGradient:
     "from-amber-100 to-amber-50 dark:from-amber-950/40 dark:to-amber-900/20",
+  bgLight: "#FEF3C7",
+  bgDark: "rgba(120,53,15,0.25)",
   heroEmoji: "🎻",
   units: [
     {
@@ -196,6 +201,8 @@ const BASICS_MODULE: LearningModuleDef = {
   cardIcon: "🎹",
   cardGradient:
     "from-violet-100 to-violet-50 dark:from-violet-950/40 dark:to-violet-900/20",
+  bgLight: "#EDE9FE",
+  bgDark: "rgba(109,40,217,0.2)",
   heroEmoji: "🎼",
   units: [
     {
@@ -335,6 +342,8 @@ const ETIQUETTE_MODULE: LearningModuleDef = {
   cardIcon: "🎩",
   cardGradient:
     "from-rose-100 to-rose-50 dark:from-rose-950/40 dark:to-rose-900/20",
+  bgLight: "#FFE4E6",
+  bgDark: "rgba(190,18,60,0.2)",
   heroEmoji: "🎩",
   units: [
     {
@@ -484,6 +493,8 @@ const LEGENDS_MODULE: LearningModuleDef = {
   cardIcon: "🎼",
   cardGradient:
     "from-emerald-100 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-900/20",
+  bgLight: "#D1FAE5",
+  bgDark: "rgba(6,78,59,0.25)",
   heroEmoji: "👑",
   units: [
     {
@@ -619,6 +630,8 @@ const PERFORMANCES_MODULE: LearningModuleDef = {
   cardIcon: "🎭",
   cardGradient:
     "from-sky-100 to-sky-50 dark:from-sky-950/40 dark:to-sky-900/20",
+  bgLight: "#E0F2FE",
+  bgDark: "rgba(12,74,110,0.25)",
   heroEmoji: "🎭",
   units: [
     {
@@ -756,6 +769,8 @@ const LISTENING_MODULE: LearningModuleDef = {
   cardIcon: "🎧",
   cardGradient:
     "from-orange-100 to-orange-50 dark:from-orange-950/40 dark:to-orange-900/20",
+  bgLight: "#FFEDD5",
+  bgDark: "rgba(154,52,18,0.25)",
   heroEmoji: "🎧",
   units: [
     {

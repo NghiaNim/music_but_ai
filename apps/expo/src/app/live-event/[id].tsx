@@ -4,6 +4,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -49,6 +50,14 @@ function formatDate(dateInput: Date | string | null | undefined): string {
 export default function LiveEventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const isDark = useColorScheme() === "dark";
+
+  const bg = isDark ? "#09090B" : "#FAFAF9";
+  const card = isDark ? "#1A1A1A" : "#FFFFFF";
+  const cardBorder = isDark ? "#27272A" : "#E4E4E7";
+  const textPrimary = isDark ? "#F9FAFB" : "#111827";
+  const textMuted = "#6B7280";
+  const primary = "#9C1738";
 
   const { data: event, isPending } = useQuery({
     ...trpc.liveEvent.byId.queryOptions({ id }),
@@ -57,9 +66,11 @@ export default function LiveEventDetailScreen() {
 
   if (isPending) {
     return (
-      <SafeAreaView className="bg-background flex-1">
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-muted-foreground text-sm">Loading…</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <Text style={{ fontSize: 13, color: textMuted }}>Loading…</Text>
         </View>
       </SafeAreaView>
     );
@@ -67,16 +78,22 @@ export default function LiveEventDetailScreen() {
 
   if (!event) {
     return (
-      <SafeAreaView className="bg-background flex-1">
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-foreground text-lg font-semibold">
+      <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 32,
+          }}
+        >
+          <Text
+            style={{ fontSize: 17, fontWeight: "600", color: textPrimary }}
+          >
             Event not found
           </Text>
-          <Pressable
-            onPress={() => router.back()}
-            className="mt-4 active:opacity-70"
-          >
-            <Text className="text-primary">Go back</Text>
+          <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
+            <Text style={{ color: primary }}>Go back</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -90,23 +107,39 @@ export default function LiveEventDetailScreen() {
     .join(" · ");
 
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 32 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Back button */}
+        {/* Back */}
         <Pressable
           onPress={() => router.back()}
-          className="mx-4 mt-3 mb-2 flex-row items-center gap-1 active:opacity-60"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            marginHorizontal: 16,
+            marginTop: 12,
+            marginBottom: 8,
+          }}
         >
-          <Ionicons name="chevron-back" size={16} color="#9C1738" />
-          <Text className="text-primary text-sm">Events</Text>
+          <Ionicons name="chevron-back" size={16} color={primary} />
+          <Text style={{ fontSize: 13, color: primary }}>Events</Text>
         </Pressable>
 
         {/* Hero image */}
-        <View className="mx-4 mb-4 aspect-video overflow-hidden rounded-2xl bg-amber-100 dark:bg-amber-900/30">
+        <View
+          style={{
+            marginHorizontal: 16,
+            marginBottom: 16,
+            aspectRatio: 16 / 9,
+            borderRadius: 16,
+            overflow: "hidden",
+            backgroundColor: isDark ? "#1C1107" : "#FEF3C7",
+          }}
+        >
           {event.imageUrl ? (
             <Image
               source={{ uri: event.imageUrl }}
@@ -114,128 +147,289 @@ export default function LiveEventDetailScreen() {
               resizeMode="cover"
             />
           ) : (
-            <View className="flex-1 items-center justify-center">
-              <Text style={{ fontSize: 48 }}>🎵</Text>
+            <View
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons
+                name="musical-notes"
+                size={48}
+                color={isDark ? "#FB923C" : "#EA580C"}
+              />
             </View>
           )}
         </View>
 
-        <View className="px-4">
+        <View style={{ paddingHorizontal: 16 }}>
           {/* Tags */}
-          <View className="mb-3 flex-row flex-wrap gap-2">
-            <View className="rounded-full bg-sky-100 px-2.5 py-1 dark:bg-sky-900/30">
-              <Text className="text-xs font-semibold text-sky-700 dark:text-sky-300">
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 6,
+              marginBottom: 10,
+            }}
+          >
+            <View
+              style={{
+                borderRadius: 999,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                backgroundColor: isDark ? "#0C4A6E" : "#E0F2FE",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "600",
+                  color: isDark ? "#7DD3FC" : "#0369A1",
+                }}
+              >
                 {sourceLabel}
               </Text>
             </View>
-            <View className="bg-muted rounded-full px-2.5 py-1">
-              <Text className="text-foreground text-xs font-semibold">
+            <View
+              style={{
+                borderRadius: 999,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                backgroundColor: isDark ? "#27272A" : "#F4F4F5",
+              }}
+            >
+              <Text
+                style={{ fontSize: 11, fontWeight: "500", color: textMuted }}
+              >
                 {GENRE_LABELS[event.genre] ?? event.genre}
               </Text>
             </View>
           </View>
 
           {/* Title */}
-          <Text className="text-foreground mb-4 text-xl leading-snug font-bold">
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              color: textPrimary,
+              lineHeight: 26,
+              marginBottom: 12,
+            }}
+          >
             {event.title}
           </Text>
 
           {/* Date & venue */}
-          <View className="mb-4 gap-2">
-            <View className="flex-row items-start gap-2">
-              <View className="mt-0.5">
-                <Ionicons name="calendar-outline" size={16} color="#6B7280" />
+          <View style={{ gap: 8, marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: 8,
+              }}
+            >
+              <View style={{ marginTop: 2 }}>
+                <Ionicons name="calendar-outline" size={14} color={textMuted} />
               </View>
-              <Text className="text-foreground flex-1 text-sm">{when}</Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  color: textMuted,
+                  lineHeight: 18,
+                }}
+              >
+                {when}
+              </Text>
             </View>
             {venueLine ? (
-              <View className="flex-row items-start gap-2">
-                <View className="mt-0.5">
-                  <Ionicons name="location-outline" size={16} color="#6B7280" />
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "flex-start",
+                  gap: 8,
+                }}
+              >
+                <View style={{ marginTop: 2 }}>
+                  <Ionicons name="location-outline" size={14} color={textMuted} />
                 </View>
-                <Text className="text-foreground flex-1 text-sm">
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 13,
+                    color: textMuted,
+                    lineHeight: 18,
+                  }}
+                >
                   {venueLine}
                 </Text>
               </View>
             ) : null}
           </View>
 
-          <View className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/30 dark:bg-amber-950/20">
-            <Text className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-              Ask Ton Ton about this event
-            </Text>
-            <Text className="text-muted-foreground mt-1 text-xs">
-              Get listening tips and context before you go.
-            </Text>
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/(tabs)/chat",
-                  params: { mode: "learning", liveEventId: event.id },
-                })
-              }
-              className="mt-3 items-center rounded-xl bg-[#9C1738] py-3 active:opacity-80"
-            >
-              <Text className="text-sm font-semibold text-white">
-                Ask Ton Ton
-              </Text>
-            </Pressable>
-          </View>
-
           {/* Tickets */}
-          <View className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/20">
-            <Text className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+          <View
+            style={{
+              marginBottom: 16,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: isDark ? "#064E3B" : "#A7F3D0",
+              backgroundColor: isDark ? "#022C22" : "#ECFDF5",
+              padding: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: isDark ? "#6EE7B7" : "#047857",
+                marginBottom: 4,
+              }}
+            >
               Tickets & details
             </Text>
-            <Text className="text-muted-foreground mt-1 text-xs">
+            <Text
+              style={{ fontSize: 11, color: textMuted, marginBottom: 12 }}
+            >
               Availability and pricing are handled on the venue's website.
             </Text>
-            <Pressable
-              onPress={() => void Linking.openURL(event.buyUrl)}
-              className="mt-3 items-center rounded-xl bg-[#9C1738] py-3 active:opacity-80"
-            >
-              <Text className="text-sm font-semibold text-white">
-                View on venue site
-              </Text>
+            <Pressable onPress={() => void Linking.openURL(event.buyUrl)}>
+              <View
+                style={{
+                  alignItems: "center",
+                  borderRadius: 12,
+                  backgroundColor: primary,
+                  paddingVertical: 12,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: "#FFFFFF",
+                  }}
+                >
+                  View on venue site
+                </Text>
+              </View>
             </Pressable>
           </View>
 
+          {/* Ask Ton Ton */}
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/(tabs)/chat",
+                params: { mode: "learning", liveEventId: id },
+              })
+            }
+            style={{ marginBottom: 16 }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                borderRadius: 12,
+                paddingVertical: 13,
+                backgroundColor: isDark ? "#1C0A00" : "#FFFBEB",
+                borderWidth: 1,
+                borderColor: isDark ? "#78350F" : "#FDE68A",
+              }}
+            >
+              <Ionicons name="sparkles-outline" size={16} color="#D97706" />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: isDark ? "#FCD34D" : "#92400E",
+                }}
+              >
+                Ask Ton Ton About This Event
+              </Text>
+            </View>
+          </Pressable>
+
           {/* Program */}
-          <View className="mb-4">
-            <Text className="text-foreground mb-2 text-base font-semibold">
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "600",
+                color: textPrimary,
+                marginBottom: 8,
+              }}
+            >
               Program
             </Text>
-            <View className="bg-card rounded-xl border p-3">
+            <View
+              style={{
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: cardBorder,
+                backgroundColor: card,
+                padding: 12,
+              }}
+            >
               {event.program ? (
-                <Text className="text-foreground text-sm leading-relaxed">
+                <Text
+                  style={{ fontSize: 13, color: textPrimary, lineHeight: 20 }}
+                >
                   {event.program}
                 </Text>
               ) : (
-                <Text className="text-muted-foreground text-sm leading-relaxed">
+                <Text
+                  style={{ fontSize: 13, color: textMuted, lineHeight: 20 }}
+                >
                   Full program information is published by the venue. Open the
                   official listing for repertoire, performers, and any updates.
                 </Text>
               )}
               <Pressable
                 onPress={() => void Linking.openURL(event.eventUrl)}
-                className="mt-3 items-center rounded-lg border py-2 active:opacity-70"
+                style={{ marginTop: 12 }}
               >
-                <Text className="text-foreground text-xs font-medium">
-                  Official event page
-                </Text>
+                <View
+                  style={{
+                    alignItems: "center",
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: cardBorder,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "500",
+                      color: textPrimary,
+                    }}
+                  >
+                    Official event page
+                  </Text>
+                </View>
               </Pressable>
             </View>
           </View>
 
           {/* About */}
           <View>
-            <Text className="text-foreground mb-2 text-base font-semibold">
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "600",
+                color: textPrimary,
+                marginBottom: 8,
+              }}
+            >
               About
             </Text>
-            <Text className="text-muted-foreground text-sm leading-relaxed">
+            <Text style={{ fontSize: 13, color: textMuted, lineHeight: 20 }}>
               This performance is included in Classica from public venue
-              calendars. For accessibility, parking, and box office hours, refer
-              to {sourceLabel}.
+              calendars. For accessibility, parking, and box office hours,
+              refer to {sourceLabel}.
             </Text>
           </View>
         </View>

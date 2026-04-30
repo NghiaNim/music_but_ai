@@ -51,6 +51,13 @@ export default function EventDetailScreen() {
   const { data: session } = authClient.useSession();
   const isSignedIn = !!session?.user;
 
+  const bg = isDark ? "#09090B" : "#FAFAF9";
+  const card = isDark ? "#1A1A1A" : "#FFFFFF";
+  const cardBorder = isDark ? "#27272A" : "#E4E4E7";
+  const textPrimary = isDark ? "#F9FAFB" : "#111827";
+  const textMuted = "#6B7280";
+  const primary = "#9C1738";
+
   const { data: event, isPending } = useQuery({
     ...trpc.event.byId.queryOptions({ id }),
     enabled: !!id,
@@ -96,9 +103,11 @@ export default function EventDetailScreen() {
 
   if (isPending) {
     return (
-      <SafeAreaView className="bg-background flex-1">
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-muted-foreground text-sm">Loading…</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <Text style={{ fontSize: 13, color: textMuted }}>Loading…</Text>
         </View>
       </SafeAreaView>
     );
@@ -106,16 +115,22 @@ export default function EventDetailScreen() {
 
   if (!event) {
     return (
-      <SafeAreaView className="bg-background flex-1">
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-foreground text-lg font-semibold">
+      <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 32,
+          }}
+        >
+          <Text
+            style={{ fontSize: 17, fontWeight: "600", color: textPrimary }}
+          >
             Event not found
           </Text>
-          <Pressable
-            onPress={() => router.back()}
-            className="mt-4 active:opacity-70"
-          >
-            <Text className="text-primary">Go back</Text>
+          <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
+            <Text style={{ color: primary }}>Go back</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -133,30 +148,45 @@ export default function EventDetailScreen() {
     minute: "2-digit",
   });
 
-  const diffColors = DIFFICULTY_COLORS[event.difficulty] ?? {
-    bg: "#D1FAE5",
-    text: "#065F46",
-  };
+  const diffColors =
+    DIFFICULTY_COLORS[event.difficulty] ??
+    ({ bg: "#D1FAE5", text: "#065F46" } as const);
   const ticketUrl = event.ticketUrl;
 
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 32 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Back */}
         <Pressable
           onPress={() => router.back()}
-          className="mx-4 mt-3 mb-2 flex-row items-center gap-1 active:opacity-60"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            marginHorizontal: 16,
+            marginTop: 12,
+            marginBottom: 8,
+          }}
         >
-          <Ionicons name="chevron-back" size={16} color="#9C1738" />
-          <Text className="text-primary text-sm">Events</Text>
+          <Ionicons name="chevron-back" size={16} color={primary} />
+          <Text style={{ fontSize: 13, color: primary }}>Events</Text>
         </Pressable>
 
         {/* Hero image */}
-        <View className="mx-4 mb-4 aspect-video overflow-hidden rounded-2xl">
+        <View
+          style={{
+            marginHorizontal: 16,
+            marginBottom: 16,
+            aspectRatio: 16 / 9,
+            borderRadius: 16,
+            overflow: "hidden",
+            backgroundColor: isDark ? "#1C1107" : "#FEF3C7",
+          }}
+        >
           {event.imageUrl ? (
             <Image
               source={{ uri: event.imageUrl }}
@@ -165,61 +195,123 @@ export default function EventDetailScreen() {
             />
           ) : (
             <View
-              className="flex-1 items-center justify-center"
               style={{
-                backgroundColor: isDark
-                  ? "rgba(120,53,15,0.3)"
-                  : "#FEF3C7",
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <Ionicons name="musical-notes" size={48} color={isDark ? "#FB923C" : "#EA580C"} />
+              <Ionicons
+                name="musical-notes"
+                size={48}
+                color={isDark ? "#FB923C" : "#EA580C"}
+              />
             </View>
           )}
         </View>
 
-        <View className="px-4">
+        <View style={{ paddingHorizontal: 16 }}>
           {/* Cancelled banner */}
           {isCancelled && (
-            <View className="mb-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 dark:border-red-900/40 dark:bg-red-950/30">
-              <Text className="text-sm font-medium text-red-700 dark:text-red-300">
+            <View
+              style={{
+                marginBottom: 12,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: isDark ? "#7F1D1D" : "#FECACA",
+                backgroundColor: isDark ? "#1C0A0A" : "#FEF2F2",
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "500",
+                  color: isDark ? "#FCA5A5" : "#B91C1C",
+                }}
+              >
                 This event has been cancelled by the host.
               </Text>
             </View>
           )}
 
           {/* Tags */}
-          <View className="mb-3 flex-row flex-wrap gap-2">
-            <View className="bg-muted rounded-full px-2.5 py-1">
-              <Text className="text-foreground text-xs font-medium">
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 6,
+              marginBottom: 10,
+            }}
+          >
+            <View
+              style={{
+                borderRadius: 999,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                backgroundColor: isDark ? "#27272A" : "#F4F4F5",
+              }}
+            >
+              <Text
+                style={{ fontSize: 11, fontWeight: "500", color: textMuted }}
+              >
                 {LISTING_LABELS[event.listingCategory] ??
                   event.listingCategory}
               </Text>
             </View>
             <View
-              className="rounded-full px-2.5 py-1"
-              style={{ backgroundColor: isDark ? "#1e3a5f" : "#dbeafe" }}
+              style={{
+                borderRadius: 999,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                backgroundColor: isDark ? "#1e3a5f" : "#DBEAFE",
+              }}
             >
               <Text
-                className="text-xs font-medium"
-                style={{ color: isDark ? "#93c5fd" : "#1d4ed8" }}
+                style={{
+                  fontSize: 11,
+                  fontWeight: "500",
+                  color: isDark ? "#93C5FD" : "#1D4ED8",
+                }}
               >
                 {GENRE_LABELS[event.genre] ?? event.genre}
               </Text>
             </View>
             <View
-              className="rounded-full px-2.5 py-1"
-              style={{ backgroundColor: diffColors.bg }}
+              style={{
+                borderRadius: 999,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                backgroundColor: diffColors.bg,
+              }}
             >
               <Text
-                className="text-xs font-semibold"
-                style={{ color: diffColors.text }}
+                style={{
+                  fontSize: 11,
+                  fontWeight: "600",
+                  color: diffColors.text,
+                }}
               >
                 {DIFFICULTY_LABELS[event.difficulty] ?? event.difficulty}
               </Text>
             </View>
             {event.isFree && (
-              <View className="rounded-full bg-emerald-100 px-2.5 py-1 dark:bg-emerald-900/40">
-                <Text className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+              <View
+                style={{
+                  borderRadius: 999,
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  backgroundColor: isDark ? "#064E3B" : "#D1FAE5",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: "600",
+                    color: isDark ? "#6EE7B7" : "#047857",
+                  }}
+                >
                   Free
                 </Text>
               </View>
@@ -227,117 +319,214 @@ export default function EventDetailScreen() {
           </View>
 
           {/* Title */}
-          <Text className="text-foreground mb-1 text-xl font-bold leading-snug">
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              color: textPrimary,
+              lineHeight: 26,
+              marginBottom: 12,
+            }}
+          >
             {event.title}
           </Text>
 
           {/* Date & venue */}
-          <View className="mb-4 mt-3 gap-2">
-            <View className="flex-row items-start gap-2">
-              <View className="mt-0.5">
-                <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+          <View style={{ gap: 8, marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: 8,
+              }}
+            >
+              <View style={{ marginTop: 2 }}>
+                <Ionicons name="calendar-outline" size={14} color={textMuted} />
               </View>
-              <Text className="text-muted-foreground flex-1 text-sm">
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  color: textMuted,
+                  lineHeight: 18,
+                }}
+              >
                 {when}
               </Text>
             </View>
-            <View className="flex-row items-start gap-2">
-              <View className="mt-0.5">
-                <Ionicons name="location-outline" size={14} color="#6B7280" />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: 8,
+              }}
+            >
+              <View style={{ marginTop: 2 }}>
+                <Ionicons name="location-outline" size={14} color={textMuted} />
               </View>
-              <Text className="text-muted-foreground flex-1 text-sm">
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  color: textMuted,
+                  lineHeight: 18,
+                }}
+              >
                 {event.venue}
                 {event.venueAddress ? `\n${event.venueAddress}` : ""}
               </Text>
             </View>
           </View>
 
-          <View className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/30 dark:bg-amber-950/20">
-            <Text className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-              Ask Ton Ton about this event
-            </Text>
-            <Text className="text-muted-foreground mt-1 text-xs">
-              Get a quick guide on what to listen for and why this program
-              stands out.
-            </Text>
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/(tabs)/chat",
-                  params: { mode: "learning", eventId: event.id },
-                })
-              }
-              className="mt-3 items-center rounded-xl bg-[#9C1738] py-3 active:opacity-80"
-            >
-              <Text className="text-sm font-semibold text-white">
-                Ask Ton Ton
-              </Text>
-            </Pressable>
-          </View>
-
           {/* Ticket / price card */}
           {event.isFree ? (
-            <View className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/20">
-              <Text className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+            <View
+              style={{
+                marginBottom: 16,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: isDark ? "#064E3B" : "#A7F3D0",
+                backgroundColor: isDark ? "#022C22" : "#ECFDF5",
+                padding: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: isDark ? "#6EE7B7" : "#047857",
+                }}
+              >
                 Free admission
               </Text>
-              <Text className="text-muted-foreground mt-0.5 text-xs">
+              <Text
+                style={{ fontSize: 11, color: textMuted, marginTop: 2 }}
+              >
                 No ticket required — just show up.
                 {ticketUrl ? " RSVP at the link below if requested." : ""}
               </Text>
               {ticketUrl ? (
                 <Pressable
                   onPress={() => void Linking.openURL(ticketUrl)}
-                  className="mt-3 items-center rounded-xl border py-3 active:opacity-80"
+                  style={{ marginTop: 12 }}
                 >
-                  <Text className="text-foreground text-sm font-semibold">
-                    RSVP / More info
-                  </Text>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: cardBorder,
+                      paddingVertical: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: textPrimary,
+                      }}
+                    >
+                      RSVP / More info
+                    </Text>
+                  </View>
                 </Pressable>
               ) : null}
             </View>
           ) : (
-            <View className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/20">
-              <Text className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+            <View
+              style={{
+                marginBottom: 16,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: isDark ? "#064E3B" : "#A7F3D0",
+                backgroundColor: isDark ? "#022C22" : "#ECFDF5",
+                padding: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "700",
+                  color: isDark ? "#34D399" : "#047857",
+                }}
+              >
                 ${(event.discountedPriceCents / 100).toFixed(2)}
               </Text>
-              <Text className="text-muted-foreground mb-3 text-xs">
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: textMuted,
+                  marginBottom: 12,
+                }}
+              >
                 {event.ticketsAvailable} tickets remaining
               </Text>
               {ticketUrl ? (
-                <Pressable
-                  onPress={() => void Linking.openURL(ticketUrl)}
-                  className="items-center rounded-xl bg-emerald-600 py-3 active:opacity-80"
-                >
-                  <Text className="text-sm font-semibold text-white">
-                    Get Tickets
-                  </Text>
+                <Pressable onPress={() => void Linking.openURL(ticketUrl)}>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      borderRadius: 12,
+                      backgroundColor: "#059669",
+                      paddingVertical: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      Get Tickets
+                    </Text>
+                  </View>
                 </Pressable>
               ) : null}
             </View>
           )}
 
-          {/* Save / Attended buttons */}
+          {/* Save / I Went */}
           {!isCancelled && (
-            <View className="mb-4 flex-row gap-2">
+            <View
+              style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}
+            >
               <Pressable
                 onPress={() => {
                   if (!isSignedIn) {
                     Alert.alert("Sign in required", "Sign in to save events.");
                     return;
                   }
-                  toggleSave.mutate({ eventId: id, status: "saved" });
+                  if (id) toggleSave.mutate({ eventId: id, status: "saved" });
                 }}
                 disabled={toggleSave.isPending}
-                className="flex-1 active:opacity-70"
+                style={{ flex: 1 }}
               >
-                <View className="flex-row items-center justify-center gap-1.5 rounded-xl border py-3">
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: cardBorder,
+                    paddingVertical: 12,
+                    backgroundColor: card,
+                  }}
+                >
                   <Ionicons
                     name="bookmark-outline"
                     size={15}
-                    color={isDark ? "#9CA3AF" : "#6B7280"}
+                    color={textMuted}
                   />
-                  <Text className="text-foreground text-sm font-medium">
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "500",
+                      color: textPrimary,
+                    }}
+                  >
                     Save
                   </Text>
                 </View>
@@ -351,18 +540,40 @@ export default function EventDetailScreen() {
                     );
                     return;
                   }
-                  toggleAttended.mutate({ eventId: id, status: "attended" });
+                  if (id)
+                    toggleAttended.mutate({
+                      eventId: id,
+                      status: "attended",
+                    });
                 }}
                 disabled={toggleAttended.isPending}
-                className="flex-1 active:opacity-70"
+                style={{ flex: 1 }}
               >
-                <View className="flex-row items-center justify-center gap-1.5 rounded-xl border py-3">
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: cardBorder,
+                    paddingVertical: 12,
+                    backgroundColor: card,
+                  }}
+                >
                   <Ionicons
                     name="checkmark-circle-outline"
                     size={15}
-                    color={isDark ? "#9CA3AF" : "#6B7280"}
+                    color={textMuted}
                   />
-                  <Text className="text-foreground text-sm font-medium">
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "500",
+                      color: textPrimary,
+                    }}
+                  >
                     I Went
                   </Text>
                 </View>
@@ -370,28 +581,107 @@ export default function EventDetailScreen() {
             </View>
           )}
 
+          {/* Ask Ton Ton */}
+          {!isCancelled && (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/chat",
+                  params: { mode: "learning", eventId: id },
+                })
+              }
+              style={{ marginBottom: 16 }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  borderRadius: 12,
+                  paddingVertical: 13,
+                  backgroundColor: isDark ? "#1C0A00" : "#FFFBEB",
+                  borderWidth: 1,
+                  borderColor: isDark ? "#78350F" : "#FDE68A",
+                }}
+              >
+                <Ionicons
+                  name="sparkles-outline"
+                  size={16}
+                  color="#D97706"
+                />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: isDark ? "#FCD34D" : "#92400E",
+                  }}
+                >
+                  Ask Ton Ton About This Event
+                </Text>
+              </View>
+            </Pressable>
+          )}
+
           {/* Beginner notes */}
           {event.beginnerNotes ? (
-            <View className="border-primary/20 bg-primary/5 mb-4 rounded-2xl border p-4">
-              <View className="mb-2 flex-row items-center gap-2">
-                <Ionicons name="bulb-outline" size={18} color="#9C1738" />
-                <Text className="text-foreground font-semibold">
+            <View
+              style={{
+                marginBottom: 16,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: isDark ? "#3B0764" : "#E9D5FF",
+                backgroundColor: isDark ? "#1A0636" : "#FAF5FF",
+                padding: 16,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 8,
+                }}
+              >
+                <Ionicons name="bulb-outline" size={18} color={primary} />
+                <Text
+                  style={{ fontWeight: "600", color: textPrimary }}
+                >
                   For Beginners
                 </Text>
               </View>
-              <Text className="text-muted-foreground text-sm leading-relaxed">
+              <Text
+                style={{ fontSize: 13, color: textMuted, lineHeight: 20 }}
+              >
                 {event.beginnerNotes}
               </Text>
             </View>
           ) : null}
 
           {/* Program */}
-          <View className="mb-4">
-            <Text className="text-foreground mb-2 text-base font-semibold">
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "600",
+                color: textPrimary,
+                marginBottom: 8,
+              }}
+            >
               Program
             </Text>
-            <View className="bg-card rounded-xl border p-3">
-              <Text className="text-foreground text-sm leading-relaxed">
+            <View
+              style={{
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: cardBorder,
+                backgroundColor: card,
+                padding: 12,
+              }}
+            >
+              <Text
+                style={{ fontSize: 13, color: textPrimary, lineHeight: 20 }}
+              >
                 {event.program}
               </Text>
             </View>
@@ -399,11 +689,20 @@ export default function EventDetailScreen() {
 
           {/* About */}
           {event.description ? (
-            <View className="mb-4">
-              <Text className="text-foreground mb-2 text-base font-semibold">
+            <View style={{ marginBottom: 16 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "600",
+                  color: textPrimary,
+                  marginBottom: 8,
+                }}
+              >
                 About
               </Text>
-              <Text className="text-muted-foreground text-sm leading-relaxed">
+              <Text
+                style={{ fontSize: 13, color: textMuted, lineHeight: 20 }}
+              >
                 {event.description}
               </Text>
             </View>
@@ -411,15 +710,38 @@ export default function EventDetailScreen() {
 
           {/* Venue detail */}
           {event.venueAddress ? (
-            <View className="mb-4">
-              <Text className="text-foreground mb-2 text-base font-semibold">
+            <View style={{ marginBottom: 16 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "600",
+                  color: textPrimary,
+                  marginBottom: 8,
+                }}
+              >
                 Venue
               </Text>
-              <View className="bg-card rounded-xl border p-3">
-                <Text className="text-foreground text-sm font-medium">
+              <View
+                style={{
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: cardBorder,
+                  backgroundColor: card,
+                  padding: 12,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "500",
+                    color: textPrimary,
+                  }}
+                >
                   {event.venue}
                 </Text>
-                <Text className="text-muted-foreground mt-0.5 text-xs">
+                <Text
+                  style={{ fontSize: 11, color: textMuted, marginTop: 2 }}
+                >
                   {event.venueAddress}
                 </Text>
               </View>

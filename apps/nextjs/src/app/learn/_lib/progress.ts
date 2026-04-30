@@ -1,26 +1,23 @@
-export const POINTS_KEY = "classica-points";
-// Stores "moduleSlug:unitId" strings, e.g. "instruments:families"
-export const COMPLETED_KEY = "classica-completed-units";
+import {
+  COMPLETED_KEY,
+  getStoredNumber as parseStoredNumber,
+  parseCompletedUnits,
+  POINTS_KEY,
+  unitKey,
+} from "@acme/validators";
 
-export function unitKey(moduleSlug: string, unitId: string): string {
-  return `${moduleSlug}:${unitId}`;
-}
+export { COMPLETED_KEY, POINTS_KEY, unitKey };
 
 export function getStoredNumber(key: string): number {
   if (typeof window === "undefined") return 0;
   const v = window.localStorage.getItem(key);
-  return v ? Number(v) || 0 : 0;
+  return parseStoredNumber(v);
 }
 
 export function getCompletedSet(): Set<string> {
   if (typeof window === "undefined") return new Set();
-  try {
-    const raw = window.localStorage.getItem(COMPLETED_KEY);
-    if (!raw) return new Set();
-    return new Set(JSON.parse(raw) as string[]);
-  } catch {
-    return new Set();
-  }
+  const raw = window.localStorage.getItem(COMPLETED_KEY);
+  return parseCompletedUnits(raw);
 }
 
 export function countCompletedInModule(
