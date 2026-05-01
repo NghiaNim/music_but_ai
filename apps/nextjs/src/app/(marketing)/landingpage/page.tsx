@@ -43,8 +43,9 @@ const TON_TON_QUOTES = [
 const HERO_TAGS = ["Grand", "Dreamy", "Joyful", "Smoky", "Curious"] as const;
 
 export default function LandingPage() {
-  const primaryHref = "/";
-  const primaryLabel = "Get started";
+  const demoHref = "/";
+  const demoLabel = "Try the Demo";
+  const waitlistHref = "/waitlist";
 
   return (
     <div className="dark:from-background relative overflow-hidden bg-linear-to-br from-amber-50/70 via-rose-50/35 to-violet-50/35 dark:via-rose-950/8 dark:to-violet-950/8">
@@ -62,9 +63,12 @@ export default function LandingPage() {
               <span>Classica</span>
             </span>
           </Link>
-          <div className="flex items-center">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button variant="outline" asChild>
+              <Link href={demoHref}>{demoLabel}</Link>
+            </Button>
             <Button asChild>
-              <Link href={primaryHref}>{primaryLabel}</Link>
+              <Link href={waitlistHref}>Join Waitlist</Link>
             </Button>
           </div>
         </header>
@@ -96,7 +100,10 @@ export default function LandingPage() {
               </div>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button size="lg" asChild>
-                  <Link href={primaryHref}>{primaryLabel}</Link>
+                  <Link href={waitlistHref}>Join Waitlist</Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href={demoHref}>{demoLabel}</Link>
                 </Button>
               </div>
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -268,7 +275,10 @@ export default function LandingPage() {
                 </p>
                 <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
                   <Button size="lg" asChild>
-                    <Link href={primaryHref}>{primaryLabel}</Link>
+                    <Link href={waitlistHref}>Join Waitlist</Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link href={demoHref}>{demoLabel}</Link>
                   </Button>
                 </div>
                 <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">

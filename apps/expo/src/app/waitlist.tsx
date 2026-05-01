@@ -6,9 +6,13 @@ import { useMutation } from "@tanstack/react-query";
 
 import { trpc } from "~/utils/api";
 
+type SignupType = "individual" | "organization";
+
 export default function WaitlistScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [city, setCity] = useState("");
+  const [signupType, setSignupType] = useState<SignupType>("individual");
   const [result, setResult] = useState<"idle" | "joined" | "already_joined">(
     "idle",
   );
@@ -20,6 +24,8 @@ export default function WaitlistScreen() {
         if (data.status === "joined") {
           setName("");
           setEmail("");
+          setCity("");
+          setSignupType("individual");
         }
       },
     }),
@@ -28,6 +34,7 @@ export default function WaitlistScreen() {
   const canSubmit =
     name.trim().length > 0 &&
     email.trim().length > 0 &&
+    city.trim().length > 0 &&
     !joinWaitlist.isPending;
 
   return (
@@ -59,6 +66,37 @@ export default function WaitlistScreen() {
             autoCorrect={false}
           />
 
+          <Text className="text-foreground mb-1 text-xs font-medium">City</Text>
+          <TextInput
+            className="border-input bg-card text-foreground rounded-xl border px-4 py-3 text-base"
+            value={city}
+            onChangeText={setCity}
+            placeholder="City"
+            autoCapitalize="words"
+          />
+
+          <Text className="text-foreground mb-1 text-xs font-medium">
+            Individual or organization
+          </Text>
+          <View className="flex-row gap-2">
+            <Pressable
+              className={`flex-1 rounded-xl border px-3 py-3 ${signupType === "individual" ? "border-[#9C1738] bg-[#9C1738]/15" : "border-input bg-card"}`}
+              onPress={() => setSignupType("individual")}
+            >
+              <Text className="text-foreground text-center text-sm font-semibold">
+                Individual
+              </Text>
+            </Pressable>
+            <Pressable
+              className={`flex-1 rounded-xl border px-3 py-3 ${signupType === "organization" ? "border-[#9C1738] bg-[#9C1738]/15" : "border-input bg-card"}`}
+              onPress={() => setSignupType("organization")}
+            >
+              <Text className="text-foreground text-center text-sm font-semibold">
+                Organization
+              </Text>
+            </Pressable>
+          </View>
+
           <Pressable
             className={`items-center rounded-xl px-4 py-3 ${
               canSubmit ? "bg-[#9C1738]" : "bg-zinc-400"
@@ -68,6 +106,8 @@ export default function WaitlistScreen() {
               joinWaitlist.mutate({
                 name: name.trim(),
                 email: email.trim().toLowerCase(),
+                city: city.trim(),
+                signupType,
                 source: "mobile",
               });
             }}
