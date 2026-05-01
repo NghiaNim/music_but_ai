@@ -11,7 +11,7 @@ export default function WaitlistPage() {
       <div className="relative flex min-h-screen flex-col">
         <header className="flex items-center px-6 py-5">
           <Link
-            href="/landingpage"
+            href="/"
             className="flex items-center gap-2 text-lg font-bold tracking-tight"
           >
             <span className="flex size-8 items-center justify-center rounded-full border bg-white/90 shadow-sm">
@@ -31,7 +31,7 @@ export default function WaitlistPage() {
                 Be first to discover concerts matched to your taste, guided by
                 Ton Ton.
               </p>
-              <p className="mx-auto mt-4 max-w-xs text-sm italic text-amber-700/80">
+              <p className="mx-auto mt-4 max-w-xs text-sm text-amber-700/80 italic">
                 "Big feelings? I know a symphony for that."
               </p>
             </div>

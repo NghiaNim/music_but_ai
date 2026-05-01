@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@acme/ui";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: HomeIcon },
+  { href: "/demo", label: "Home", icon: HomeIcon },
   { href: "/learn", label: "Learn", icon: BookIcon },
   { href: "/events", label: "Events", icon: CalendarIcon },
   { href: "/post-event", label: "Post Event", icon: PlusCircleIcon },
@@ -33,8 +33,8 @@ export function BottomNav() {
       <div className="flex h-16 items-center justify-around px-2">
         {NAV_ITEMS.map((item) => {
           const isActive =
-            item.href === "/"
-              ? pathname === "/"
+            item.href === "/demo"
+              ? pathname === "/demo"
               : pathname.startsWith(item.href);
           return (
             <Link

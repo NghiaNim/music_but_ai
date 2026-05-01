@@ -73,7 +73,10 @@ export function WaitlistForm() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="waitlist-first" className="text-sm font-medium text-gray-700">
+          <Label
+            htmlFor="waitlist-first"
+            className="text-sm font-medium text-gray-700"
+          >
             First name
           </Label>
           <Input
@@ -86,7 +89,10 @@ export function WaitlistForm() {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="waitlist-last" className="text-sm font-medium text-gray-700">
+          <Label
+            htmlFor="waitlist-last"
+            className="text-sm font-medium text-gray-700"
+          >
             Last name
           </Label>
           <Input
@@ -101,7 +107,10 @@ export function WaitlistForm() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="waitlist-email" className="text-sm font-medium text-gray-700">
+        <Label
+          htmlFor="waitlist-email"
+          className="text-sm font-medium text-gray-700"
+        >
           Email
         </Label>
         <Input
@@ -116,7 +125,10 @@ export function WaitlistForm() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="waitlist-city" className="text-sm font-medium text-gray-700">
+        <Label
+          htmlFor="waitlist-city"
+          className="text-sm font-medium text-gray-700"
+        >
           City
         </Label>
         <Input
@@ -130,7 +142,10 @@ export function WaitlistForm() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="waitlist-org" className="text-sm font-medium text-gray-700">
+        <Label
+          htmlFor="waitlist-org"
+          className="text-sm font-medium text-gray-700"
+        >
           Organization name{" "}
           <span className="font-normal text-gray-400">(Optional)</span>
         </Label>

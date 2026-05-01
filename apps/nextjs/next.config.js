@@ -23,6 +23,16 @@ const config = {
   /** Required to support PostHog trailing slash API requests */
   skipTrailingSlashRedirect: true,
 
+  async redirects() {
+    return [
+      {
+        source: "/landingpage",
+        destination: "/",
+        permanent: true,
+      },
+    ];
+  },
+
   async rewrites() {
     return [
       {

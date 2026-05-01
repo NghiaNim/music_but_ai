@@ -9,8 +9,7 @@ export function RouteShell(props: {
   footer: ReactNode;
 }) {
   const pathname = usePathname();
-  const isMarketingRoute =
-    pathname === "/landingpage" || pathname === "/waitlist";
+  const isMarketingRoute = pathname === "/" || pathname === "/waitlist";
 
   if (isMarketingRoute) {
     return <>{props.children}</>;
