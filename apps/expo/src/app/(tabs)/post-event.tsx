@@ -17,8 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { trpc } from "~/utils/api";
-import { toSignInHref } from "~/utils/auth-redirect";
 import { authClient } from "~/utils/auth";
+import { toSignInHref } from "~/utils/auth-redirect";
 
 const GENRES = [
   { value: "solo_recital", label: "Solo Recital" },
@@ -236,7 +236,9 @@ export default function PostEventScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
+          <View
+            style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}
+          >
             <Text
               style={{
                 fontSize: 24,
@@ -253,87 +255,93 @@ export default function PostEventScreen() {
           </View>
 
           {/* My Hosted Events */}
-          {hostedQuery.data &&
-            hostedQuery.data.length > 0 && (
-              <View
+          {hostedQuery.data && hostedQuery.data.length > 0 && (
+            <View
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 16,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: cardBorder,
+                backgroundColor: card,
+                padding: 16,
+              }}
+            >
+              <Text
                 style={{
-                  marginHorizontal: 16,
-                  marginBottom: 16,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: cardBorder,
-                  backgroundColor: card,
-                  padding: 16,
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: textPrimary,
+                  marginBottom: 12,
                 }}
               >
-                <Text
+                My Hosted Events
+              </Text>
+              {hostedQuery.data.map((ev) => (
+                <View
+                  key={ev.id}
                   style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: textPrimary,
-                    marginBottom: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 8,
                   }}
                 >
-                  My Hosted Events
-                </Text>
-                {hostedQuery.data.map((ev) => (
-                  <View
-                    key={ev.id}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <View style={{ flex: 1, marginRight: 8 }}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "500",
+                        color: textPrimary,
+                      }}
+                      numberOfLines={1}
+                    >
+                      {ev.title}
+                    </Text>
+                    <Text
+                      style={{ fontSize: 11, color: textMuted, marginTop: 1 }}
+                    >
+                      {new Date(ev.date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </Text>
+                  </View>
+                  {ev.publicationStatus === "cancelled" && (
+                    <View
+                      style={{
+                        borderRadius: 999,
+                        backgroundColor: isDark ? "#450A0A" : "#FEE2E2",
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                      }}
+                    >
                       <Text
                         style={{
-                          fontSize: 13,
+                          fontSize: 11,
                           fontWeight: "500",
-                          color: textPrimary,
+                          color: isDark ? "#FCA5A5" : "#991B1B",
                         }}
-                        numberOfLines={1}
                       >
-                        {ev.title}
-                      </Text>
-                      <Text style={{ fontSize: 11, color: textMuted, marginTop: 1 }}>
-                        {new Date(ev.date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                        Cancelled
                       </Text>
                     </View>
-                    {ev.publicationStatus === "cancelled" && (
-                      <View
-                        style={{
-                          borderRadius: 999,
-                          backgroundColor: isDark ? "#450A0A" : "#FEE2E2",
-                          paddingHorizontal: 8,
-                          paddingVertical: 2,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: "500",
-                            color: isDark ? "#FCA5A5" : "#991B1B",
-                          }}
-                        >
-                          Cancelled
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                ))}
-              </View>
-            )}
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Form fields */}
           <View style={{ paddingHorizontal: 16, gap: 20 }}>
             {/* Title */}
-            <Field label="Event Title" required textPrimary={textPrimary} primary={primary}>
+            <Field
+              label="Event Title"
+              required
+              textPrimary={textPrimary}
+              primary={primary}
+            >
               <TextInput
                 value={title}
                 onChangeText={setTitle}
@@ -346,7 +354,12 @@ export default function PostEventScreen() {
             {/* Date + Time */}
             <View style={{ flexDirection: "row", gap: 12 }}>
               <View style={{ flex: 1 }}>
-                <Field label="Date" required textPrimary={textPrimary} primary={primary}>
+                <Field
+                  label="Date"
+                  required
+                  textPrimary={textPrimary}
+                  primary={primary}
+                >
                   <TextInput
                     value={date}
                     onChangeText={setDate}
@@ -358,7 +371,12 @@ export default function PostEventScreen() {
                 </Field>
               </View>
               <View style={{ flex: 1 }}>
-                <Field label="Time" required textPrimary={textPrimary} primary={primary}>
+                <Field
+                  label="Time"
+                  required
+                  textPrimary={textPrimary}
+                  primary={primary}
+                >
                   <Pressable onPress={() => setShowTimePicker(true)}>
                     <View
                       style={{
@@ -380,7 +398,12 @@ export default function PostEventScreen() {
             </View>
 
             {/* Venue */}
-            <Field label="Venue" required textPrimary={textPrimary} primary={primary}>
+            <Field
+              label="Venue"
+              required
+              textPrimary={textPrimary}
+              primary={primary}
+            >
               <TextInput
                 value={venue}
                 onChangeText={setVenue}
@@ -391,7 +414,11 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Venue Address */}
-            <Field label="Venue Address" textPrimary={textPrimary} primary={primary}>
+            <Field
+              label="Venue Address"
+              textPrimary={textPrimary}
+              primary={primary}
+            >
               <TextInput
                 value={venueAddress}
                 onChangeText={setVenueAddress}
@@ -402,7 +429,12 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Genre */}
-            <Field label="Genre" required textPrimary={textPrimary} primary={primary}>
+            <Field
+              label="Genre"
+              required
+              textPrimary={textPrimary}
+              primary={primary}
+            >
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {GENRES.map((g) => (
                   <Pressable
@@ -429,10 +461,7 @@ export default function PostEventScreen() {
                         style={{
                           fontSize: 12,
                           fontWeight: "500",
-                          color:
-                            genre === g.value
-                              ? "#FFFFFF"
-                              : textMuted,
+                          color: genre === g.value ? "#FFFFFF" : textMuted,
                         }}
                       >
                         {g.label}
@@ -444,7 +473,12 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Audience Level */}
-            <Field label="Audience Level" required textPrimary={textPrimary} primary={primary}>
+            <Field
+              label="Audience Level"
+              required
+              textPrimary={textPrimary}
+              primary={primary}
+            >
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {DIFFICULTIES.map((d) => (
                   <Pressable
@@ -471,8 +505,7 @@ export default function PostEventScreen() {
                         style={{
                           fontSize: 11,
                           fontWeight: "500",
-                          color:
-                            difficulty === d.value ? "#FFFFFF" : textMuted,
+                          color: difficulty === d.value ? "#FFFFFF" : textMuted,
                         }}
                       >
                         {d.label}
@@ -486,12 +519,10 @@ export default function PostEventScreen() {
             {/* Category */}
             <Field label="Category" textPrimary={textPrimary} primary={primary}>
               <View style={{ flexDirection: "row", gap: 8 }}>
-                {(
-                  [
-                    { value: "local" as const, label: "Local" },
-                    { value: "concert" as const, label: "Concert" },
-                  ]
-                ).map((c) => (
+                {[
+                  { value: "local" as const, label: "Local" },
+                  { value: "concert" as const, label: "Concert" },
+                ].map((c) => (
                   <Pressable
                     key={c.value}
                     onPress={() => setCategory(c.value)}
@@ -516,8 +547,7 @@ export default function PostEventScreen() {
                         style={{
                           fontSize: 11,
                           fontWeight: "500",
-                          color:
-                            category === c.value ? "#FFFFFF" : textMuted,
+                          color: category === c.value ? "#FFFFFF" : textMuted,
                         }}
                       >
                         {c.label}
@@ -529,7 +559,12 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Program */}
-            <Field label="Program" required textPrimary={textPrimary} primary={primary}>
+            <Field
+              label="Program"
+              required
+              textPrimary={textPrimary}
+              primary={primary}
+            >
               <TextInput
                 value={program}
                 onChangeText={setProgram}
@@ -548,7 +583,12 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Description */}
-            <Field label="Description" required textPrimary={textPrimary} primary={primary}>
+            <Field
+              label="Description"
+              required
+              textPrimary={textPrimary}
+              primary={primary}
+            >
               <TextInput
                 value={description}
                 onChangeText={setDescription}
@@ -568,7 +608,12 @@ export default function PostEventScreen() {
             <Field label="Tickets" textPrimary={textPrimary} primary={primary}>
               <Pressable
                 onPress={() => setIsFree(!isFree)}
-                style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  paddingVertical: 4,
+                }}
               >
                 <View
                   style={{
@@ -592,7 +637,13 @@ export default function PostEventScreen() {
               </Pressable>
               {!isFree && (
                 <View style={{ marginTop: 8, gap: 6 }}>
-                  <Text style={{ fontSize: 11, fontWeight: "500", color: textPrimary }}>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "500",
+                      color: textPrimary,
+                    }}
+                  >
                     Ticket price (USD) *
                   </Text>
                   <TextInput
@@ -616,7 +667,11 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Ticket URL */}
-            <Field label="Ticket / RSVP Link" textPrimary={textPrimary} primary={primary}>
+            <Field
+              label="Ticket / RSVP Link"
+              textPrimary={textPrimary}
+              primary={primary}
+            >
               <TextInput
                 value={ticketUrl}
                 onChangeText={setTicketUrl}
@@ -633,10 +688,7 @@ export default function PostEventScreen() {
             </Field>
 
             {/* Submit */}
-            <Pressable
-              onPress={handleSubmit}
-              disabled={createEvent.isPending}
-            >
+            <Pressable onPress={handleSubmit} disabled={createEvent.isPending}>
               <View
                 style={{
                   flexDirection: "row",
@@ -651,7 +703,13 @@ export default function PostEventScreen() {
                 }}
               >
                 {createEvent.isPending ? (
-                  <Text style={{ fontSize: 15, fontWeight: "600", color: "#FFFFFF" }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: "#FFFFFF",
+                    }}
+                  >
                     Posting...
                   </Text>
                 ) : (
@@ -661,7 +719,13 @@ export default function PostEventScreen() {
                       size={18}
                       color="#FFFFFF"
                     />
-                    <Text style={{ fontSize: 15, fontWeight: "600", color: "#FFFFFF" }}>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: "#FFFFFF",
+                      }}
+                    >
                       Post Event
                     </Text>
                   </>
@@ -681,7 +745,11 @@ export default function PostEventScreen() {
       >
         <Pressable
           onPress={() => setShowTimePicker(false)}
-          style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" }}
+          style={{
+            flex: 1,
+            justifyContent: "flex-end",
+            backgroundColor: "rgba(0,0,0,0.4)",
+          }}
         >
           <Pressable onPress={(e) => e.stopPropagation()}>
             <View
@@ -702,16 +770,27 @@ export default function PostEventScreen() {
                   marginBottom: 12,
                 }}
               >
-                <Text style={{ fontSize: 15, fontWeight: "600", color: textPrimary }}>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: textPrimary,
+                  }}
+                >
                   Select Time
                 </Text>
                 <Pressable onPress={() => setShowTimePicker(false)}>
-                  <Text style={{ fontSize: 13, fontWeight: "500", color: primary }}>
+                  <Text
+                    style={{ fontSize: 13, fontWeight: "500", color: primary }}
+                  >
                     Done
                   </Text>
                 </Pressable>
               </View>
-              <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
+              <ScrollView
+                style={{ maxHeight: 260 }}
+                showsVerticalScrollIndicator={false}
+              >
                 {TIME_OPTIONS.map((opt) => (
                   <Pressable
                     key={opt.value}
@@ -783,9 +862,7 @@ function Field({
     <View style={{ gap: 6 }}>
       <Text style={{ fontSize: 13, fontWeight: "500", color: textPrimary }}>
         {label}
-        {required && (
-          <Text style={{ color: primary }}> *</Text>
-        )}
+        {required && <Text style={{ color: primary }}> *</Text>}
       </Text>
       {children}
     </View>

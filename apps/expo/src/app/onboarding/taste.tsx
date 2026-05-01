@@ -5,8 +5,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
 
 import { trpc } from "~/utils/api";
-import { toSignInHref } from "~/utils/auth-redirect";
 import { authClient } from "~/utils/auth";
+import { toSignInHref } from "~/utils/auth-redirect";
 
 export default function TasteOnboardingBridgeScreen() {
   const isDark = useColorScheme() === "dark";
@@ -21,11 +21,17 @@ export default function TasteOnboardingBridgeScreen() {
     }
   }, [router, session?.user]);
 
-  const restartSession = useMutation(trpc.onboarding.restartSession.mutationOptions());
+  const restartSession = useMutation(
+    trpc.onboarding.restartSession.mutationOptions(),
+  );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}>
-      <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}
+    >
+      <View
+        style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}
+      >
         <View
           style={{
             borderRadius: 18,
@@ -70,7 +76,9 @@ export default function TasteOnboardingBridgeScreen() {
                 paddingVertical: 11,
               }}
             >
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>
+              <Text
+                style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}
+              >
                 View my taste profile
               </Text>
             </Pressable>
@@ -84,7 +92,13 @@ export default function TasteOnboardingBridgeScreen() {
                 paddingVertical: 11,
               }}
             >
-              <Text style={{ color: isDark ? "#F9FAFB" : "#111827", fontSize: 13, fontWeight: "600" }}>
+              <Text
+                style={{
+                  color: isDark ? "#F9FAFB" : "#111827",
+                  fontSize: 13,
+                  fontWeight: "600",
+                }}
+              >
                 Explore events
               </Text>
             </Pressable>

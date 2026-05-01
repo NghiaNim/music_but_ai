@@ -87,9 +87,7 @@ export default function LiveEventDetailScreen() {
             paddingHorizontal: 32,
           }}
         >
-          <Text
-            style={{ fontSize: 17, fontWeight: "600", color: textPrimary }}
-          >
+          <Text style={{ fontSize: 17, fontWeight: "600", color: textPrimary }}>
             Event not found
           </Text>
           <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
@@ -252,7 +250,11 @@ export default function LiveEventDetailScreen() {
                 }}
               >
                 <View style={{ marginTop: 2 }}>
-                  <Ionicons name="location-outline" size={14} color={textMuted} />
+                  <Ionicons
+                    name="location-outline"
+                    size={14}
+                    color={textMuted}
+                  />
                 </View>
                 <Text
                   style={{
@@ -289,9 +291,7 @@ export default function LiveEventDetailScreen() {
             >
               Tickets & details
             </Text>
-            <Text
-              style={{ fontSize: 11, color: textMuted, marginBottom: 12 }}
-            >
+            <Text style={{ fontSize: 11, color: textMuted, marginBottom: 12 }}>
               Availability and pricing are handled on the venue's website.
             </Text>
             <Pressable onPress={() => void Linking.openURL(event.buyUrl)}>
@@ -428,8 +428,8 @@ export default function LiveEventDetailScreen() {
             </Text>
             <Text style={{ fontSize: 13, color: textMuted, lineHeight: 20 }}>
               This performance is included in Classica from public venue
-              calendars. For accessibility, parking, and box office hours,
-              refer to {sourceLabel}.
+              calendars. For accessibility, parking, and box office hours, refer
+              to {sourceLabel}.
             </Text>
           </View>
         </View>

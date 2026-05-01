@@ -17,8 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { trpc } from "~/utils/api";
-import { pushSignIn, toSignInHref } from "~/utils/auth-redirect";
 import { authClient } from "~/utils/auth";
+import { pushSignIn, toSignInHref } from "~/utils/auth-redirect";
 
 const BUY_TICKET_REGEX = /\[BUY_TICKET:([a-f0-9-]+)\]/g;
 
@@ -92,11 +92,17 @@ export default function ChatScreen() {
     trpc.chat.send.mutationOptions({
       onSuccess: (data) => {
         if (data.sessionId) setSessionId(data.sessionId);
-        setMessages((prev) => [...prev, { role: "assistant", content: data.response }]);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: data.response },
+        ]);
       },
       onError: (err) => {
         setMessages((prev) => prev.slice(0, -1));
-        Alert.alert("Ton Ton couldn't respond", err.message || "Please try again.");
+        Alert.alert(
+          "Ton Ton couldn't respond",
+          err.message || "Please try again.",
+        );
       },
     }),
   );
@@ -119,7 +125,8 @@ export default function ChatScreen() {
         "What's the dress code? Any etiquette tips?",
         "Why is this piece considered a masterwork?",
       ];
-  const suggestions = mode === "discovery" ? DISCOVERY_SUGGESTIONS : learningSuggestions;
+  const suggestions =
+    mode === "discovery" ? DISCOVERY_SUGGESTIONS : learningSuggestions;
 
   const handleSend = () => {
     const content = inputValue.trim();
@@ -165,13 +172,22 @@ export default function ChatScreen() {
                 backgroundColor: isDark ? "rgba(120,53,15,0.3)" : "#FEF3C7",
               }}
             >
-              <Ionicons name="musical-notes-outline" size={20} color="#D97706" />
+              <Ionicons
+                name="musical-notes-outline"
+                size={20}
+                color="#D97706"
+              />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: textPrimary }}>
+              <Text
+                style={{ fontSize: 17, fontWeight: "700", color: textPrimary }}
+              >
                 Ask Ton Ton
               </Text>
-              <Text style={{ fontSize: 12, color: "#6B7280" }} numberOfLines={1}>
+              <Text
+                style={{ fontSize: 12, color: "#6B7280" }}
+                numberOfLines={1}
+              >
                 {mode === "discovery"
                   ? "Help me find a concert"
                   : activeEvent
@@ -193,7 +209,9 @@ export default function ChatScreen() {
                 paddingVertical: 6,
               }}
             >
-              <Text style={{ color: textPrimary, fontSize: 11, fontWeight: "600" }}>
+              <Text
+                style={{ color: textPrimary, fontSize: 11, fontWeight: "600" }}
+              >
                 Tickets
               </Text>
             </Pressable>
@@ -223,16 +241,27 @@ export default function ChatScreen() {
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: 14,
+          }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <Pressable
             onPress={() => router.back()}
-            style={{ marginBottom: 12, flexDirection: "row", alignItems: "center", gap: 4 }}
+            style={{
+              marginBottom: 12,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
           >
             <Ionicons name="chevron-back" size={16} color="#9C1738" />
-            <Text style={{ color: "#9C1738", fontSize: 13, fontWeight: "500" }}>Back</Text>
+            <Text style={{ color: "#9C1738", fontSize: 13, fontWeight: "500" }}>
+              Back
+            </Text>
           </Pressable>
 
           {activeEvent ? (
@@ -246,14 +275,24 @@ export default function ChatScreen() {
                 padding: 12,
               }}
             >
-              <Text style={{ fontSize: 11, fontWeight: "700", color: "#B45309" }}>
+              <Text
+                style={{ fontSize: 11, fontWeight: "700", color: "#B45309" }}
+              >
                 Talking about
               </Text>
-              <Text style={{ marginTop: 2, fontSize: 14, fontWeight: "600", color: textPrimary }}>
+              <Text
+                style={{
+                  marginTop: 2,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: textPrimary,
+                }}
+              >
                 {activeEvent.title}
               </Text>
               <Text style={{ marginTop: 2, fontSize: 12, color: "#6B7280" }}>
-                {formatFriendlyDate(activeEvent.date)} {activeEvent.venue ? `· ${activeEvent.venue}` : ""}
+                {formatFriendlyDate(activeEvent.date)}{" "}
+                {activeEvent.venue ? `· ${activeEvent.venue}` : ""}
               </Text>
             </View>
           ) : null}
@@ -269,14 +308,27 @@ export default function ChatScreen() {
                   padding: 14,
                 }}
               >
-                <Text style={{ fontSize: 18, fontWeight: "700", color: textPrimary }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: textPrimary,
+                  }}
+                >
                   {mode === "discovery"
                     ? "What are you in the mood for?"
                     : activeEvent
                       ? `Ask me about "${activeEvent.title}"`
                       : "What would you like to learn?"}
                 </Text>
-                <Text style={{ marginTop: 6, fontSize: 13, lineHeight: 20, color: "#6B7280" }}>
+                <Text
+                  style={{
+                    marginTop: 6,
+                    fontSize: 13,
+                    lineHeight: 20,
+                    color: "#6B7280",
+                  }}
+                >
                   {mode === "discovery"
                     ? "I can help you find the perfect concert based on your interests."
                     : "Ask me anything about the event, the music, or the composers."}
@@ -295,7 +347,9 @@ export default function ChatScreen() {
                     paddingVertical: 10,
                   }}
                 >
-                  <Text style={{ fontSize: 13, color: textPrimary }}>{item}</Text>
+                  <Text style={{ fontSize: 13, color: textPrimary }}>
+                    {item}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -437,7 +491,9 @@ function TypingIndicator({ isDark }: { isDark: boolean }) {
           paddingVertical: 10,
         }}
       >
-        <Text style={{ fontSize: 12, color: "#6B7280" }}>Ton Ton is typing...</Text>
+        <Text style={{ fontSize: 12, color: "#6B7280" }}>
+          Ton Ton is typing...
+        </Text>
       </View>
     </View>
   );
@@ -465,16 +521,23 @@ function ChatBubble({
       },
       onError: (err) => {
         if (err.data?.code === "UNAUTHORIZED") {
-          Alert.alert("Sign in required", "Please sign in to purchase tickets.", [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Sign in",
-              onPress: () => pushSignIn("/(tabs)/chat"),
-            },
-          ]);
+          Alert.alert(
+            "Sign in required",
+            "Please sign in to purchase tickets.",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Sign in",
+                onPress: () => pushSignIn("/(tabs)/chat"),
+              },
+            ],
+          );
           return;
         }
-        Alert.alert("Checkout failed", err.message || "Could not open checkout.");
+        Alert.alert(
+          "Checkout failed",
+          err.message || "Could not open checkout.",
+        );
       },
     }),
   );
@@ -494,7 +557,11 @@ function ChatBubble({
             borderTopRightRadius: isUser ? 4 : 16,
             borderWidth: isUser ? 0 : 1,
             borderColor: isDark ? "#2D2D2D" : "#E5E7EB",
-            backgroundColor: isUser ? "#9C1738" : isDark ? "#1A1A1A" : "#FFFFFF",
+            backgroundColor: isUser
+              ? "#9C1738"
+              : isDark
+                ? "#1A1A1A"
+                : "#FFFFFF",
             paddingHorizontal: 12,
             paddingVertical: 10,
           }}
@@ -512,7 +579,9 @@ function ChatBubble({
         {buyEventId && !isUser ? (
           <Pressable
             disabled={checkout.isPending}
-            onPress={() => checkout.mutate({ eventId: buyEventId, quantity: 1 })}
+            onPress={() =>
+              checkout.mutate({ eventId: buyEventId, quantity: 1 })
+            }
             style={{
               borderRadius: 12,
               borderWidth: 1,

@@ -9,12 +9,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import type { SocialProvider } from "~/utils/auth";
 
-import {
-  authClient,
-  DEFAULT_AUTH_CALLBACK,
-} from "~/utils/auth";
+import type { SocialProvider } from "~/utils/auth";
+import { authClient, DEFAULT_AUTH_CALLBACK } from "~/utils/auth";
 
 function normalizeCallback(raw: string | string[] | undefined) {
   const value = Array.isArray(raw) ? raw[0] : raw;
@@ -59,8 +56,12 @@ export default function SignInScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}>
-      <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}
+    >
+      <View
+        style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}
+      >
         <View
           style={{
             borderRadius: 18,

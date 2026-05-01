@@ -42,7 +42,8 @@ interface LearnModuleExports {
 }
 
 declare const require: (id: string) => unknown;
-const learnModuleExports = require("../../../apps/nextjs/src/app/learn/_lib/modules") as LearnModuleExports;
+const learnModuleExports =
+  require("../../../apps/nextjs/src/app/learn/_lib/modules") as LearnModuleExports;
 export const MODULES = learnModuleExports.MODULES;
 export const getModule = learnModuleExports.getModule;
 
@@ -97,13 +98,19 @@ export const LEARNING_LEVELS: readonly LearningLevel[] = [
 export function getLearningLevel(points: number) {
   const firstLevel = LEARNING_LEVELS[0];
   if (!firstLevel) {
-    return { current: { min: 0, name: "Newcomer" }, currentIndex: 0, next: undefined };
+    return {
+      current: { min: 0, name: "Newcomer" },
+      currentIndex: 0,
+      next: undefined,
+    };
   }
   let current = firstLevel;
   for (const level of LEARNING_LEVELS) {
     if (points >= level.min) current = level;
   }
-  const currentIndex = LEARNING_LEVELS.findIndex((l) => l.name === current.name);
+  const currentIndex = LEARNING_LEVELS.findIndex(
+    (l) => l.name === current.name,
+  );
   const next = LEARNING_LEVELS[currentIndex + 1];
   return { current, currentIndex, next };
 }
@@ -170,4 +177,3 @@ export const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
     category: "listened",
   },
 ] as const;
-

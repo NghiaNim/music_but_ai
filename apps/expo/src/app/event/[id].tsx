@@ -124,9 +124,7 @@ export default function EventDetailScreen() {
             paddingHorizontal: 32,
           }}
         >
-          <Text
-            style={{ fontSize: 17, fontWeight: "600", color: textPrimary }}
-          >
+          <Text style={{ fontSize: 17, fontWeight: "600", color: textPrimary }}>
             Event not found
           </Text>
           <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
@@ -256,8 +254,7 @@ export default function EventDetailScreen() {
               <Text
                 style={{ fontSize: 11, fontWeight: "500", color: textMuted }}
               >
-                {LISTING_LABELS[event.listingCategory] ??
-                  event.listingCategory}
+                {LISTING_LABELS[event.listingCategory] ?? event.listingCategory}
               </Text>
             </View>
             <View
@@ -399,9 +396,7 @@ export default function EventDetailScreen() {
               >
                 Free admission
               </Text>
-              <Text
-                style={{ fontSize: 11, color: textMuted, marginTop: 2 }}
-              >
+              <Text style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>
                 No ticket required — just show up.
                 {ticketUrl ? " RSVP at the link below if requested." : ""}
               </Text>
@@ -488,9 +483,7 @@ export default function EventDetailScreen() {
 
           {/* Save / I Went */}
           {!isCancelled && (
-            <View
-              style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}
-            >
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
               <Pressable
                 onPress={() => {
                   if (!isSignedIn) {
@@ -534,10 +527,7 @@ export default function EventDetailScreen() {
               <Pressable
                 onPress={() => {
                   if (!isSignedIn) {
-                    Alert.alert(
-                      "Sign in required",
-                      "Sign in to track events.",
-                    );
+                    Alert.alert("Sign in required", "Sign in to track events.");
                     return;
                   }
                   if (id)
@@ -605,11 +595,7 @@ export default function EventDetailScreen() {
                   borderColor: isDark ? "#78350F" : "#FDE68A",
                 }}
               >
-                <Ionicons
-                  name="sparkles-outline"
-                  size={16}
-                  color="#D97706"
-                />
+                <Ionicons name="sparkles-outline" size={16} color="#D97706" />
                 <Text
                   style={{
                     fontSize: 13,
@@ -644,15 +630,11 @@ export default function EventDetailScreen() {
                 }}
               >
                 <Ionicons name="bulb-outline" size={18} color={primary} />
-                <Text
-                  style={{ fontWeight: "600", color: textPrimary }}
-                >
+                <Text style={{ fontWeight: "600", color: textPrimary }}>
                   For Beginners
                 </Text>
               </View>
-              <Text
-                style={{ fontSize: 13, color: textMuted, lineHeight: 20 }}
-              >
+              <Text style={{ fontSize: 13, color: textMuted, lineHeight: 20 }}>
                 {event.beginnerNotes}
               </Text>
             </View>
@@ -700,9 +682,7 @@ export default function EventDetailScreen() {
               >
                 About
               </Text>
-              <Text
-                style={{ fontSize: 13, color: textMuted, lineHeight: 20 }}
-              >
+              <Text style={{ fontSize: 13, color: textMuted, lineHeight: 20 }}>
                 {event.description}
               </Text>
             </View>
@@ -739,9 +719,7 @@ export default function EventDetailScreen() {
                 >
                   {event.venue}
                 </Text>
-                <Text
-                  style={{ fontSize: 11, color: textMuted, marginTop: 2 }}
-                >
+                <Text style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>
                   {event.venueAddress}
                 </Text>
               </View>

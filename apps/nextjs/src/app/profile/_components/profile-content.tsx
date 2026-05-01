@@ -17,7 +17,9 @@ import { authClient } from "~/auth/client";
 import { useTRPC } from "~/trpc/react";
 
 type UserEventWithEvent = RouterOutputs["userEvent"]["myEvents"][number];
-type BadgeForUser = RouterOutputs["badges"]["forUser"][number] & { image: string };
+type BadgeForUser = RouterOutputs["badges"]["forUser"][number] & {
+  image: string;
+};
 
 const BADGE_IMAGE_BY_KEY: Record<string, string> = {
   beethoven: "/badges/badge_beethoven.png",
@@ -300,7 +302,8 @@ export function ProfileContent() {
   const concertsAttended = attended.length;
 
   const badgesWithState: BadgeForUser[] = (badges ?? []).map((badge) => {
-    const fallbackImage = BADGE_IMAGE_BY_KEY.bach ?? "/badges/badge_bach_v2.png";
+    const fallbackImage =
+      BADGE_IMAGE_BY_KEY.bach ?? "/badges/badge_bach_v2.png";
     return {
       ...badge,
       image: BADGE_IMAGE_BY_KEY[badge.imageKey] ?? fallbackImage,

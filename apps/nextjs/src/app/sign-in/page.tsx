@@ -11,7 +11,7 @@ export default async function SignInPage(props: {
   const { callbackUrl } = await props.searchParams;
 
   if (session) {
-    redirect(callbackUrl ?? "/");
+    redirect(callbackUrl ?? "/demo");
   }
 
   return (

@@ -1,196 +1,434 @@
-import { Suspense } from "react";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@acme/ui/button";
 
-import { getSession } from "~/auth/server";
-import { HydrateClient, prefetch, trpc } from "~/trpc/server";
-import { EventFeedSkeleton, FeaturedEvents } from "./_components/event-feed";
-import { OnboardingCTA } from "./_components/onboarding-cta";
+export const metadata: Metadata = {
+  title: "Classica | Discover Your Next Concert",
+  description:
+    "A calm, modern way to discover classical and jazz concerts, build your taste profile, and get personalized recommendations.",
+};
 
-export default async function HomePage() {
-  prefetch(trpc.event.all.queryOptions({}));
-  prefetch(
-    trpc.liveEvent.page.queryOptions({
-      upcomingOnly: true,
-      limit: 50,
-      cursor: 0,
-    }),
-  );
-  const session = await getSession();
-  const firstName = session?.user.name.split(" ")[0] ?? "friend";
+const FEATURE_CARDS = [
+  {
+    title: "Ton Ton helps you find your sound",
+    description:
+      "Your musical sidekick makes the first step feel playful, warm, and way less intimidating.",
+  },
+  {
+    title: "Concerts matched to your mood",
+    description:
+      "Pick the energy you want, from grand and dramatic to intimate and dreamy.",
+  },
+  {
+    title: "Learn without feeling lectured",
+    description:
+      "Get just enough context, recs, and confidence to actually want to go to the concert.",
+  },
+] as const;
+
+const STEPS = [
+  "Meet Ton Ton and tell Classica what kind of music moves you.",
+  "Get a taste profile that turns feelings into concert recs.",
+  "Save favorites, learn as you go, and build your concert life.",
+] as const;
+
+const TON_TON_QUOTES = [
+  "Big feelings? I know a symphony for that.",
+  "New to classical or jazz? Perfect. I love an origin story.",
+  "Let's find you a concert worth dressing up for.",
+] as const;
+
+const HERO_TAGS = ["Grand", "Dreamy", "Joyful", "Smoky", "Curious"] as const;
+
+export default function LandingPage() {
+  const demoHref = "/demo";
+  const demoLabel = "Try the Demo";
+  const waitlistHref = "/waitlist";
 
   return (
-    <HydrateClient>
-      <div className="mx-auto max-w-lg">
-        {/* Hero */}
-        <section className="relative overflow-hidden px-4 pt-6 pb-5">
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-amber-50/80 via-orange-50/40 to-transparent dark:from-amber-950/20 dark:via-orange-950/10 dark:to-transparent" />
-
-          <FloatingNotes />
-
-          <div className="relative">
-            <p className="mb-1 text-sm font-medium text-amber-600 dark:text-amber-400">
-              {session ? `Hey ${firstName} ~` : "Welcome to Classica"}
-            </p>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {session
-                ? "What shall we listen to today?"
-                : "Your next favorite concert is waiting"}
-            </h1>
-            <p className="text-muted-foreground mt-1.5 text-sm">
-              Discover classical & jazz, powered by curiosity
-            </p>
-          </div>
-        </section>
-
-        {/* Ask Ton Ton */}
-        <section className="px-4 pb-4">
-          <Link href="/chat" className="group block">
-            <div className="bg-card relative overflow-hidden rounded-2xl border p-3.5 transition-all group-hover:shadow-md">
-              <div className="relative flex items-center gap-3">
-                <div className="relative grid size-[4.25rem] shrink-0 place-items-center rounded-full bg-[#F5E6DC] dark:bg-rose-950/30">
-                  <Image
-                    src="/ton-ton-cat-cutout.png"
-                    alt="Ton Ton the cat"
-                    width={68}
-                    height={68}
-                    className="h-full w-full object-contain object-bottom"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">Ask Ton Ton</p>
-                  <p className="text-muted-foreground text-xs">
-                    Your musical sidekick &mdash; recs, trivia, anything!
-                  </p>
-                </div>
-                <ChevronRightIcon />
-              </div>
-            </div>
+    <div className="dark:from-background relative overflow-hidden bg-linear-to-br from-amber-50/70 via-rose-50/35 to-violet-50/35 dark:via-rose-950/8 dark:to-violet-950/8">
+      <HeroSparkles />
+      <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 pb-12 sm:px-6 lg:px-8">
+        <header className="flex items-center justify-between py-5">
+          <Link href="/" className="text-lg font-bold tracking-tight">
+            <span className="flex items-center gap-2">
+              <span className="bg-background/90 flex size-8 items-center justify-center rounded-full border shadow-sm">
+                <MusicNoteIcon />
+              </span>
+              <span>Classica</span>
+            </span>
           </Link>
-        </section>
-
-        {/* Onboarding */}
-        <OnboardingCTA isSignedIn={!!session} />
-
-        {/* Upcoming Events */}
-        <section className="px-4 pb-6">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarSparkle />
-              <h2 className="text-lg font-semibold">Upcoming Events</h2>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/events" className="text-xs">
-                See all
-              </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button variant="outline" asChild>
+              <Link href={demoHref}>{demoLabel}</Link>
+            </Button>
+            <Button asChild>
+              <Link href={waitlistHref}>Join Waitlist</Link>
             </Button>
           </div>
-          <Suspense fallback={<EventFeedSkeleton count={3} />}>
-            <FeaturedEvents />
-          </Suspense>
-        </section>
+        </header>
 
-        {/* Quick Start */}
-        <section className="pb-8">
-          <div className="mb-3 flex items-center gap-2 px-4">
-            <CompassIcon />
-            <h2 className="text-lg font-semibold">Explore</h2>
-          </div>
-          <div className="flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <Link href="/events?difficulty=beginner" className="group shrink-0">
-              <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
-                <SeedlingIllustration />
-                <div>
-                  <p className="text-sm leading-tight font-semibold">
-                    For Beginners
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-xs leading-snug">
-                    First concert? Start here
-                  </p>
+        <main className="flex-1">
+          <section className="grid gap-10 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-16">
+            <div className="max-w-2xl">
+              <p className="text-primary mb-3 text-sm font-medium">
+                Meet Ton Ton, your classical and jazz sidekick
+              </p>
+              <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+                Discover classical & jazz, powered by curiosity
+              </h1>
+              <p className="text-muted-foreground mt-4 max-w-xl text-base leading-7 sm:text-lg">
+                Classica helps you discover live classical and jazz music
+                through a fun taste profile, thoughtful recommendations, and Ton
+                Ton-guided moments that make the whole experience feel welcoming
+                from the very first tap.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {HERO_TAGS.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-amber-200/80 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-900 shadow-sm dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Button
+                  size="lg"
+                  className="h-12 px-7 text-base sm:w-auto"
+                  asChild
+                >
+                  <Link href={waitlistHref}>Join Waitlist</Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-12 px-7 text-base sm:w-auto"
+                  asChild
+                >
+                  <Link href={demoHref}>{demoLabel}</Link>
+                </Button>
+              </div>
+              <div className="mt-12 flex flex-col gap-3 sm:flex-row">
+                <StoreBadge platform="app-store" />
+                <StoreBadge platform="google-play" />
+              </div>
+              <div className="text-muted-foreground mt-8 grid gap-3 text-sm sm:grid-cols-3">
+                <StatCard value="2 min" label="to build your taste profile" />
+                <StatCard
+                  value="Ton Ton-approved"
+                  label="concerts matched to your vibe"
+                />
+                <StatCard
+                  value="Beginner-friendly"
+                  label="guidance without gatekeeping"
+                />
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 rounded-[2rem] bg-linear-to-br from-amber-200/40 via-rose-200/25 to-violet-200/35 blur-3xl dark:from-amber-800/16 dark:via-rose-800/8 dark:to-violet-800/16" />
+              <div className="dark:bg-card relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-[0_20px_60px_rgba(214,143,92,0.12)] backdrop-blur sm:p-6 dark:border-white/10">
+                <div className="absolute -top-8 -right-6 h-24 w-24 rounded-full bg-amber-200/60 blur-2xl dark:bg-amber-700/20" />
+                <div className="absolute right-10 bottom-12 h-20 w-20 rounded-full bg-rose-200/60 blur-2xl dark:bg-rose-700/20" />
+                <div className="absolute top-20 -left-4 h-16 w-16 rounded-full bg-violet-200/50 blur-2xl dark:bg-violet-700/20" />
+                <div className="relative space-y-4">
+                  <div className="bg-background/85 flex items-center gap-3 rounded-2xl border border-white/80 p-3 shadow-sm backdrop-blur">
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[#F5E6DC]">
+                      <Image
+                        src="/ton-ton-cat-cutout.png"
+                        alt="Ton Ton the cat mascot"
+                        width={56}
+                        height={56}
+                        className="h-full w-full object-contain object-bottom"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold">Ton Ton says</p>
+                      <p className="text-muted-foreground text-sm leading-6">
+                        "{TON_TON_QUOTES[0]}"
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-amber-100 bg-linear-to-br from-amber-50/95 to-rose-50/85 p-4 shadow-sm dark:border-amber-900/40 dark:from-amber-950/30 dark:to-rose-950/20">
+                    <p className="text-xs font-medium tracking-[0.18em] text-amber-700 uppercase dark:text-amber-300">
+                      Your sound
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold tracking-tight">
+                      Cathartic Symphony Enthusiast
+                    </p>
+                    <p className="text-muted-foreground mt-2 text-sm leading-6">
+                      Loves emotional sweep, rich orchestration, and nights that
+                      feel transportive from the first note.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {[
+                        "Orchestral drama",
+                        "Late-night jazz",
+                        "Main-character energy",
+                      ].map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-foreground dark:bg-background/70 rounded-full border border-white/80 bg-white/80 px-2.5 py-1 text-xs font-medium shadow-sm dark:border-white/10"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <PreviewCard
+                      eyebrow="Ton Ton pick"
+                      title="Romantic orchestra at Carnegie"
+                      body="A big, melodic program with drama, warmth, and just the right amount of main-character energy."
+                    />
+                    <PreviewCard
+                      eyebrow="Stretch pick"
+                      title="Contemporary chamber set"
+                      body="A playful curveball for when you want something intimate, fresh, and still emotionally rich."
+                    />
+                  </div>
+
+                  <div className="bg-background/90 rounded-2xl border p-4 shadow-sm">
+                    <p className="text-sm font-medium">
+                      Why people use Classica
+                    </p>
+                    <ul className="text-muted-foreground mt-3 space-y-2 text-sm">
+                      <li>
+                        Personalized recommendations instead of generic listings
+                      </li>
+                      <li>A mascot guide that makes exploring feel fun</li>
+                      <li>
+                        A softer, friendlier way into live classical and jazz
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </Link>
-            <Link href="/chat?mode=discovery" className="group shrink-0">
-              <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
-                <SparkleIllustration />
-                <div>
-                  <p className="text-sm leading-tight font-semibold">
-                    Get a Rec
+            </div>
+          </section>
+
+          <section className="py-2 sm:py-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              {TON_TON_QUOTES.map((quote, index) => (
+                <div
+                  key={quote}
+                  className="via-background rounded-3xl border border-white/70 bg-linear-to-br from-amber-50 to-rose-50 p-5 shadow-sm transition-transform hover:-translate-y-1 dark:border-white/10 dark:from-amber-950/20 dark:to-rose-950/20"
+                >
+                  <p className="text-primary text-xs font-semibold tracking-[0.18em] uppercase">
+                    Ton Ton note 0{index + 1}
                   </p>
-                  <p className="text-muted-foreground mt-1 text-xs leading-snug">
-                    AI-picked just for you
-                  </p>
-                </div>
-              </div>
-            </Link>
-            <Link href="/learn" className="group shrink-0">
-              <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
-                <BookIllustration />
-                <div>
-                  <p className="text-sm leading-tight font-semibold">Learn</p>
-                  <p className="text-muted-foreground mt-1 text-xs leading-snug">
-                    Classical &amp; jazz 101
+                  <p className="mt-3 text-base leading-7 font-medium">
+                    "{quote}"
                   </p>
                 </div>
-              </div>
-            </Link>
-            <Link href="/profile" className="group shrink-0">
-              <div className="flex h-36 w-32 flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-all group-hover:shadow-md dark:bg-white/5">
-                <TrophyIllustration />
-                <div>
-                  <p className="text-sm leading-tight font-semibold">
-                    My Badges
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-xs leading-snug">
-                    See what you&apos;ve earned
+              ))}
+            </div>
+          </section>
+
+          <section className="py-6 sm:py-10">
+            <div className="grid gap-4 md:grid-cols-3">
+              {FEATURE_CARDS.map((feature) => (
+                <div
+                  key={feature.title}
+                  className="dark:bg-card rounded-3xl border border-white/70 bg-white/80 p-6 shadow-sm transition-transform hover:-translate-y-1 dark:border-white/10"
+                >
+                  <p className="text-lg font-semibold">{feature.title}</p>
+                  <p className="text-muted-foreground mt-2 text-sm leading-6">
+                    {feature.description}
                   </p>
                 </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="py-8 sm:py-12">
+            <div className="dark:bg-card rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-sm sm:p-8 dark:border-white/10">
+              <p className="text-primary text-sm font-medium">
+                How the fun starts
+              </p>
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                {STEPS.map((step, index) => (
+                  <div
+                    key={step}
+                    className="bg-background/90 rounded-2xl border p-5 shadow-sm"
+                  >
+                    <p className="text-primary text-sm font-semibold">
+                      0{index + 1}
+                    </p>
+                    <p className="mt-2 text-sm leading-6">{step}</p>
+                  </div>
+                ))}
               </div>
-            </Link>
-          </div>
-        </section>
+            </div>
+          </section>
+
+          <section className="py-8 sm:py-12">
+            <div className="via-background dark:via-background rounded-[2rem] border bg-linear-to-br from-amber-50 to-rose-50 p-6 shadow-sm sm:p-8 dark:from-amber-950/20 dark:to-rose-950/20">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold tracking-tight text-balance">
+                  Let Ton Ton help you find your next obsession.
+                </h2>
+                <p className="text-muted-foreground mt-3 text-sm leading-6 sm:text-base">
+                  Whether you are brand new or already obsessed, Classica makes
+                  discovering what to hear next feel playful, personal, and easy
+                  to jump into.
+                </p>
+                <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                  <Button size="lg" className="sm:min-w-[160px]" asChild>
+                    <Link href={waitlistHref}>Join Waitlist</Link>
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="sm:min-w-[160px]"
+                    asChild
+                  >
+                    <Link href={demoHref}>{demoLabel}</Link>
+                  </Button>
+                </div>
+                <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                  <StoreBadge platform="app-store" centered />
+                  <StoreBadge platform="google-play" centered />
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
-    </HydrateClient>
+    </div>
   );
 }
 
-function FloatingNotes() {
+function StatCard(props: { value: string; label: string }) {
+  return (
+    <div className="dark:bg-card rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-white/10">
+      <p className="text-foreground text-sm font-semibold">{props.value}</p>
+      <p className="text-muted-foreground mt-1 text-xs leading-5">
+        {props.label}
+      </p>
+    </div>
+  );
+}
+
+function PreviewCard(props: { eyebrow: string; title: string; body: string }) {
+  return (
+    <div className="bg-background/90 rounded-2xl border p-4 shadow-sm">
+      <p className="text-primary text-xs font-medium tracking-[0.18em] uppercase">
+        {props.eyebrow}
+      </p>
+      <p className="mt-2 font-semibold">{props.title}</p>
+      <p className="text-muted-foreground mt-1 text-sm leading-6">
+        {props.body}
+      </p>
+    </div>
+  );
+}
+
+function StoreBadge(props: {
+  platform: "app-store" | "google-play";
+  centered?: boolean;
+}) {
+  const isAppStore = props.platform === "app-store";
+
+  return (
+    <div
+      className={[
+        "dark:bg-card flex min-h-14 min-w-[190px] items-center gap-3 rounded-2xl border border-white/70 bg-white/85 px-4 py-3 shadow-sm backdrop-blur dark:border-white/10",
+        props.centered ? "justify-center" : "",
+      ].join(" ")}
+      aria-label={
+        isAppStore ? "Download on the App Store" : "Get it on Google Play"
+      }
+    >
+      <div className="text-foreground shrink-0">
+        {isAppStore ? <AppleIcon /> : <PlayStoreIcon />}
+      </div>
+      <div className="min-w-0">
+        <p className="text-muted-foreground text-[10px] tracking-[0.18em] uppercase">
+          {isAppStore ? "Download on the" : "Get it on"}
+        </p>
+        <p className="text-sm font-semibold">
+          {isAppStore ? "App Store" : "Google Play"}
+        </p>
+      </div>
+      <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-[10px] font-medium">
+        Coming soon
+      </span>
+    </div>
+  );
+}
+
+function HeroSparkles() {
   return (
     <div
       className="pointer-events-none absolute inset-0 overflow-hidden"
       aria-hidden
     >
+      <div className="absolute top-8 left-[8%] h-32 w-32 rounded-full bg-amber-200/22 blur-3xl dark:bg-amber-700/10" />
+      <div className="absolute top-28 right-[18%] h-36 w-36 rounded-full bg-rose-200/18 blur-3xl dark:bg-rose-700/10" />
+      <div className="absolute bottom-24 left-[18%] h-36 w-36 rounded-full bg-violet-200/18 blur-3xl dark:bg-violet-700/10" />
       <svg
-        className="absolute top-2 right-4 rotate-12"
+        className="absolute top-20 left-[18%] rotate-[-10deg]"
         width="30"
         height="30"
         viewBox="0 0 24 24"
-        fill="#FFBE00"
-        opacity="0.7"
+        fill="#F6A6B4"
+        opacity="0.78"
+      >
+        <EighthNote />
+      </svg>
+      <svg
+        className="absolute top-24 right-[24%] rotate-[8deg]"
+        width="34"
+        height="34"
+        viewBox="0 0 24 24"
+        fill="#F5BF47"
+        opacity="0.78"
       >
         <BeamedEighthNote />
       </svg>
       <svg
-        className="absolute top-14 right-14 -rotate-6"
+        className="absolute top-40 left-[54%] rotate-[14deg]"
         width="24"
         height="24"
         viewBox="0 0 24 24"
-        fill="#FFB777"
-        opacity="0.8"
+        fill="#F7B17A"
+        opacity="0.72"
       >
         <EighthNote />
       </svg>
       <svg
-        className="absolute top-5 right-36 rotate-6"
-        width="22"
-        height="22"
+        className="absolute top-24 left-[12%] rotate-12 text-amber-400/45 dark:text-amber-300/30"
+        width="26"
+        height="26"
         viewBox="0 0 24 24"
-        fill="#FFB1B7"
-        opacity="0.8"
+        fill="currentColor"
       >
-        <EighthNote />
+        <path d="M12 2.5 13.9 8l5.6 1.9-5.6 1.9L12 17.5l-1.9-5.7L4.5 9.9 10.1 8z" />
+      </svg>
+      <svg
+        className="absolute top-44 right-[16%] -rotate-6 text-rose-400/40 dark:text-rose-300/30"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M12 2.5 13.9 8l5.6 1.9-5.6 1.9L12 17.5l-1.9-5.7L4.5 9.9 10.1 8z" />
+      </svg>
+      <svg
+        className="absolute right-[28%] bottom-36 rotate-6 text-violet-400/38 dark:text-violet-300/30"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M12 2.5 13.9 8l5.6 1.9-5.6 1.9L12 17.5l-1.9-5.7L4.5 9.9 10.1 8z" />
       </svg>
     </div>
   );
@@ -218,161 +456,7 @@ function BeamedEighthNote() {
   );
 }
 
-function CalendarSparkle() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      className="text-amber-500 dark:text-amber-400"
-    >
-      <rect
-        x="3"
-        y="4"
-        width="18"
-        height="18"
-        rx="3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M8 2v4M16 2v4M3 10h18"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M15 15l1.5-3 1.5 3M12 14l-1 2h3"
-        stroke="currentColor"
-        strokeWidth="1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.6"
-      />
-    </svg>
-  );
-}
-
-function CompassIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      className="text-amber-500 dark:text-amber-400"
-    >
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M16.24 7.76l-3.53 5.3-1.41 1.41 1.41-4.24 3.53-2.47z"
-        fill="currentColor"
-      />
-      <path
-        d="M7.76 16.24l3.53-5.3 1.41-1.41-1.41 4.24-3.53 2.47z"
-        fill="currentColor"
-        opacity="0.35"
-      />
-    </svg>
-  );
-}
-
-function SeedlingIllustration() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle
-        cx="18"
-        cy="18"
-        r="18"
-        className="fill-emerald-100 dark:fill-emerald-900/40"
-      />
-      <path
-        d="M18 26V18"
-        stroke="#059669"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path d="M18 18c0-4 3-6 6-6-1 4-3 6-6 6z" fill="#34d399" />
-      <path d="M18 20c0-3-2.5-5-5-5 .8 3 2.5 5 5 5z" fill="#6ee7b7" />
-      <ellipse cx="18" cy="27" rx="4" ry="1.5" fill="#a7f3d0" />
-    </svg>
-  );
-}
-
-function SparkleIllustration() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle
-        cx="18"
-        cy="18"
-        r="18"
-        className="fill-violet-100 dark:fill-violet-900/40"
-      />
-      <path d="M18 8l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="#a78bfa" />
-      <path
-        d="M26 10l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5L22.5 13l2.5-1z"
-        fill="#c4b5fd"
-      />
-      <path d="M10 22l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="#ddd6fe" />
-    </svg>
-  );
-}
-
-function BookIllustration() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle
-        cx="18"
-        cy="18"
-        r="18"
-        className="fill-amber-100 dark:fill-amber-900/40"
-      />
-      <rect x="10" y="10" width="16" height="18" rx="2" fill="#fbbf24" />
-      <rect x="12" y="10" width="14" height="18" rx="1" fill="#fde68a" />
-      <path
-        d="M15 15h8M15 18h6M15 21h4"
-        stroke="#b45309"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-      />
-      <path d="M12 10v18" stroke="#f59e0b" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-function TrophyIllustration() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle
-        cx="18"
-        cy="18"
-        r="18"
-        className="fill-sky-100 dark:fill-sky-900/40"
-      />
-      <path d="M13 12h10v6c0 3-2 5-5 5s-5-2-5-5v-6z" fill="#38bdf8" />
-      <path
-        d="M13 14h-2c-1 0-2 1-1.5 3s2 3 3.5 2"
-        stroke="#7dd3fc"
-        strokeWidth="1.2"
-        fill="none"
-      />
-      <path
-        d="M23 14h2c1 0 2 1 1.5 3s-2 3-3.5 2"
-        stroke="#7dd3fc"
-        strokeWidth="1.2"
-        fill="none"
-      />
-      <rect x="16" y="23" width="4" height="2" rx="0.5" fill="#0ea5e9" />
-      <rect x="14" y="25" width="8" height="2" rx="1" fill="#0ea5e9" />
-      <path
-        d="M17 16l1-2 1 2 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L15 16.3z"
-        fill="#fbbf24"
-      />
-    </svg>
-  );
-}
-
-function ChevronRightIcon({ className }: { className?: string }) {
+function MusicNoteIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -384,9 +468,48 @@ function ChevronRightIcon({ className }: { className?: string }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className ?? "text-muted-foreground"}
+      className="text-foreground"
     >
-      <path d="m9 18 6-6-6-6" />
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+    >
+      <path d="M16.365 1.43c0 1.14-.424 2.187-1.123 2.954-.84.926-2.212 1.64-3.404 1.543-.152-1.113.439-2.305 1.123-3.073.754-.88 2.06-1.555 3.404-1.624zM20.92 17.09c-.61 1.395-.902 2.016-1.687 3.215-1.095 1.67-2.642 3.754-4.562 3.77-1.707.016-2.147-1.113-4.463-1.1-2.316.014-2.8 1.123-4.507 1.107-1.92-.018-3.384-1.9-4.48-3.57C-1.84 15.86-.75 7.78 3.4 7.536c1.804-.106 3.505 1.247 4.598 1.247 1.094 0 3.147-1.543 5.307-1.316.904.038 3.443.365 5.07 2.746-4.447 2.44-3.728 8.8 2.545 9.877z" />
+    </svg>
+  );
+}
+
+function PlayStoreIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <path d="M4 3.5v17l9.5-8.5z" fill="#34A853" />
+      <path
+        d="M13.5 12 17 8.9 20.8 11c.9.5.9 1.5 0 2L17 15.1z"
+        fill="#FBBC04"
+      />
+      <path d="M4 3.5 13.5 12 17 8.9l-11-6c-.8-.4-2 .1-2 1.6z" fill="#4285F4" />
+      <path
+        d="M4 20.5 13.5 12 17 15.1l-11 6c-.8.4-2-.1-2-1.6z"
+        fill="#EA4335"
+      />
     </svg>
   );
 }

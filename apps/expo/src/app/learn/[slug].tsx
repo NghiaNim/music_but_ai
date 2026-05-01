@@ -9,10 +9,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import type {
-  LearningModuleDef,
-  Unit,
-} from "@acme/validators";
+
+import type { LearningModuleDef, Unit } from "@acme/validators";
 import {
   COMPLETED_KEY,
   getModule,
@@ -54,13 +52,33 @@ export default function LearnModuleScreen() {
 
   if (!moduleDef) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: "700", color: isDark ? "#F9FAFB" : "#111827" }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 24,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "700",
+              color: isDark ? "#F9FAFB" : "#111827",
+            }}
+          >
             Module not found
           </Text>
-          <Pressable onPress={() => router.replace("/(tabs)/learn")} style={{ marginTop: 10 }}>
-            <Text style={{ color: "#9C1738", fontWeight: "600" }}>Back to Learn</Text>
+          <Pressable
+            onPress={() => router.replace("/(tabs)/learn")}
+            style={{ marginTop: 10 }}
+          >
+            <Text style={{ color: "#9C1738", fontWeight: "600" }}>
+              Back to Learn
+            </Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -79,7 +97,10 @@ export default function LearnModuleScreen() {
     setCompleted((prev) => {
       const next = new Set(prev);
       next.add(unitKey(moduleDef.slug, unitId));
-      void SecureStore.setItemAsync(COMPLETED_KEY, serializeCompletedUnits(next));
+      void SecureStore.setItemAsync(
+        COMPLETED_KEY,
+        serializeCompletedUnits(next),
+      );
       return next;
     });
   };
@@ -104,10 +125,16 @@ export default function LearnModuleScreen() {
     const unit = findUnit(moduleDef, screen.unitId);
     if (!unit) return;
     if (screen.index + 1 < unit.quiz.length) {
-      setScreen({ type: "quiz", unitId: screen.unitId, index: screen.index + 1 });
+      setScreen({
+        type: "quiz",
+        unitId: screen.unitId,
+        index: screen.index + 1,
+      });
       return;
     }
-    const score = answers.filter((a, i) => a === unit.quiz[i]?.correctIndex).length;
+    const score = answers.filter(
+      (a, i) => a === unit.quiz[i]?.correctIndex,
+    ).length;
     const isFirstTime = !completed.has(unitKey(moduleDef.slug, unit.id));
     if (isFirstTime && score === unit.quiz.length) {
       awardPoints(10);
@@ -122,24 +149,58 @@ export default function LearnModuleScreen() {
   const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
+      >
         {screen.type === "overview" ? (
           <>
-            <Pressable onPress={() => router.replace("/(tabs)/learn")} style={{ marginBottom: 10 }}>
-              <Text style={{ color: "#9C1738", fontWeight: "600", fontSize: 13 }}>{"← Learn"}</Text>
+            <Pressable
+              onPress={() => router.replace("/(tabs)/learn")}
+              style={{ marginBottom: 10 }}
+            >
+              <Text
+                style={{ color: "#9C1738", fontWeight: "600", fontSize: 13 }}
+              >
+                {"← Learn"}
+              </Text>
             </Pressable>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: 14,
+              }}
+            >
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 24, fontWeight: "700", color: textPrimary }}>
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontWeight: "700",
+                    color: textPrimary,
+                  }}
+                >
                   {moduleDef.title}
                 </Text>
                 <Text style={{ marginTop: 4, color: textMuted, fontSize: 13 }}>
                   {moduleDef.description}
                 </Text>
               </View>
-              <View style={{ borderRadius: 999, backgroundColor: "#FEF3C7", paddingHorizontal: 10, paddingVertical: 6 }}>
-                <Text style={{ color: "#92400E", fontSize: 12, fontWeight: "700" }}>
+              <View
+                style={{
+                  borderRadius: 999,
+                  backgroundColor: "#FEF3C7",
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                }}
+              >
+                <Text
+                  style={{ color: "#92400E", fontSize: 12, fontWeight: "700" }}
+                >
                   ⭐ {points}
                 </Text>
               </View>
@@ -159,24 +220,53 @@ export default function LearnModuleScreen() {
                     marginBottom: 10,
                   }}
                 >
-                  <Text style={{ color: textMuted, fontSize: 11, fontWeight: "700" }}>
+                  <Text
+                    style={{
+                      color: textMuted,
+                      fontSize: 11,
+                      fontWeight: "700",
+                    }}
+                  >
                     Unit {unit.number}
                   </Text>
-                  <Text style={{ marginTop: 3, fontSize: 17, fontWeight: "700", color: textPrimary }}>
+                  <Text
+                    style={{
+                      marginTop: 3,
+                      fontSize: 17,
+                      fontWeight: "700",
+                      color: textPrimary,
+                    }}
+                  >
                     {unit.title}
                   </Text>
-                  <Text style={{ marginTop: 2, color: textMuted, fontSize: 12 }}>
+                  <Text
+                    style={{ marginTop: 2, color: textMuted, fontSize: 12 }}
+                  >
                     {unit.subtitle}
                   </Text>
-                  <Text style={{ marginTop: 5, color: textMuted, fontSize: 11 }}>
+                  <Text
+                    style={{ marginTop: 5, color: textMuted, fontSize: 11 }}
+                  >
                     👉 {unit.goal}
                   </Text>
-                  <View style={{ marginTop: 8, flexDirection: "row", justifyContent: "space-between" }}>
+                  <View
+                    style={{
+                      marginTop: 8,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
                     <Text style={{ color: textMuted, fontSize: 11 }}>
                       {unit.lessons.length} lessons · {unit.quiz.length}q
                     </Text>
                     {done ? (
-                      <Text style={{ color: "#047857", fontSize: 11, fontWeight: "700" }}>
+                      <Text
+                        style={{
+                          color: "#047857",
+                          fontSize: 11,
+                          fontWeight: "700",
+                        }}
+                      >
                         ✓ Done
                       </Text>
                     ) : null}
@@ -273,23 +363,68 @@ function LessonView({
   return (
     <>
       <Pressable onPress={onBack}>
-        <Text style={{ color: "#9C1738", fontWeight: "600", fontSize: 13 }}>{"← Back"}</Text>
+        <Text style={{ color: "#9C1738", fontWeight: "600", fontSize: 13 }}>
+          {"← Back"}
+        </Text>
       </Pressable>
       <Text style={{ marginTop: 8, color: textMuted, fontSize: 11 }}>
         Unit {unit.number} · Lesson {screen.index + 1} of {unit.lessons.length}
       </Text>
-      <View style={{ marginTop: 12, borderRadius: 16, borderWidth: 1, borderColor: border, backgroundColor: cardBg, padding: 14 }}>
-        <Text style={{ fontSize: 48, textAlign: "center" }}>{lesson.emoji}</Text>
-        <Text style={{ marginTop: 10, fontSize: 22, fontWeight: "700", color: textPrimary }}>
+      <View
+        style={{
+          marginTop: 12,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: border,
+          backgroundColor: cardBg,
+          padding: 14,
+        }}
+      >
+        <Text style={{ fontSize: 48, textAlign: "center" }}>
+          {lesson.emoji}
+        </Text>
+        <Text
+          style={{
+            marginTop: 10,
+            fontSize: 22,
+            fontWeight: "700",
+            color: textPrimary,
+          }}
+        >
           {lesson.title}
         </Text>
-        <Text style={{ marginTop: 8, color: textMuted, fontSize: 14, lineHeight: 22 }}>
+        <Text
+          style={{
+            marginTop: 8,
+            color: textMuted,
+            fontSize: 14,
+            lineHeight: 22,
+          }}
+        >
           {lesson.body}
         </Text>
-        <View style={{ marginTop: 10, flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+        <View
+          style={{
+            marginTop: 10,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 6,
+          }}
+        >
           {lesson.examples.map((example) => (
-            <View key={example} style={{ borderRadius: 999, borderWidth: 1, borderColor: border, paddingHorizontal: 9, paddingVertical: 4 }}>
-              <Text style={{ color: textPrimary, fontSize: 11 }}>{example}</Text>
+            <View
+              key={example}
+              style={{
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: border,
+                paddingHorizontal: 9,
+                paddingVertical: 4,
+              }}
+            >
+              <Text style={{ color: textPrimary, fontSize: 11 }}>
+                {example}
+              </Text>
             </View>
           ))}
         </View>
@@ -305,7 +440,9 @@ function LessonView({
         }}
       >
         <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 13 }}>
-          {screen.index + 1 < unit.lessons.length ? "Next lesson" : "Start quiz →"}
+          {screen.index + 1 < unit.lessons.length
+            ? "Next lesson"
+            : "Start quiz →"}
         </Text>
       </Pressable>
     </>
@@ -344,16 +481,34 @@ function QuizView({
   return (
     <>
       <Pressable onPress={onExit}>
-        <Text style={{ color: "#9C1738", fontWeight: "600", fontSize: 13 }}>{"← Exit quiz"}</Text>
+        <Text style={{ color: "#9C1738", fontWeight: "600", fontSize: 13 }}>
+          {"← Exit quiz"}
+        </Text>
       </Pressable>
       <Text style={{ marginTop: 8, color: textMuted, fontSize: 11 }}>
         Unit {unit.number} · Quiz {screen.index + 1}/{unit.quiz.length}
       </Text>
-      <View style={{ marginTop: 12, borderRadius: 16, borderWidth: 1, borderColor: border, backgroundColor: cardBg, padding: 14 }}>
+      <View
+        style={{
+          marginTop: 12,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: border,
+          backgroundColor: cardBg,
+          padding: 14,
+        }}
+      >
         <Text style={{ color: textMuted, fontSize: 11, fontWeight: "700" }}>
           QUESTION {screen.index + 1}
         </Text>
-        <Text style={{ marginTop: 8, color: textPrimary, fontSize: 18, fontWeight: "700" }}>
+        <Text
+          style={{
+            marginTop: 8,
+            color: textPrimary,
+            fontSize: 18,
+            fontWeight: "700",
+          }}
+        >
           {question.question}
         </Text>
       </View>
@@ -386,7 +541,9 @@ function QuizView({
                 padding: 12,
               }}
             >
-              <Text style={{ color: textPrimary, fontSize: 14, fontWeight: "500" }}>
+              <Text
+                style={{ color: textPrimary, fontSize: 14, fontWeight: "500" }}
+              >
                 {option}
               </Text>
             </Pressable>
@@ -430,7 +587,9 @@ function QuizView({
           }}
         >
           <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 13 }}>
-            {screen.index + 1 < unit.quiz.length ? "Next question" : "See results"}
+            {screen.index + 1 < unit.quiz.length
+              ? "Next question"
+              : "See results"}
           </Text>
         </Pressable>
       ) : null}
@@ -459,18 +618,49 @@ function ResultView({
   return (
     <View style={{ alignItems: "center", marginTop: 30 }}>
       <Text style={{ fontSize: 62 }}>{perfect ? "🏆" : "🎉"}</Text>
-      <Text style={{ marginTop: 8, fontSize: 24, fontWeight: "700", color: textPrimary }}>
+      <Text
+        style={{
+          marginTop: 8,
+          fontSize: 24,
+          fontWeight: "700",
+          color: textPrimary,
+        }}
+      >
         {perfect ? "Perfect score!" : "Nice work!"}
       </Text>
-      <Text style={{ marginTop: 8, color: textMuted, fontSize: 13, textAlign: "center" }}>
+      <Text
+        style={{
+          marginTop: 8,
+          color: textMuted,
+          fontSize: 13,
+          textAlign: "center",
+        }}
+      >
         You got {screen.score} out of {total} correct on Unit {unit.number}:{" "}
         {unit.title}.
       </Text>
-      <View style={{ marginTop: 14, borderRadius: 14, borderWidth: 1, borderColor: "#FDE68A", backgroundColor: "#FFFBEB", paddingVertical: 10, paddingHorizontal: 16 }}>
+      <View
+        style={{
+          marginTop: 14,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: "#FDE68A",
+          backgroundColor: "#FFFBEB",
+          paddingVertical: 10,
+          paddingHorizontal: 16,
+        }}
+      >
         <Text style={{ color: "#B45309", fontSize: 12, fontWeight: "700" }}>
           Points earned
         </Text>
-        <Text style={{ color: "#B45309", fontSize: 28, fontWeight: "800", textAlign: "center" }}>
+        <Text
+          style={{
+            color: "#B45309",
+            fontSize: 28,
+            fontWeight: "800",
+            textAlign: "center",
+          }}
+        >
           +{earned}
         </Text>
       </View>
