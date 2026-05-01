@@ -13,8 +13,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "~/utils/api";
 import { trpc } from "~/utils/api";
-import { toSignInHref } from "~/utils/auth-redirect";
 import { authClient } from "~/utils/auth";
+import { toSignInHref } from "~/utils/auth-redirect";
 import tonTonAvatar from "../../../assets/ton-ton.png";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -794,7 +794,9 @@ export default function HomeScreen() {
                       borderRadius: 18,
                       alignItems: "center",
                       justifyContent: "center",
-                      backgroundColor: isDark ? card.iconBgDark : card.iconBgLight,
+                      backgroundColor: isDark
+                        ? card.iconBgDark
+                        : card.iconBgLight,
                     }}
                   >
                     <Text style={{ fontSize: 18 }}>{card.icon}</Text>

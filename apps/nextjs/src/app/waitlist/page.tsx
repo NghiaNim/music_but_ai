@@ -31,6 +31,9 @@ export default function WaitlistPage() {
                 Be first to discover concerts matched to your taste, guided by
                 Ton Ton.
               </p>
+              <p className="mx-auto mt-4 max-w-xs text-sm italic text-amber-700/80">
+                "Big feelings? I know a symphony for that."
+              </p>
             </div>
 
             <div className="relative">
@@ -66,18 +69,24 @@ export default function WaitlistPage() {
 
 function BackgroundOrbs() {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      aria-hidden
+    >
       <div className="absolute top-12 left-[6%] h-40 w-40 rounded-full bg-amber-200/30 blur-3xl" />
       <div className="absolute top-32 right-[10%] h-44 w-44 rounded-full bg-rose-200/25 blur-3xl" />
       <div className="absolute bottom-20 left-[20%] h-48 w-48 rounded-full bg-violet-200/22 blur-3xl" />
-      <div className="absolute bottom-10 right-[8%] h-32 w-32 rounded-full bg-amber-300/20 blur-3xl" />
+      <div className="absolute right-[8%] bottom-10 h-32 w-32 rounded-full bg-amber-300/20 blur-3xl" />
     </div>
   );
 }
 
 function FloatingNotes() {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      aria-hidden
+    >
       <svg
         className="absolute top-24 left-[14%] -rotate-12"
         width="28"
@@ -135,7 +144,7 @@ function FloatingNotes() {
         <path d="M12 2.5 13.9 8l5.6 1.9-5.6 1.9L12 17.5l-1.9-5.7L4.5 9.9 10.1 8z" />
       </svg>
       <svg
-        className="absolute bottom-32 right-[26%] rotate-6 text-violet-400/32"
+        className="absolute right-[26%] bottom-32 rotate-6 text-violet-400/32"
         width="16"
         height="16"
         viewBox="0 0 24 24"

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Image,
   Pressable,
@@ -9,7 +10,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useState } from "react";
 
 import {
   COMPLETED_KEY,
@@ -20,17 +20,15 @@ import {
 
 import tonTonAvatar from "../../../assets/ton-ton.png";
 
-const MODULE_CARD_COLORS: Record<
-  string,
-  { bgLight: string; bgDark: string }
-> = {
-  instruments: { bgLight: "#FFFBEB", bgDark: "rgba(180,83,9,0.15)" },
-  basics: { bgLight: "#F5F3FF", bgDark: "rgba(109,40,217,0.15)" },
-  etiquette: { bgLight: "#FDF2F8", bgDark: "rgba(190,24,93,0.15)" },
-  legends: { bgLight: "#ECFDF5", bgDark: "rgba(16,185,129,0.15)" },
-  performances: { bgLight: "#EFF6FF", bgDark: "rgba(29,78,216,0.15)" },
-  listening: { bgLight: "#FFF7ED", bgDark: "rgba(194,65,12,0.15)" },
-};
+const MODULE_CARD_COLORS: Record<string, { bgLight: string; bgDark: string }> =
+  {
+    instruments: { bgLight: "#FFFBEB", bgDark: "rgba(180,83,9,0.15)" },
+    basics: { bgLight: "#F5F3FF", bgDark: "rgba(109,40,217,0.15)" },
+    etiquette: { bgLight: "#FDF2F8", bgDark: "rgba(190,24,93,0.15)" },
+    legends: { bgLight: "#ECFDF5", bgDark: "rgba(16,185,129,0.15)" },
+    performances: { bgLight: "#EFF6FF", bgDark: "rgba(29,78,216,0.15)" },
+    listening: { bgLight: "#FFF7ED", bgDark: "rgba(194,65,12,0.15)" },
+  };
 
 export default function LearnScreen() {
   const isDark = useColorScheme() === "dark";
@@ -71,7 +69,9 @@ export default function LearnScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}>
+        <View
+          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}
+        >
           <Text style={{ fontSize: 24, fontWeight: "700", color: textPrimary }}>
             Learn
           </Text>
@@ -117,7 +117,8 @@ export default function LearnScreen() {
                   alignItems: "center",
                   justifyContent: "center",
                   backgroundColor: isDark
-                    ? (MODULE_CARD_COLORS[mod.slug]?.bgDark ?? "rgba(120,53,15,0.15)")
+                    ? (MODULE_CARD_COLORS[mod.slug]?.bgDark ??
+                      "rgba(120,53,15,0.15)")
                     : (MODULE_CARD_COLORS[mod.slug]?.bgLight ?? "#FFFBEB"),
                 }}
               >
@@ -174,7 +175,7 @@ export default function LearnScreen() {
                         color: "#B45309",
                       }}
                     >
-                        {completedByModule[mod.slug] ?? 0}/{mod.units.length}
+                      {completedByModule[mod.slug] ?? 0}/{mod.units.length}
                     </Text>
                   </View>
                   <View
@@ -188,14 +189,14 @@ export default function LearnScreen() {
                     <View
                       style={{
                         height: "100%",
-                          width: `${Math.min(
-                            100,
-                            Math.round(
-                              ((completedByModule[mod.slug] ?? 0) /
-                                mod.units.length) *
-                                100,
-                            ),
-                          )}%`,
+                        width: `${Math.min(
+                          100,
+                          Math.round(
+                            ((completedByModule[mod.slug] ?? 0) /
+                              mod.units.length) *
+                              100,
+                          ),
+                        )}%`,
                         borderRadius: 999,
                         backgroundColor: "#F59E0B",
                       }}
@@ -245,7 +246,9 @@ export default function LearnScreen() {
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: "600", color: textPrimary }}>
+              <Text
+                style={{ fontSize: 14, fontWeight: "600", color: textPrimary }}
+              >
                 Have a question?
               </Text>
               <Text style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>

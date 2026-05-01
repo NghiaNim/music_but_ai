@@ -53,14 +53,12 @@ export default function WaitlistScreen() {
             className="border-input bg-card text-foreground rounded-xl border px-4 py-3 text-base"
             value={name}
             onChangeText={setName}
-            placeholder="Name"
             autoCapitalize="words"
           />
           <TextInput
             className="border-input bg-card text-foreground rounded-xl border px-4 py-3 text-base"
             value={email}
             onChangeText={setEmail}
-            placeholder="Email"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -71,7 +69,6 @@ export default function WaitlistScreen() {
             className="border-input bg-card text-foreground rounded-xl border px-4 py-3 text-base"
             value={city}
             onChangeText={setCity}
-            placeholder="City"
             autoCapitalize="words"
           />
 

@@ -12,20 +12,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
-
 import * as SecureStore from "expo-secure-store";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import {
   COMPLETED_KEY,
   getLearningLevel,
-  POINTS_KEY,
   getStoredNumber,
+  POINTS_KEY,
 } from "@acme/validators";
 
 import { trpc } from "~/utils/api";
-import { toSignInHref } from "~/utils/auth-redirect";
 import { authClient } from "~/utils/auth";
+import { toSignInHref } from "~/utils/auth-redirect";
 import bachBadgeImage from "../../../assets/badges/badge_bach_v2.png";
 import classicalBadgeImage from "../../../assets/badges/badge_classical_v3.png";
 import romanticBadgeImage from "../../../assets/badges/badge_romantic_v3.png";
@@ -33,7 +32,6 @@ import baroqueBadgeImage from "../../../assets/badges/baroque_badge.png";
 import beethovenBadgeImage from "../../../assets/badges/beethoven_badge.png";
 import chopinBadgeImage from "../../../assets/badges/chopin_badge.png";
 import mozartBadgeImage from "../../../assets/badges/mozart_badge.png";
-
 
 const BADGE_IMAGES: Record<string, number> = {
   beethoven: beethovenBadgeImage,
@@ -85,10 +83,18 @@ function NavCard({
         <Text style={{ fontSize: 18 }}>{emoji}</Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: isDark ? "#F9FAFB" : "#111827", fontSize: 14, fontWeight: "600" }}>
+        <Text
+          style={{
+            color: isDark ? "#F9FAFB" : "#111827",
+            fontSize: 14,
+            fontWeight: "600",
+          }}
+        >
           {title}
         </Text>
-        <Text style={{ marginTop: 2, color: "#6B7280", fontSize: 12 }}>{subtitle}</Text>
+        <Text style={{ marginTop: 2, color: "#6B7280", fontSize: 12 }}>
+          {subtitle}
+        </Text>
       </View>
       <Text style={{ color: "#9CA3AF", fontSize: 18 }}>›</Text>
     </Pressable>
@@ -131,7 +137,8 @@ export default function ProfileScreen() {
       void completedRaw;
     })();
   }, []);
-  const activeBadge = badges?.find((badge) => badge.id === activeBadgeId) ?? null;
+  const activeBadge =
+    badges?.find((badge) => badge.id === activeBadgeId) ?? null;
 
   const signOut = useMutation({
     mutationFn: async () => {
@@ -142,7 +149,9 @@ export default function ProfileScreen() {
     },
     onError: (error) => {
       const message =
-        error instanceof Error ? error.message : "Could not sign out right now.";
+        error instanceof Error
+          ? error.message
+          : "Could not sign out right now.";
       Alert.alert("Sign out failed", message);
     },
   });
@@ -158,11 +167,17 @@ export default function ProfileScreen() {
     ? Math.max(1, Math.floor((asOf - createdAt.getTime()) / 86_400_000))
     : 0;
 
-  const { current: learningLevel, currentIndex, next: nextLevel } = getLearningLevel(learningPoints);
+  const {
+    current: learningLevel,
+    currentIndex,
+    next: nextLevel,
+  } = getLearningLevel(learningPoints);
   const levelNumber = currentIndex + 1;
   const xpIntoLevel = learningPoints - learningLevel.min;
   const xpForNext = nextLevel ? nextLevel.min - learningLevel.min : 0;
-  const levelPct = nextLevel ? Math.round((xpIntoLevel / xpForNext) * 100) : 100;
+  const levelPct = nextLevel
+    ? Math.round((xpIntoLevel / xpForNext) * 100)
+    : 100;
 
   const quests = [
     {
@@ -251,7 +266,9 @@ export default function ProfileScreen() {
                   borderColor: cardBg,
                 }}
               >
-                <Text style={{ fontSize: 30 }}>{tasteProfile?.badgeEmoji ?? "🎵"}</Text>
+                <Text style={{ fontSize: 30 }}>
+                  {tasteProfile?.badgeEmoji ?? "🎵"}
+                </Text>
               </View>
               <View style={{ flexDirection: "row", gap: 8, marginTop: 44 }}>
                 <View
@@ -266,8 +283,17 @@ export default function ProfileScreen() {
                     minWidth: 68,
                   }}
                 >
-                  <Text style={{ fontSize: 10, color: textMuted }}>🎵 Concerts</Text>
-                  <Text style={{ fontSize: 20, fontWeight: "700", color: textPrimary, marginTop: 2 }}>
+                  <Text style={{ fontSize: 10, color: textMuted }}>
+                    🎵 Concerts
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "700",
+                      color: textPrimary,
+                      marginTop: 2,
+                    }}
+                  >
                     {attendedCount}
                   </Text>
                 </View>
@@ -283,8 +309,17 @@ export default function ProfileScreen() {
                     minWidth: 68,
                   }}
                 >
-                  <Text style={{ fontSize: 10, color: textMuted }}>🔥 Streak</Text>
-                  <Text style={{ fontSize: 20, fontWeight: "700", color: textPrimary, marginTop: 2 }}>
+                  <Text style={{ fontSize: 10, color: textMuted }}>
+                    🔥 Streak
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "700",
+                      color: textPrimary,
+                      marginTop: 2,
+                    }}
+                  >
                     {daysOnApp}
                   </Text>
                 </View>
@@ -292,7 +327,9 @@ export default function ProfileScreen() {
             </View>
 
             {/* Name + level */}
-            <Text style={{ fontSize: 20, fontWeight: "700", color: textPrimary }}>
+            <Text
+              style={{ fontSize: 20, fontWeight: "700", color: textPrimary }}
+            >
               {userName}
             </Text>
             <Text style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>
@@ -314,7 +351,13 @@ export default function ProfileScreen() {
                   paddingVertical: 5,
                 }}
               >
-                <Text style={{ color: textPrimary, fontSize: 11, fontWeight: "600" }}>
+                <Text
+                  style={{
+                    color: textPrimary,
+                    fontSize: 11,
+                    fontWeight: "600",
+                  }}
+                >
                   {signOut.isPending ? "Signing out..." : "Sign out"}
                 </Text>
               </Pressable>
@@ -331,7 +374,9 @@ export default function ProfileScreen() {
                   alignItems: "center",
                 }}
               >
-                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>
+                <Text
+                  style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}
+                >
                   Sign in
                 </Text>
               </Pressable>
@@ -344,18 +389,32 @@ export default function ProfileScreen() {
                 borderRadius: 14,
                 borderWidth: 1,
                 borderColor: isDark ? "rgba(251,191,36,0.2)" : "#FDE68A",
-                backgroundColor: isDark ? "rgba(120,53,15,0.15)" : "rgba(255,251,235,0.9)",
+                backgroundColor: isDark
+                  ? "rgba(120,53,15,0.15)"
+                  : "rgba(255,251,235,0.9)",
                 padding: 14,
               }}
             >
               <View
-                style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                }}
               >
-                <Text style={{ fontSize: 11, fontWeight: "700", color: textPrimary }}>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: "700",
+                    color: textPrimary,
+                  }}
+                >
                   ✨ LV {levelNumber} · {learningLevel.name}
                 </Text>
                 <Text style={{ fontSize: 11, color: textMuted }}>
-                  {nextLevel ? `${xpIntoLevel}/${xpForNext} XP` : `${learningPoints} XP`}
+                  {nextLevel
+                    ? `${xpIntoLevel}/${xpForNext} XP`
+                    : `${learningPoints} XP`}
                 </Text>
               </View>
               <View
@@ -383,10 +442,19 @@ export default function ProfileScreen() {
             </View>
 
             {/* Divider */}
-            <View style={{ height: 1, backgroundColor: border, marginVertical: 16 }} />
+            <View
+              style={{ height: 1, backgroundColor: border, marginVertical: 16 }}
+            />
 
             {/* Daily quests */}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 4,
+              }}
+            >
               <View
                 style={{
                   width: 28,
@@ -399,7 +467,9 @@ export default function ProfileScreen() {
               >
                 <Text style={{ fontSize: 14 }}>🎯</Text>
               </View>
-              <Text style={{ fontSize: 15, fontWeight: "700", color: textPrimary }}>
+              <Text
+                style={{ fontSize: 15, fontWeight: "700", color: textPrimary }}
+              >
                 Daily quests
               </Text>
             </View>
@@ -424,7 +494,12 @@ export default function ProfileScreen() {
                     marginBottom: 10,
                   }}
                 >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
                     <View style={{ flexDirection: "row", gap: 12, flex: 1 }}>
                       <View
                         style={{
@@ -440,10 +515,22 @@ export default function ProfileScreen() {
                         <Text style={{ fontSize: 16 }}>{quest.icon}</Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: textPrimary }}>
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "600",
+                            color: textPrimary,
+                          }}
+                        >
                           {quest.title}
                         </Text>
-                        <Text style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            color: textMuted,
+                            marginTop: 2,
+                          }}
+                        >
                           {quest.subtitle}
                         </Text>
                       </View>
@@ -457,18 +544,34 @@ export default function ProfileScreen() {
                         alignSelf: "flex-start",
                       }}
                     >
-                      <Text style={{ fontSize: 10, fontWeight: "700", color: "#FFFFFF" }}>
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: "700",
+                          color: "#FFFFFF",
+                        }}
+                      >
                         +{quest.reward} XP
                       </Text>
                     </View>
                   </View>
                   <View
-                    style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginTop: 10,
+                    }}
                   >
                     <Text style={{ fontSize: 11, color: textMuted }}>
                       {clamped}/{quest.target} complete
                     </Text>
-                    <Text style={{ fontSize: 11, fontWeight: "600", color: textPrimary }}>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: "600",
+                        color: textPrimary,
+                      }}
+                    >
                       {done ? "✓ Completed" : quest.cta}
                     </Text>
                   </View>
@@ -554,7 +657,14 @@ export default function ProfileScreen() {
         >
           Badges
         </Text>
-        <Text style={{ paddingHorizontal: 16, marginBottom: 12, color: textMuted, fontSize: 12 }}>
+        <Text
+          style={{
+            paddingHorizontal: 16,
+            marginBottom: 12,
+            color: textMuted,
+            fontSize: 12,
+          }}
+        >
           Earn badges by attending concerts and listening to music.
         </Text>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
@@ -590,14 +700,25 @@ export default function ProfileScreen() {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: textPrimary, fontSize: 14, fontWeight: "600" }}>
+                <Text
+                  style={{
+                    color: textPrimary,
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
                   {badge.label}
                 </Text>
                 <Text style={{ color: textMuted, fontSize: 12, marginTop: 2 }}>
                   {badge.earned ? badge.achievement : badge.requirementText}
                 </Text>
               </View>
-              <Text style={{ color: badge.earned ? "#047857" : "#9CA3AF", fontSize: 11 }}>
+              <Text
+                style={{
+                  color: badge.earned ? "#047857" : "#9CA3AF",
+                  fontSize: 11,
+                }}
+              >
                 {badge.earned ? "Unlocked" : "Locked"}
               </Text>
             </Pressable>
@@ -670,14 +791,25 @@ export default function ProfileScreen() {
                     paddingVertical: 10,
                   }}
                 >
-                  <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 13 }}>
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontWeight: "600",
+                      fontSize: 13,
+                    }}
+                  >
                     Share badge
                   </Text>
                 </Pressable>
               ) : null}
 
-              <Pressable onPress={() => setActiveBadgeId(null)} style={{ marginTop: 12 }}>
-                <Text style={{ color: "#9C1738", fontWeight: "600", fontSize: 13 }}>
+              <Pressable
+                onPress={() => setActiveBadgeId(null)}
+                style={{ marginTop: 12 }}
+              >
+                <Text
+                  style={{ color: "#9C1738", fontWeight: "600", fontSize: 13 }}
+                >
                   Close
                 </Text>
               </Pressable>

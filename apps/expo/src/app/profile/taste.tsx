@@ -11,8 +11,8 @@ import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { trpc } from "~/utils/api";
-import { toSignInHref } from "~/utils/auth-redirect";
 import { authClient } from "~/utils/auth";
+import { toSignInHref } from "~/utils/auth-redirect";
 
 interface ProfileCard {
   label: string;
@@ -22,7 +22,9 @@ interface ProfileCard {
 function isProfileCard(value: unknown): value is ProfileCard {
   if (!value || typeof value !== "object") return false;
   const candidate = value as { label?: unknown; value?: unknown };
-  return typeof candidate.label === "string" && typeof candidate.value === "string";
+  return (
+    typeof candidate.label === "string" && typeof candidate.value === "string"
+  );
 }
 
 export default function TasteProfileScreen() {
@@ -54,15 +56,33 @@ export default function TasteProfileScreen() {
     : null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}
+    >
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 28, paddingTop: 12 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: 28,
+          paddingTop: 12,
+        }}
       >
         {isPending ? (
           <View style={{ marginTop: 12, gap: 12 }}>
-            <View style={{ height: 180, borderRadius: 16, backgroundColor: isDark ? "#222" : "#EEE" }} />
-            <View style={{ height: 120, borderRadius: 16, backgroundColor: isDark ? "#222" : "#EEE" }} />
+            <View
+              style={{
+                height: 180,
+                borderRadius: 16,
+                backgroundColor: isDark ? "#222" : "#EEE",
+              }}
+            />
+            <View
+              style={{
+                height: 120,
+                borderRadius: 16,
+                backgroundColor: isDark ? "#222" : "#EEE",
+              }}
+            />
           </View>
         ) : !profile?.archetype ? (
           <View
@@ -87,7 +107,14 @@ export default function TasteProfileScreen() {
             >
               Discover your sound
             </Text>
-            <Text style={{ marginTop: 4, fontSize: 13, color: "#6B7280", textAlign: "center" }}>
+            <Text
+              style={{
+                marginTop: 4,
+                fontSize: 13,
+                color: "#6B7280",
+                textAlign: "center",
+              }}
+            >
               Take the taste quiz and we will map your musical archetype.
             </Text>
             <Pressable
@@ -100,7 +127,9 @@ export default function TasteProfileScreen() {
                 paddingVertical: 10,
               }}
             >
-              <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 13 }}>
+              <Text
+                style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 13 }}
+              >
                 Start the quiz
               </Text>
             </Pressable>
@@ -128,9 +157,18 @@ export default function TasteProfileScreen() {
                   backgroundColor: "#F8E8EE",
                 }}
               >
-                <Text style={{ fontSize: 44 }}>{profile.badgeEmoji ?? "♪"}</Text>
+                <Text style={{ fontSize: 44 }}>
+                  {profile.badgeEmoji ?? "♪"}
+                </Text>
               </View>
-              <Text style={{ marginTop: 10, fontSize: 11, color: "#6B7280", letterSpacing: 1.1 }}>
+              <Text
+                style={{
+                  marginTop: 10,
+                  fontSize: 11,
+                  color: "#6B7280",
+                  letterSpacing: 1.1,
+                }}
+              >
                 YOU ARE A
               </Text>
               <Text
@@ -145,18 +183,34 @@ export default function TasteProfileScreen() {
                 {profile.archetype}
               </Text>
               {tags.length > 0 ? (
-                <View style={{ marginTop: 10, flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
+                <View
+                  style={{
+                    marginTop: 10,
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 6,
+                    justifyContent: "center",
+                  }}
+                >
                   {tags.map((tag) => (
                     <View
                       key={tag}
                       style={{
                         borderRadius: 999,
-                        backgroundColor: isDark ? "rgba(16,185,129,0.2)" : "#D1FAE5",
+                        backgroundColor: isDark
+                          ? "rgba(16,185,129,0.2)"
+                          : "#D1FAE5",
                         paddingHorizontal: 10,
                         paddingVertical: 4,
                       }}
                     >
-                      <Text style={{ color: isDark ? "#6EE7B7" : "#047857", fontSize: 11, fontWeight: "600" }}>
+                      <Text
+                        style={{
+                          color: isDark ? "#6EE7B7" : "#047857",
+                          fontSize: 11,
+                          fontWeight: "600",
+                        }}
+                      >
                         {tag}
                       </Text>
                     </View>
@@ -166,7 +220,14 @@ export default function TasteProfileScreen() {
             </View>
 
             {cards.length > 0 ? (
-              <View style={{ marginTop: 12, flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              <View
+                style={{
+                  marginTop: 12,
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 10,
+                }}
+              >
                 {cards.slice(0, 4).map((card) => (
                   <View
                     key={card.label}
@@ -179,10 +240,23 @@ export default function TasteProfileScreen() {
                       padding: 12,
                     }}
                   >
-                    <Text style={{ fontSize: 10, letterSpacing: 0.8, color: "#6B7280" }}>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        letterSpacing: 0.8,
+                        color: "#6B7280",
+                      }}
+                    >
                       {card.label.toUpperCase()}
                     </Text>
-                    <Text style={{ marginTop: 6, fontSize: 13, fontWeight: "600", color: isDark ? "#F9FAFB" : "#111827" }}>
+                    <Text
+                      style={{
+                        marginTop: 6,
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: isDark ? "#F9FAFB" : "#111827",
+                      }}
+                    >
                       {card.value}
                     </Text>
                   </View>
@@ -201,10 +275,19 @@ export default function TasteProfileScreen() {
                   padding: 14,
                 }}
               >
-                <Text style={{ fontSize: 10, letterSpacing: 0.8, color: "#6B7280" }}>
+                <Text
+                  style={{ fontSize: 10, letterSpacing: 0.8, color: "#6B7280" }}
+                >
                   HOW WE READ YOU
                 </Text>
-                <Text style={{ marginTop: 8, color: isDark ? "#F9FAFB" : "#111827", fontSize: 13, lineHeight: 19 }}>
+                <Text
+                  style={{
+                    marginTop: 8,
+                    color: isDark ? "#F9FAFB" : "#111827",
+                    fontSize: 13,
+                    lineHeight: 19,
+                  }}
+                >
                   {profile.profileSummary}
                 </Text>
               </View>
@@ -226,7 +309,13 @@ export default function TasteProfileScreen() {
                 padding: 14,
               }}
             >
-              <Text style={{ color: isDark ? "#F9FAFB" : "#111827", fontSize: 14, fontWeight: "600" }}>
+              <Text
+                style={{
+                  color: isDark ? "#F9FAFB" : "#111827",
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
                 Re-take the taste quiz
               </Text>
               <Text style={{ marginTop: 2, color: "#6B7280", fontSize: 12 }}>
@@ -235,8 +324,16 @@ export default function TasteProfileScreen() {
             </Pressable>
 
             {updatedDate ? (
-              <Text style={{ marginTop: 10, textAlign: "center", color: "#6B7280", fontSize: 11 }}>
-                Profile last updated {updatedDate}. We will keep refining as you explore.
+              <Text
+                style={{
+                  marginTop: 10,
+                  textAlign: "center",
+                  color: "#6B7280",
+                  fontSize: 11,
+                }}
+              >
+                Profile last updated {updatedDate}. We will keep refining as you
+                explore.
               </Text>
             ) : null}
           </>
