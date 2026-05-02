@@ -60,14 +60,9 @@ export default function LandingPage() {
               <span>Classica</span>
             </span>
           </Link>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <Button variant="outline" asChild>
-              <Link href={demoHref}>{demoLabel}</Link>
-            </Button>
-            <Button asChild>
-              <Link href={waitlistHref}>Join Waitlist</Link>
-            </Button>
-          </div>
+          <Button asChild>
+            <Link href={waitlistHref}>Join Waitlist</Link>
+          </Button>
         </header>
 
         <main className="flex-1">
