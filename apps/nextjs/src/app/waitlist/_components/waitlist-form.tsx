@@ -164,17 +164,13 @@ export function WaitlistForm() {
           className={cn("w-full", !canSubmit && "opacity-50")}
           disabled={!canSubmit}
           onClick={() => {
-            const trimmedFirst = firstName.trim();
-            const trimmedLast = lastName.trim();
             const trimmedOrg = orgName.trim();
             joinWaitlist.mutate({
-              name: `${trimmedFirst} ${trimmedLast}`,
-              firstName: trimmedFirst,
-              lastName: trimmedLast,
+              firstName: firstName.trim(),
+              lastName: lastName.trim(),
               organizationName: trimmedOrg || undefined,
               email: email.trim().toLowerCase(),
               city: city.trim(),
-              signupType: trimmedOrg ? "organization" : "individual",
               source: "web",
             });
           }}

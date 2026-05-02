@@ -630,25 +630,21 @@ export const CreateUserMusicEventSchema = createInsertSchema(UserMusicEvent, {
 
 export const WaitlistSignup = pgTable("waitlist_signup", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
-  name: t.varchar({ length: 128 }).notNull(),
-  firstName: t.varchar({ length: 64 }),
-  lastName: t.varchar({ length: 64 }),
+  firstName: t.varchar({ length: 64 }).notNull(),
+  lastName: t.varchar({ length: 64 }).notNull(),
   organizationName: t.varchar({ length: 128 }),
   email: t.varchar({ length: 320 }).notNull().unique(),
   city: t.varchar({ length: 128 }),
-  signupType: t.varchar({ length: 32 }), // "individual" | "organization"
   source: t.varchar({ length: 32 }).notNull().default("web"),
   createdAt: t.timestamp({ mode: "date" }).defaultNow().notNull(),
 }));
 
 export const CreateWaitlistSignupSchema = createInsertSchema(WaitlistSignup, {
-  name: z.string().min(1).max(128),
-  firstName: z.string().min(1).max(64).optional(),
-  lastName: z.string().min(1).max(64).optional(),
+  firstName: z.string().min(1).max(64),
+  lastName: z.string().min(1).max(64),
   organizationName: z.string().min(1).max(128).optional(),
   email: z.email().max(320),
   city: z.string().min(1).max(128),
-  signupType: z.enum(["individual", "organization"]),
   source: z.enum(["web", "mobile"]).default("web"),
 }).omit({
   id: true,

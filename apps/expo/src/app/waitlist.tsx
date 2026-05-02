@@ -6,13 +6,12 @@ import { useMutation } from "@tanstack/react-query";
 
 import { trpc } from "~/utils/api";
 
-type SignupType = "individual" | "organization";
-
 export default function WaitlistScreen() {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [city, setCity] = useState("");
-  const [signupType, setSignupType] = useState<SignupType>("individual");
+  const [orgName, setOrgName] = useState("");
   const [result, setResult] = useState<"idle" | "joined" | "already_joined">(
     "idle",
   );
@@ -22,17 +21,19 @@ export default function WaitlistScreen() {
       onSuccess(data) {
         setResult(data.status);
         if (data.status === "joined") {
-          setName("");
+          setFirstName("");
+          setLastName("");
           setEmail("");
           setCity("");
-          setSignupType("individual");
+          setOrgName("");
         }
       },
     }),
   );
 
   const canSubmit =
-    name.trim().length > 0 &&
+    firstName.trim().length > 0 &&
+    lastName.trim().length > 0 &&
     email.trim().length > 0 &&
     city.trim().length > 0 &&
     !joinWaitlist.isPending;
@@ -49,19 +50,33 @@ export default function WaitlistScreen() {
         </Text>
 
         <View className="mt-6 gap-3">
-          <TextInput
-            className="border-input bg-card text-foreground rounded-xl border px-4 py-3 text-base"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
+          <View className="flex-row gap-2">
+            <TextInput
+              className="border-input bg-card text-foreground flex-1 rounded-xl border px-4 py-3 text-base"
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="First name"
+              autoCapitalize="words"
+              autoComplete="given-name"
+            />
+            <TextInput
+              className="border-input bg-card text-foreground flex-1 rounded-xl border px-4 py-3 text-base"
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Last name"
+              autoCapitalize="words"
+              autoComplete="family-name"
+            />
+          </View>
           <TextInput
             className="border-input bg-card text-foreground rounded-xl border px-4 py-3 text-base"
             value={email}
             onChangeText={setEmail}
+            placeholder="Email"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            autoComplete="email"
           />
 
           <Text className="text-foreground mb-1 text-xs font-medium">City</Text>
@@ -73,26 +88,16 @@ export default function WaitlistScreen() {
           />
 
           <Text className="text-foreground mb-1 text-xs font-medium">
-            Individual or organization
+            Organization name (optional)
           </Text>
-          <View className="flex-row gap-2">
-            <Pressable
-              className={`flex-1 rounded-xl border px-3 py-3 ${signupType === "individual" ? "border-[#9C1738] bg-[#9C1738]/15" : "border-input bg-card"}`}
-              onPress={() => setSignupType("individual")}
-            >
-              <Text className="text-foreground text-center text-sm font-semibold">
-                Individual
-              </Text>
-            </Pressable>
-            <Pressable
-              className={`flex-1 rounded-xl border px-3 py-3 ${signupType === "organization" ? "border-[#9C1738] bg-[#9C1738]/15" : "border-input bg-card"}`}
-              onPress={() => setSignupType("organization")}
-            >
-              <Text className="text-foreground text-center text-sm font-semibold">
-                Organization
-              </Text>
-            </Pressable>
-          </View>
+          <TextInput
+            className="border-input bg-card text-foreground rounded-xl border px-4 py-3 text-base"
+            value={orgName}
+            onChangeText={setOrgName}
+            placeholder="Your organization or ensemble"
+            autoCapitalize="words"
+            autoComplete="organization"
+          />
 
           <Pressable
             className={`items-center rounded-xl px-4 py-3 ${
@@ -100,11 +105,13 @@ export default function WaitlistScreen() {
             }`}
             disabled={!canSubmit}
             onPress={() => {
+              const trimmedOrg = orgName.trim();
               joinWaitlist.mutate({
-                name: name.trim(),
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                organizationName: trimmedOrg || undefined,
                 email: email.trim().toLowerCase(),
                 city: city.trim(),
-                signupType,
                 source: "mobile",
               });
             }}
