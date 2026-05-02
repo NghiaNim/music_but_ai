@@ -163,17 +163,21 @@ export function WaitlistForm() {
         <Button
           className={cn("w-full", !canSubmit && "opacity-50")}
           disabled={!canSubmit}
-          onClick={() =>
+          onClick={() => {
+            const trimmedFirst = firstName.trim();
+            const trimmedLast = lastName.trim();
+            const trimmedOrg = orgName.trim();
             joinWaitlist.mutate({
-              name: orgName.trim()
-                ? `${firstName.trim()} ${lastName.trim()} (${orgName.trim()})`
-                : `${firstName.trim()} ${lastName.trim()}`,
+              name: `${trimmedFirst} ${trimmedLast}`,
+              firstName: trimmedFirst,
+              lastName: trimmedLast,
+              organizationName: trimmedOrg || undefined,
               email: email.trim().toLowerCase(),
               city: city.trim(),
-              signupType: orgName.trim() ? "organization" : "individual",
+              signupType: trimmedOrg ? "organization" : "individual",
               source: "web",
-            })
-          }
+            });
+          }}
         >
           {joinWaitlist.isPending ? "Joining..." : "Join Waitlist"}
         </Button>

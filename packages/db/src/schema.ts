@@ -631,6 +631,9 @@ export const CreateUserMusicEventSchema = createInsertSchema(UserMusicEvent, {
 export const WaitlistSignup = pgTable("waitlist_signup", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
   name: t.varchar({ length: 128 }).notNull(),
+  firstName: t.varchar({ length: 64 }),
+  lastName: t.varchar({ length: 64 }),
+  organizationName: t.varchar({ length: 128 }),
   email: t.varchar({ length: 320 }).notNull().unique(),
   city: t.varchar({ length: 128 }),
   signupType: t.varchar({ length: 32 }), // "individual" | "organization"
@@ -640,6 +643,9 @@ export const WaitlistSignup = pgTable("waitlist_signup", (t) => ({
 
 export const CreateWaitlistSignupSchema = createInsertSchema(WaitlistSignup, {
   name: z.string().min(1).max(128),
+  firstName: z.string().min(1).max(64).optional(),
+  lastName: z.string().min(1).max(64).optional(),
+  organizationName: z.string().min(1).max(128).optional(),
   email: z.email().max(320),
   city: z.string().min(1).max(128),
   signupType: z.enum(["individual", "organization"]),
