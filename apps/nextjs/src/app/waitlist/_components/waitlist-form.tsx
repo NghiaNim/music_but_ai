@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
 import posthog from "posthog-js";
 
@@ -21,16 +22,20 @@ export function WaitlistForm() {
   const [status, setStatus] = useState<"idle" | "joined" | "already_joined">(
     "idle",
   );
+  const [confirmedEmail, setConfirmedEmail] = useState("");
 
   const joinWaitlist = useMutation(
     trpc.waitlist.join.mutationOptions({
-      onSuccess(data) {
+      onSuccess(data, variables) {
         setStatus(data.status);
         if (data.status === "joined") {
           posthog.capture("waitlist_joined", {
             source: "web",
-            signup_type: orgName.trim() ? "organization" : "individual",
+            signup_type: variables.organizationName
+              ? "organization"
+              : "individual",
           });
+          setConfirmedEmail(variables.email);
           setFirstName("");
           setLastName("");
           setEmail("");
@@ -50,7 +55,7 @@ export function WaitlistForm() {
 
   if (status === "joined") {
     return (
-      <div className="flex flex-col items-center gap-4 py-8 text-center">
+      <div className="flex flex-col items-center gap-6 py-8 text-center">
         <div className="flex size-16 items-center justify-center rounded-full bg-amber-100 text-3xl">
           🎶
         </div>
@@ -59,9 +64,16 @@ export function WaitlistForm() {
             You're on the list!
           </p>
           <p className="mt-1 text-sm text-gray-500">
-            We'll reach out to {email} when Classica is ready for you.
+            We'll reach out to {confirmedEmail} when Classica is ready for you.
           </p>
         </div>
+        <Button
+          variant="outline"
+          className="w-full sm:w-auto sm:min-w-[200px]"
+          asChild
+        >
+          <Link href="/demo">Try the Demo</Link>
+        </Button>
       </div>
     );
   }
