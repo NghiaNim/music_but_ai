@@ -31,7 +31,9 @@ export function WaitlistForm() {
         if (data.status === "joined") {
           posthog.capture("waitlist_joined", {
             source: "web",
-            signup_type: variables.organizationName ? "organization" : "individual",
+            signup_type: variables.organizationName
+              ? "organization"
+              : "individual",
           });
           setConfirmedEmail(variables.email);
           setFirstName("");
@@ -65,7 +67,11 @@ export function WaitlistForm() {
             We'll reach out to {confirmedEmail} when Classica is ready for you.
           </p>
         </div>
-        <Button variant="outline" className="w-full sm:w-auto sm:min-w-[200px]" asChild>
+        <Button
+          variant="outline"
+          className="w-full sm:w-auto sm:min-w-[200px]"
+          asChild
+        >
           <Link href="/demo">Try the Demo</Link>
         </Button>
       </div>
