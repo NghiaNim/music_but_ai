@@ -29,7 +29,7 @@ const LISTING_LABELS: Record<string, string> = {
 
 export function EventDetail({
   eventId,
-  isSignedIn,
+  isSignedIn: _isSignedIn,
   viewerId,
   previewAsAttendee = false,
 }: {
@@ -55,25 +55,7 @@ export function EventDetail({
 
   return (
     <div className="relative mx-auto max-w-lg">
-      {!isSignedIn && (
-        <div className="bg-background/80 absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-4 py-6 backdrop-blur-md">
-          <p className="text-center text-sm font-medium">
-            Sign in to view event details, save events, and buy tickets
-          </p>
-          <Button asChild size="lg">
-            <Link
-              href={`/sign-in?callbackUrl=${encodeURIComponent(
-                `/event/${eventId}`,
-              )}`}
-            >
-              Sign in
-            </Link>
-          </Button>
-        </div>
-      )}
-      <div
-        className={cn(!isSignedIn && "pointer-events-none blur-sm select-none")}
-      >
+      <div>
         <div className="px-4 pt-4 pb-2">
           <Link
             href="/events"

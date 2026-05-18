@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { cn } from "@acme/ui";
 import { Button } from "@acme/ui/button";
 
 import {
@@ -76,7 +75,7 @@ function directionsUrl(ev: {
 
 export function LiveEventDetail({
   liveEventId,
-  isSignedIn,
+  isSignedIn: _isSignedIn,
 }: {
   liveEventId: string;
   isSignedIn: boolean;
@@ -96,25 +95,7 @@ export function LiveEventDetail({
 
   return (
     <div className="relative mx-auto max-w-lg">
-      {!isSignedIn && (
-        <div className="bg-background/80 absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-4 py-6 backdrop-blur-md">
-          <p className="text-center text-sm font-medium">
-            Sign in to view event details and ask Ton Ton
-          </p>
-          <Button asChild size="lg">
-            <Link
-              href={`/sign-in?callbackUrl=${encodeURIComponent(
-                `/live-event/${liveEventId}`,
-              )}`}
-            >
-              Sign in
-            </Link>
-          </Button>
-        </div>
-      )}
-      <div
-        className={cn(!isSignedIn && "pointer-events-none blur-sm select-none")}
-      >
+      <div>
         <div className="px-4 pt-4 pb-2">
           <Link
             href="/events"
