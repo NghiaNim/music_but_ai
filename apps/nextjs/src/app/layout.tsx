@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   title: "Classica",
   description:
     "Discover, learn, and experience classical and jazz music with an AI-powered concierge",
+  icons: {
+    icon: "/classica-icon.svg",
+    shortcut: "/classica-icon.svg",
+    apple: "/classica-icon.svg",
+  },
   openGraph: {
     title: "Classica",
     description:

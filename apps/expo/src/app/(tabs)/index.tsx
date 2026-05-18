@@ -15,7 +15,7 @@ import type { RouterOutputs } from "~/utils/api";
 import { trpc } from "~/utils/api";
 import { authClient } from "~/utils/auth";
 import { toSignInHref } from "~/utils/auth-redirect";
-import tonTonAvatar from "../../../assets/ton-ton.png";
+import tonTonAvatar from "../../../assets/ton-ton-cat-cutout.png";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -98,13 +98,13 @@ const GENRE_LABELS: Record<string, string> = {
   jazz: "Jazz",
 };
 
-const VENUE_SHORT: Record<string, string> = {
-  msm: "MSM",
+const VENUE_LABELS: Record<string, string> = {
+  msm: "Manhattan School of Music",
   juilliard: "Juilliard",
-  met_opera: "Met Opera",
-  carnegie_hall: "Carnegie",
-  ny_phil: "NY Phil",
-  nycballet: "NYC Ballet",
+  met_opera: "Metropolitan Opera",
+  carnegie_hall: "Carnegie Hall",
+  ny_phil: "New York Philharmonic",
+  nycballet: "New York City Ballet",
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -245,10 +245,7 @@ function EventCard({ row, isDark }: { row: UnifiedRow; isDark: boolean }) {
               style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}
               numberOfLines={1}
             >
-              {friendlyDate(date)}
-            </Text>
-            <Text style={{ fontSize: 12, color: "#6B7280" }} numberOfLines={1}>
-              {ev.venue}
+              {friendlyDate(date)} · {ev.venue}
             </Text>
           </View>
         </View>
@@ -258,7 +255,7 @@ function EventCard({ row, isDark }: { row: UnifiedRow; isDark: boolean }) {
 
   const ev = row.event;
   const date = parseLiveDate(ev);
-  const sourceLabel = VENUE_SHORT[ev.source] ?? ev.source;
+  const sourceLabel = VENUE_LABELS[ev.source] ?? ev.source;
   const genreColor = GENRE_COLORS[ev.genre] ?? "#6B7280";
   return (
     <Pressable
@@ -326,7 +323,11 @@ function EventCard({ row, isDark }: { row: UnifiedRow; isDark: boolean }) {
             style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}
             numberOfLines={1}
           >
-            {date ? friendlyDate(date) : (ev.dateText ?? "")}
+            {(() => {
+              const when = date ? friendlyDate(date) : (ev.dateText ?? "");
+              const venue = ev.venueName?.trim() ?? "";
+              return when && venue ? `${when} · ${venue}` : when || venue;
+            })()}
           </Text>
         </View>
       </View>
@@ -391,6 +392,27 @@ function EventsSkeleton({ isDark }: { isDark: boolean }) {
   );
 }
 
+function WaveformIcon({ isDark }: { isDark: boolean }) {
+  return (
+    <View
+      style={{
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: isDark ? "rgba(6,78,59,0.3)" : "#D1FAE5",
+      }}
+    >
+      <Ionicons
+        name="pulse-outline"
+        size={24}
+        color={isDark ? "#34D399" : "#059669"}
+      />
+    </View>
+  );
+}
+
 function OnboardingCTA({
   session,
   tasteProfile,
@@ -402,6 +424,13 @@ function OnboardingCTA({
 }) {
   const router = useRouter();
 
+  if (session && tasteProfile) {
+    return null;
+  }
+
+  const borderColor = isDark ? "#065F46" : "#A7F3D0";
+  const bgColor = isDark ? "rgba(6,78,59,0.15)" : "#ECFDF5";
+
   if (!session) {
     return (
       <Pressable onPress={() => router.push(toSignInHref("/onboarding/taste"))}>
@@ -409,70 +438,30 @@ function OnboardingCTA({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            gap: 12,
-            borderRadius: 16,
+            gap: 16,
+            borderRadius: 12,
             borderWidth: 1,
-            borderColor: isDark ? "rgba(120,53,15,0.4)" : "#FDE68A",
-            backgroundColor: isDark ? "rgba(120,53,15,0.15)" : "#FFFBEB",
+            borderColor,
+            backgroundColor: bgColor,
             padding: 16,
           }}
         >
-          <Text style={{ fontSize: 28 }}>🎵</Text>
-          <View style={{ flex: 1 }}>
+          <WaveformIcon isDark={isDark} />
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Text
               style={{
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: "600",
                 color: isDark ? "#F9FAFB" : "#111827",
               }}
             >
-              Discover your sound
+              Sign in & discover your sound
             </Text>
-            <Text style={{ fontSize: 12, color: "#6B7280" }}>
-              2 min taste quiz — find concerts you'll love
-            </Text>
-          </View>
-          <Text style={{ color: "#D97706", fontWeight: "600", fontSize: 14 }}>
-            Start →
-          </Text>
-        </View>
-      </Pressable>
-    );
-  }
-
-  if (tasteProfile?.archetype) {
-    return (
-      <Pressable onPress={() => router.push("/profile/taste" as never)}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: isDark ? "rgba(6,78,59,0.4)" : "#A7F3D0",
-            backgroundColor: isDark ? "rgba(6,78,59,0.15)" : "#ECFDF5",
-            padding: 16,
-          }}
-        >
-          <Text style={{ fontSize: 32 }}>
-            {tasteProfile.badgeEmoji ?? "🎵"}
-          </Text>
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "600",
-                color: isDark ? "#F9FAFB" : "#111827",
-              }}
-            >
-              {tasteProfile.archetype}
-            </Text>
-            <Text style={{ fontSize: 12, color: "#6B7280" }} numberOfLines={1}>
-              {(tasteProfile.tags ?? []).slice(0, 3).join(" · ")}
+            <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
+              2 min — five taps to your personalized picks
             </Text>
           </View>
-          <Text style={{ color: "#9CA3AF", fontSize: 18 }}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
         </View>
       </Pressable>
     );
@@ -484,32 +473,30 @@ function OnboardingCTA({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          gap: 12,
-          borderRadius: 16,
+          gap: 16,
+          borderRadius: 12,
           borderWidth: 1,
-          borderColor: isDark ? "rgba(120,53,15,0.4)" : "#FDE68A",
-          backgroundColor: isDark ? "rgba(120,53,15,0.15)" : "#FFFBEB",
+          borderColor,
+          backgroundColor: bgColor,
           padding: 16,
         }}
       >
-        <Text style={{ fontSize: 28 }}>✨</Text>
-        <View style={{ flex: 1 }}>
+        <WaveformIcon isDark={isDark} />
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text
             style={{
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: "600",
               color: isDark ? "#F9FAFB" : "#111827",
             }}
           >
             Discover your sound
           </Text>
-          <Text style={{ fontSize: 12, color: "#6B7280" }}>
-            2 min taste quiz — find concerts you'll love
+          <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
+            2 min — five quick taps and we'll find your next concert
           </Text>
         </View>
-        <Text style={{ color: "#D97706", fontWeight: "600", fontSize: 14 }}>
-          Start →
-        </Text>
+        <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
       </View>
     </Pressable>
   );
@@ -560,10 +547,16 @@ export default function HomeScreen() {
   const firstName =
     rawName.length > 0 ? (rawName.split(" ")[0] ?? "friend") : "friend";
 
-  const { data: communityData, isPending: communityPending } = useQuery(
-    trpc.event.all.queryOptions({}),
-  );
-  const { data: liveData, isPending: livePending } = useQuery(
+  const {
+    data: communityData,
+    isPending: communityPending,
+    isError: communityError,
+  } = useQuery(trpc.event.all.queryOptions({}));
+  const {
+    data: liveData,
+    isPending: livePending,
+    isError: liveError,
+  } = useQuery(
     trpc.liveEvent.page.queryOptions({
       upcomingOnly: true,
       limit: 20,
@@ -576,6 +569,7 @@ export default function HomeScreen() {
   });
 
   const loading = communityPending || livePending;
+  const queryFailed = communityError || liveError;
   const featured = loading
     ? []
     : mergeEvents(communityData ?? [], liveData?.items ?? []).slice(0, 4);
@@ -599,8 +593,53 @@ export default function HomeScreen() {
             backgroundColor: isDark
               ? "rgba(120,53,15,0.08)"
               : "rgba(254,243,199,0.7)",
+            overflow: "hidden",
           }}
         >
+          {/* Floating music notes */}
+          <Text
+            style={{
+              position: "absolute",
+              top: 8,
+              right: "38%",
+              fontSize: 22,
+              color: "#FFB1B7",
+              opacity: 0.8,
+              transform: [{ rotate: "6deg" }],
+            }}
+            pointerEvents="none"
+          >
+            ♪
+          </Text>
+          <Text
+            style={{
+              position: "absolute",
+              top: 2,
+              right: 16,
+              fontSize: 28,
+              color: "#FFBE00",
+              opacity: 0.7,
+              transform: [{ rotate: "12deg" }],
+            }}
+            pointerEvents="none"
+          >
+            ♫
+          </Text>
+          <Text
+            style={{
+              position: "absolute",
+              top: 44,
+              right: 60,
+              fontSize: 20,
+              color: "#FFB777",
+              opacity: 0.8,
+              transform: [{ rotate: "-6deg" }],
+            }}
+            pointerEvents="none"
+          >
+            ♪
+          </Text>
+
           <Text
             style={{
               fontSize: 13,
@@ -660,7 +699,7 @@ export default function HomeScreen() {
                   overflow: "hidden",
                   backgroundColor: "#F5E6DC",
                   alignItems: "center",
-                  justifyContent: "center",
+                  justifyContent: "flex-end",
                 }}
               >
                 <Image
@@ -723,6 +762,10 @@ export default function HomeScreen() {
           </View>
           {loading ? (
             <EventsSkeleton isDark={isDark} />
+          ) : queryFailed ? (
+            <Text style={{ fontSize: 14, color: "#EF4444" }}>
+              Could not load events. Make sure the dev server is running.
+            </Text>
           ) : featured.length === 0 ? (
             <Text style={{ fontSize: 14, color: "#6B7280" }}>
               No upcoming events

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "~/utils/api";
 import { trpc } from "~/utils/api";
@@ -602,16 +602,19 @@ export default function EventsScreen() {
     enabled: showUser,
   });
 
-  const liveQuery = useQuery({
-    ...trpc.liveEvent.page.queryOptions({
-      upcomingOnly: true,
-      limit: 50,
-      cursor: 0,
-      search: search || undefined,
-      genre: genreArg,
-      source: liveSource,
-      difficulty: difficultyArg,
-    }),
+  const liveQuery = useInfiniteQuery({
+    ...trpc.liveEvent.page.infiniteQueryOptions(
+      {
+        upcomingOnly: true,
+        limit: 15,
+        search: search || undefined,
+        genre: genreArg,
+        source: liveSource,
+        difficulty: difficultyArg,
+      },
+      { getNextPageParam: (last) => last.nextCursor ?? undefined },
+    ),
+    initialPageParam: 0,
     enabled: showLive,
   });
 
@@ -623,7 +626,10 @@ export default function EventsScreen() {
     ? (userQuery.data ?? []).map((event) => ({ kind: "created", event }))
     : [];
   const liveEvents: UnifiedRow[] = showLive
-    ? (liveQuery.data?.items ?? []).map((event) => ({ kind: "live", event }))
+    ? (liveQuery.data?.pages.flatMap((p) => p.items) ?? []).map((event) => ({
+        kind: "live",
+        event,
+      }))
     : [];
 
   const merged = useMemo(
@@ -834,6 +840,40 @@ export default function EventsScreen() {
             )
           )}
         </View>
+
+        {/* Load more */}
+        {liveQuery.hasNextPage && (
+          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            <Pressable
+              onPress={() => void liveQuery.fetchNextPage()}
+              disabled={liveQuery.isFetchingNextPage}
+            >
+              <View
+                style={{
+                  alignItems: "center",
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  borderColor: isDark ? "#3F3F46" : "#D1D5DB",
+                  paddingVertical: 10,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "500",
+                    color: liveQuery.isFetchingNextPage
+                      ? "#9CA3AF"
+                      : isDark
+                        ? "#F9FAFB"
+                        : "#111827",
+                  }}
+                >
+                  {liveQuery.isFetchingNextPage ? "Loading…" : "See more"}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

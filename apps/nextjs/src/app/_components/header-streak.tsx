@@ -12,17 +12,16 @@ export function HeaderStreak() {
   if (!pathname.startsWith("/learn")) return null;
 
   return (
-    <div
-      className="bg-card flex min-w-[52px] shrink-0 flex-col items-center rounded-xl border px-2 py-1 shadow-sm"
-      title="Day streak on Classica"
-    >
-      <p className="text-muted-foreground flex items-center gap-0.5 text-[9px] leading-none font-medium">
-        <span aria-hidden>🔥</span>
-        <span>Streak</span>
-      </p>
-      <p className="mt-0.5 text-base leading-none font-bold tabular-nums">
-        {daysOnApp}
-      </p>
+    <div className="flex justify-end px-4 py-1.5">
+      <div
+        className="bg-card flex items-center gap-1.5 rounded-full border px-3 py-1 shadow-sm"
+        title="Day streak on Classica"
+      >
+        <span aria-hidden className="text-lg">
+          🔥
+        </span>
+        <span className="text-lg font-bold tabular-nums">{daysOnApp}</span>
+      </div>
     </div>
   );
 }
