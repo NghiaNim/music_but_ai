@@ -75,7 +75,7 @@ function directionsUrl(ev: {
 
 export function LiveEventDetail({
   liveEventId,
-  isSignedIn,
+  isSignedIn: _isSignedIn,
 }: {
   liveEventId: string;
   isSignedIn: boolean;

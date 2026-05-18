@@ -29,7 +29,7 @@ const LISTING_LABELS: Record<string, string> = {
 
 export function EventDetail({
   eventId,
-  isSignedIn,
+  isSignedIn: _isSignedIn,
   viewerId,
   previewAsAttendee = false,
 }: {
