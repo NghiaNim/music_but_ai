@@ -21,7 +21,7 @@ export default async function TasteOnboardingPage() {
           coming back resumes mid-flow. */}
       <div className="relative flex min-h-dvh flex-col bg-[#FEFCED]">
         <Link
-          href="/"
+          href="/demo"
           aria-label="Save and exit — your progress is kept"
           title="Save & exit"
           className="absolute top-3 right-3 z-20 flex size-9 items-center justify-center rounded-full border border-neutral-200 bg-[#FEFCED]/90 text-neutral-600 shadow-sm backdrop-blur transition-colors hover:border-neutral-300 hover:bg-[#fffbe0] hover:text-neutral-900"

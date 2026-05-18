@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@acme/ui/theme";
 
 import { AuthHeader } from "./auth-header";
+import { HeaderStreak } from "./header-streak";
 
 export function TopHeader() {
   return (
@@ -11,7 +12,8 @@ export function TopHeader() {
         <Link href="/demo" className="text-base font-bold tracking-tight">
           Classica
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <HeaderStreak />
           <AuthHeader />
           <ThemeToggle />
         </div>
