@@ -16,7 +16,7 @@ export function HeaderStreak() {
       className="bg-card flex min-w-[52px] shrink-0 flex-col items-center rounded-xl border px-2 py-1 shadow-sm"
       title="Day streak on Classica"
     >
-      <p className="text-muted-foreground flex items-center gap-0.5 text-[9px] font-medium leading-none">
+      <p className="text-muted-foreground flex items-center gap-0.5 text-[9px] leading-none font-medium">
         <span aria-hidden>🔥</span>
         <span>Streak</span>
       </p>

@@ -7,7 +7,6 @@ import type { RouterOutputs } from "@acme/api";
 
 import { authClient } from "~/auth/client";
 import { useTRPC } from "~/trpc/react";
-
 import { computeDaysOnApp } from "./streak-days";
 
 type UserEventWithEvent = RouterOutputs["userEvent"]["myEvents"][number];
