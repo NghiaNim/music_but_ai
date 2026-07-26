@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
-  Linking,
   Platform,
   Pressable,
   ScrollView,

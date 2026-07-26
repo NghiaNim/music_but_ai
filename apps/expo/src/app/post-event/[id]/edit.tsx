@@ -47,7 +47,6 @@ export default function EditHostedEventScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { palette } = usePalette();
-  const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
 
   useEffect(() => {

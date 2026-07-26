@@ -1,7 +1,7 @@
 import { useColorScheme } from "react-native";
 
 import type { Palette } from "./colors";
-import { darkPalette, lightPalette, staticColors } from "./colors";
+import { darkPalette, lightPalette } from "./colors";
 
 export type { Palette } from "./colors";
 export { darkPalette, lightPalette, staticColors } from "./colors";
