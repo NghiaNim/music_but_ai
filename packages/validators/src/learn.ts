@@ -2,6 +2,7 @@ export interface Lesson {
   id: string;
   title: string;
   emoji: string;
+  gradient: string;
   body: string;
   examples: string[];
 }
@@ -21,6 +22,8 @@ export interface Unit {
   estMinutes: string;
   objective?: string;
   goal?: string;
+  emoji: string;
+  gradient: string;
   lessons: Lesson[];
   quiz: QuizQuestion[];
 }

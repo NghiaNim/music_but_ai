@@ -7,8 +7,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import { Ionicons } from "@expo/vector-icons";
 
 import type { LearningModuleDef, Unit } from "@acme/validators";
 import {
@@ -21,6 +23,8 @@ import {
   unitKey,
 } from "@acme/validators";
 
+import { resolveGradient } from "~/theme/tailwind-gradient";
+
 type Screen =
   | { type: "overview" }
   | { type: "lesson"; unitId: string; index: number }
@@ -29,6 +33,30 @@ type Screen =
 
 function findUnit(module: LearningModuleDef, unitId: string): Unit | null {
   return module.units.find((u) => u.id === unitId) ?? null;
+}
+
+function ProgressBar({ value }: { value: number }) {
+  return (
+    <View
+      style={{
+        height: 6,
+        width: "100%",
+        borderRadius: 999,
+        overflow: "hidden",
+        backgroundColor: "#E4E4E7",
+      }}
+    >
+      <LinearGradient
+        colors={["#FBBF24", "#FB923C"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          height: "100%",
+          width: `${Math.min(100, Math.max(0, value * 100))}%`,
+        }}
+      />
+    </View>
+  );
 }
 
 export default function LearnModuleScreen() {
@@ -207,6 +235,7 @@ export default function LearnModuleScreen() {
             </View>
             {moduleDef.units.map((unit) => {
               const done = completed.has(unitKey(moduleDef.slug, unit.id));
+              const [gradFrom, gradTo] = resolveGradient(unit.gradient, isDark);
               return (
                 <Pressable
                   key={unit.id}
@@ -215,65 +244,125 @@ export default function LearnModuleScreen() {
                     borderRadius: 16,
                     borderWidth: 1,
                     borderColor: border,
-                    backgroundColor: cardBg,
-                    padding: 14,
                     marginBottom: 10,
+                    overflow: "hidden",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: textMuted,
-                      fontSize: 11,
-                      fontWeight: "700",
-                    }}
+                  <LinearGradient
+                    colors={[gradFrom, gradTo]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{ padding: 14 }}
                   >
-                    Unit {unit.number}
-                  </Text>
-                  <Text
-                    style={{
-                      marginTop: 3,
-                      fontSize: 17,
-                      fontWeight: "700",
-                      color: textPrimary,
-                    }}
-                  >
-                    {unit.title}
-                  </Text>
-                  <Text
-                    style={{ marginTop: 2, color: textMuted, fontSize: 12 }}
-                  >
-                    {unit.subtitle}
-                  </Text>
-                  <Text
-                    style={{ marginTop: 5, color: textMuted, fontSize: 11 }}
-                  >
-                    👉 {unit.goal}
-                  </Text>
-                  <View
-                    style={{
-                      marginTop: 8,
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Text style={{ color: textMuted, fontSize: 11 }}>
-                      {unit.lessons.length} lessons · {unit.quiz.length}q
-                    </Text>
-                    {done ? (
-                      <Text
+                    <View style={{ flexDirection: "row", gap: 12 }}>
+                      <View
                         style={{
-                          color: "#047857",
-                          fontSize: 11,
-                          fontWeight: "700",
+                          width: 44,
+                          height: 44,
+                          borderRadius: 22,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: isDark
+                            ? "rgba(0,0,0,0.2)"
+                            : "rgba(255,255,255,0.7)",
                         }}
                       >
-                        ✓ Done
-                      </Text>
-                    ) : null}
-                  </View>
+                        <Text style={{ fontSize: 22 }}>{unit.emoji}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            color: textMuted,
+                            fontSize: 11,
+                            fontWeight: "700",
+                          }}
+                        >
+                          Unit {unit.number}
+                        </Text>
+                        <Text
+                          style={{
+                            marginTop: 3,
+                            fontSize: 17,
+                            fontWeight: "700",
+                            color: textPrimary,
+                          }}
+                        >
+                          {unit.title}
+                        </Text>
+                        <Text
+                          style={{
+                            marginTop: 2,
+                            color: textMuted,
+                            fontSize: 12,
+                          }}
+                        >
+                          {unit.subtitle}
+                        </Text>
+                        <Text
+                          style={{
+                            marginTop: 5,
+                            color: textMuted,
+                            fontSize: 11,
+                          }}
+                        >
+                          👉 {unit.goal}
+                        </Text>
+                        <View
+                          style={{
+                            marginTop: 8,
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Text style={{ color: textMuted, fontSize: 11 }}>
+                            {unit.lessons.length} lessons · {unit.quiz.length}q
+                          </Text>
+                          {done ? (
+                            <Text
+                              style={{
+                                color: "#047857",
+                                fontSize: 11,
+                                fontWeight: "700",
+                              }}
+                            >
+                              ✓ Done
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    </View>
+                  </LinearGradient>
                 </Pressable>
               );
             })}
+
+            <View
+              style={{
+                marginTop: 8,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderStyle: "dashed",
+                borderColor: border,
+                padding: 16,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{ fontSize: 13, fontWeight: "700", color: textPrimary }}
+              >
+                How points work
+              </Text>
+              <Text
+                style={{
+                  marginTop: 4,
+                  color: textMuted,
+                  fontSize: 11,
+                  textAlign: "center",
+                }}
+              >
+                +2 for each correct answer · +10 bonus for perfect unit
+              </Text>
+            </View>
           </>
         ) : null}
 
@@ -285,6 +374,7 @@ export default function LearnModuleScreen() {
             textMuted={textMuted}
             border={border}
             cardBg={cardBg}
+            isDark={isDark}
             onBack={() => {
               if (screen.index > 0) {
                 setScreen({ ...screen, index: screen.index - 1 });
@@ -345,6 +435,7 @@ function LessonView({
   textMuted,
   border,
   cardBg,
+  isDark,
   onBack,
   onNext,
 }: {
@@ -354,12 +445,14 @@ function LessonView({
   textMuted: string;
   border: string;
   cardBg: string;
+  isDark: boolean;
   onBack: () => void;
   onNext: () => void;
 }) {
   const unit = findUnit(moduleDef, screen.unitId);
   const lesson = unit?.lessons[screen.index];
   if (!unit || !lesson) return null;
+  const [gradFrom, gradTo] = resolveGradient(lesson.gradient, isDark);
   return (
     <>
       <Pressable onPress={onBack}>
@@ -370,64 +463,68 @@ function LessonView({
       <Text style={{ marginTop: 8, color: textMuted, fontSize: 11 }}>
         Unit {unit.number} · Lesson {screen.index + 1} of {unit.lessons.length}
       </Text>
-      <View
+      <View style={{ marginTop: 8 }}>
+        <ProgressBar value={(screen.index + 1) / (unit.lessons.length + 1)} />
+      </View>
+      <LinearGradient
+        colors={[gradFrom, gradTo]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={{
           marginTop: 12,
+          aspectRatio: 1,
           borderRadius: 16,
           borderWidth: 1,
           borderColor: border,
-          backgroundColor: cardBg,
-          padding: 14,
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <Text style={{ fontSize: 48, textAlign: "center" }}>
-          {lesson.emoji}
-        </Text>
-        <Text
-          style={{
-            marginTop: 10,
-            fontSize: 22,
-            fontWeight: "700",
-            color: textPrimary,
-          }}
-        >
-          {lesson.title}
-        </Text>
-        <Text
-          style={{
-            marginTop: 8,
-            color: textMuted,
-            fontSize: 14,
-            lineHeight: 22,
-          }}
-        >
-          {lesson.body}
-        </Text>
-        <View
-          style={{
-            marginTop: 10,
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 6,
-          }}
-        >
-          {lesson.examples.map((example) => (
-            <View
-              key={example}
-              style={{
-                borderRadius: 999,
-                borderWidth: 1,
-                borderColor: border,
-                paddingHorizontal: 9,
-                paddingVertical: 4,
-              }}
-            >
-              <Text style={{ color: textPrimary, fontSize: 11 }}>
-                {example}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <Text style={{ fontSize: 72 }}>{lesson.emoji}</Text>
+      </LinearGradient>
+      <Text
+        style={{
+          marginTop: 12,
+          fontSize: 22,
+          fontWeight: "700",
+          color: textPrimary,
+        }}
+      >
+        {lesson.title}
+      </Text>
+      <Text
+        style={{
+          marginTop: 8,
+          color: textMuted,
+          fontSize: 14,
+          lineHeight: 22,
+        }}
+      >
+        {lesson.body}
+      </Text>
+      <View
+        style={{
+          marginTop: 10,
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: 6,
+        }}
+      >
+        {lesson.examples.map((example) => (
+          <View
+            key={example}
+            style={{
+              borderRadius: 999,
+              borderWidth: 1,
+              borderColor: border,
+              backgroundColor: cardBg,
+              paddingHorizontal: 9,
+              paddingVertical: 4,
+            }}
+          >
+            <Text style={{ color: textPrimary, fontSize: 11 }}>{example}</Text>
+          </View>
+        ))}
       </View>
       <Pressable
         onPress={onNext}
@@ -488,6 +585,14 @@ function QuizView({
       <Text style={{ marginTop: 8, color: textMuted, fontSize: 11 }}>
         Unit {unit.number} · Quiz {screen.index + 1}/{unit.quiz.length}
       </Text>
+      <View style={{ marginTop: 8 }}>
+        <ProgressBar
+          value={
+            (unit.lessons.length + screen.index + (hasAnswered ? 1 : 0)) /
+            (unit.lessons.length + unit.quiz.length)
+          }
+        />
+      </View>
       <View
         style={{
           marginTop: 12,
@@ -522,6 +627,9 @@ function QuizView({
               disabled={hasAnswered}
               onPress={() => onAnswer(index)}
               style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
                 borderRadius: 12,
                 borderWidth: 1,
                 borderColor: hasAnswered
@@ -546,6 +654,12 @@ function QuizView({
               >
                 {option}
               </Text>
+              {hasAnswered && isTheCorrect ? (
+                <Ionicons name="checkmark" size={16} color="#059669" />
+              ) : null}
+              {hasAnswered && isSelected && !isCorrect ? (
+                <Ionicons name="close" size={16} color="#E11D48" />
+              ) : null}
             </Pressable>
           );
         })}

@@ -178,6 +178,18 @@ const GENRE_COLORS: Record<string, string> = {
   jazz: "#6D28D9",
 };
 
+const DIFFICULTY_LABELS: Record<string, string> = {
+  beginner: "Beginner Friendly",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
+const DIFFICULTY_COLORS: Record<string, string> = {
+  beginner: "#065F46",
+  intermediate: "#92400E",
+  advanced: "#9F1239",
+};
+
 function EventCard({ row, isDark }: { row: UnifiedRow; isDark: boolean }) {
   const router = useRouter();
   const cardStyle = {
@@ -233,6 +245,10 @@ function EventCard({ row, isDark }: { row: UnifiedRow; isDark: boolean }) {
               <Tag
                 label={GENRE_LABELS[ev.genre] ?? ev.genre}
                 color={genreColor}
+              />
+              <Tag
+                label={DIFFICULTY_LABELS[ev.difficulty] ?? ev.difficulty}
+                color={DIFFICULTY_COLORS[ev.difficulty] ?? "#3F3F46"}
               />
             </View>
             <Text
@@ -416,15 +432,17 @@ function WaveformIcon({ isDark }: { isDark: boolean }) {
 function OnboardingCTA({
   session,
   tasteProfile,
+  onboardingCompleted,
   isDark,
 }: {
   session: boolean;
   tasteProfile: TasteProfile;
+  onboardingCompleted: boolean;
   isDark: boolean;
 }) {
   const router = useRouter();
 
-  if (session && tasteProfile) {
+  if (session && (tasteProfile ?? onboardingCompleted)) {
     return null;
   }
 
@@ -510,6 +528,7 @@ const EXPLORE_CARDS = [
     iconBgDark: "rgba(6,78,59,0.3)",
     icon: "🌱",
     href: "/(tabs)/events",
+    params: { difficulty: "beginner" },
   },
   {
     label: "Get a Rec",
@@ -518,6 +537,7 @@ const EXPLORE_CARDS = [
     iconBgDark: "rgba(76,29,149,0.3)",
     icon: "✨",
     href: "/(tabs)/chat",
+    params: undefined,
   },
   {
     label: "Learn",
@@ -526,6 +546,7 @@ const EXPLORE_CARDS = [
     iconBgDark: "rgba(120,53,15,0.3)",
     icon: "📖",
     href: "/(tabs)/learn",
+    params: undefined,
   },
   {
     label: "My Badges",
@@ -534,6 +555,7 @@ const EXPLORE_CARDS = [
     iconBgDark: "rgba(12,74,110,0.3)",
     icon: "🏆",
     href: "/(tabs)/profile",
+    params: undefined,
   },
 ] as const;
 
@@ -565,6 +587,10 @@ export default function HomeScreen() {
   );
   const { data: tasteProfile } = useQuery({
     ...trpc.tasteProfile.get.queryOptions(),
+    enabled: !!session,
+  });
+  const { data: userProfile } = useQuery({
+    ...trpc.userProfile.get.queryOptions(),
     enabled: !!session,
   });
 
@@ -728,6 +754,7 @@ export default function HomeScreen() {
           <OnboardingCTA
             session={!!session}
             tasteProfile={tasteProfile ?? null}
+            onboardingCompleted={!!userProfile?.onboardingCompleted}
             isDark={isDark}
           />
         </View>
@@ -811,7 +838,12 @@ export default function HomeScreen() {
             {EXPLORE_CARDS.map((card) => (
               <Pressable
                 key={card.label}
-                onPress={() => router.push(card.href as never)}
+                onPress={() =>
+                  router.push({
+                    pathname: card.href,
+                    params: card.params,
+                  } as never)
+                }
               >
                 <View
                   style={{

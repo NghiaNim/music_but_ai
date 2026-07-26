@@ -1,8 +1,19 @@
 import { Suspense } from "react";
 
+import { MobileAppRedirect } from "./_components/mobile-app-redirect";
 import { TicketConfirmation } from "./_components/ticket-confirmation";
 
-export default function TicketSuccessPage() {
+export default async function TicketSuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ orderId?: string; client?: string }>;
+}) {
+  const { orderId, client } = await searchParams;
+
+  if (client === "mobile" && orderId) {
+    return <MobileAppRedirect orderId={orderId} />;
+  }
+
   return (
     <Suspense fallback={<TicketSuccessSkeleton />}>
       <TicketConfirmation />

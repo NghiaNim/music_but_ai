@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -19,6 +18,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { trpc } from "~/utils/api";
 import { authClient } from "~/utils/auth";
 import { pushSignIn, toSignInHref } from "~/utils/auth-redirect";
+import { openStripeCheckout } from "~/utils/stripe-checkout";
 
 const BUY_TICKET_REGEX = /\[BUY_TICKET:([a-f0-9-]+)\]/g;
 
@@ -512,11 +512,20 @@ function ChatBubble({
   const buyEventId = buyMatch?.[1];
   const textContent = message.content.replace(BUY_TICKET_REGEX, "").trim();
 
+  const router = useRouter();
   const checkout = useMutation(
     trpc.ticket.createCheckoutSession.mutationOptions({
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         if (data.checkoutUrl) {
-          void Linking.openURL(data.checkoutUrl);
+          const outcome = await openStripeCheckout(
+            data.checkoutUrl,
+            data.orderId,
+          );
+          // Only navigate when the sheet returned via the paid deep link;
+          // a dismissed sheet leaves the pending order visible in My Tickets.
+          if (outcome.returnedViaDeepLink) {
+            router.push(`/tickets/success?orderId=${outcome.orderId}`);
+          }
         }
       },
       onError: (err) => {
@@ -580,7 +589,11 @@ function ChatBubble({
           <Pressable
             disabled={checkout.isPending}
             onPress={() =>
-              checkout.mutate({ eventId: buyEventId, quantity: 1 })
+              checkout.mutate({
+                eventId: buyEventId,
+                quantity: 1,
+                client: "mobile",
+              })
             }
             style={{
               borderRadius: 12,

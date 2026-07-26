@@ -33,6 +33,64 @@ const VENUE_FULL: Record<string, string> = {
   nycballet: "New York City Ballet",
 };
 
+const VENUE_CAMPUS_ADDRESS = {
+  msm: "Manhattan School of Music, 130 Claremont Ave, New York, NY 10027",
+  juilliard: "The Juilliard School, 155 W 65th St, New York, NY 10023",
+} as const;
+
+/** `venueName` values that mean "default hall" (no extra prefix in UI). */
+const VENUE_CAMPUS_DEFAULT_NAME = {
+  msm: "Manhattan School of Music",
+  juilliard: "The Juilliard School",
+} as const;
+
+function venueLineFor(ev: {
+  source: string;
+  venueName: string | null;
+  location: string | null;
+}): string {
+  if (ev.source === "msm") {
+    const hall = ev.venueName?.trim();
+    const campus = VENUE_CAMPUS_ADDRESS.msm;
+    const defaultName = VENUE_CAMPUS_DEFAULT_NAME.msm;
+    if (hall && hall !== defaultName) {
+      return `${hall} · ${campus}`;
+    }
+    return campus;
+  }
+  if (ev.source === "juilliard") {
+    const hall = ev.venueName?.trim();
+    const campus = VENUE_CAMPUS_ADDRESS.juilliard;
+    const defaultName = VENUE_CAMPUS_DEFAULT_NAME.juilliard;
+    if (hall && hall !== defaultName) {
+      return `${hall} · ${campus}`;
+    }
+    return campus;
+  }
+  const v = ev.venueName?.trim();
+  const loc = ev.location?.trim();
+  if (v && loc) return `${v} · ${loc}`;
+  return v ?? loc ?? "Venue TBA";
+}
+
+function directionsUrlFor(ev: {
+  source: string;
+  venueName: string | null;
+  location: string | null;
+}): string {
+  const destination =
+    ev.source === "msm"
+      ? VENUE_CAMPUS_ADDRESS.msm
+      : ev.source === "juilliard"
+        ? VENUE_CAMPUS_ADDRESS.juilliard
+        : [ev.venueName?.trim(), ev.location?.trim()]
+            .filter(Boolean)
+            .join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    destination || "New York, NY",
+  )}`;
+}
+
 function formatDate(dateInput: Date | string | null | undefined): string {
   if (!dateInput) return "Date to be announced";
   const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
@@ -100,9 +158,8 @@ export default function LiveEventDetailScreen() {
 
   const sourceLabel = VENUE_FULL[event.source] ?? event.source;
   const when = formatDate(event.date ?? event.dateText);
-  const venueLine = [event.venueName, event.location]
-    .filter(Boolean)
-    .join(" · ");
+  const venueLine = venueLineFor(event);
+  const mapHref = directionsUrlFor(event);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
@@ -241,33 +298,29 @@ export default function LiveEventDetailScreen() {
                 {when}
               </Text>
             </View>
-            {venueLine ? (
-              <View
+            <Pressable
+              onPress={() => void Linking.openURL(mapHref)}
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: 8,
+              }}
+            >
+              <View style={{ marginTop: 2 }}>
+                <Ionicons name="location-outline" size={14} color={textMuted} />
+              </View>
+              <Text
                 style={{
-                  flexDirection: "row",
-                  alignItems: "flex-start",
-                  gap: 8,
+                  flex: 1,
+                  fontSize: 13,
+                  color: textMuted,
+                  lineHeight: 18,
+                  textDecorationLine: "underline",
                 }}
               >
-                <View style={{ marginTop: 2 }}>
-                  <Ionicons
-                    name="location-outline"
-                    size={14}
-                    color={textMuted}
-                  />
-                </View>
-                <Text
-                  style={{
-                    flex: 1,
-                    fontSize: 13,
-                    color: textMuted,
-                    lineHeight: 18,
-                  }}
-                >
-                  {venueLine}
-                </Text>
-              </View>
-            ) : null}
+                {venueLine}
+              </Text>
+            </Pressable>
           </View>
 
           {/* Tickets */}

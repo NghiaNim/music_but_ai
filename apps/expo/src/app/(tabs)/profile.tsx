@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -19,6 +20,7 @@ import {
   COMPLETED_KEY,
   getLearningLevel,
   getStoredNumber,
+  parseCompletedUnits,
   POINTS_KEY,
 } from "@acme/validators";
 
@@ -32,6 +34,12 @@ import baroqueBadgeImage from "../../../assets/badges/baroque_badge.png";
 import beethovenBadgeImage from "../../../assets/badges/beethoven_badge.png";
 import chopinBadgeImage from "../../../assets/badges/chopin_badge.png";
 import mozartBadgeImage from "../../../assets/badges/mozart_badge.png";
+
+const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+
+function photoStorageKey(userId: string): string {
+  return `classica-profile-photo:${userId}`;
+}
 
 const BADGE_IMAGES: Record<string, number> = {
   beethoven: beethovenBadgeImage,
@@ -126,6 +134,10 @@ export default function ProfileScreen() {
   });
   const [activeBadgeId, setActiveBadgeId] = useState<string | null>(null);
   const [learningPoints, setLearningPoints] = useState(0);
+  const [completedQuizzes, setCompletedQuizzes] = useState(0);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isPhotoSheetOpen, setIsPhotoSheetOpen] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -134,9 +146,52 @@ export default function ProfileScreen() {
         SecureStore.getItemAsync(COMPLETED_KEY),
       ]);
       setLearningPoints(getStoredNumber(pointsRaw));
-      void completedRaw;
+      setCompletedQuizzes(parseCompletedUnits(completedRaw).size);
     })();
   }, []);
+
+  useEffect(() => {
+    if (!session?.user.id) return;
+    void SecureStore.getItemAsync(photoStorageKey(session.user.id)).then(
+      setPhotoUrl,
+    );
+  }, [session?.user.id]);
+
+  async function handlePickPhoto() {
+    if (!session?.user.id) return;
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setPhotoError("Allow photo access to upload a profile photo.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.8,
+      base64: true,
+    });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    if (!asset?.base64) return;
+    const estimatedBytes = asset.fileSize ?? asset.base64.length * 0.75;
+    if (estimatedBytes > MAX_PHOTO_BYTES) {
+      setPhotoError("Image is too large. Use 2MB or smaller.");
+      return;
+    }
+    const mimeType = asset.mimeType ?? "image/jpeg";
+    const dataUrl = `data:${mimeType};base64,${asset.base64}`;
+    await SecureStore.setItemAsync(photoStorageKey(session.user.id), dataUrl);
+    setPhotoUrl(dataUrl);
+    setPhotoError(null);
+    setIsPhotoSheetOpen(false);
+  }
+
+  async function handleRemovePhoto() {
+    if (!session?.user.id) return;
+    await SecureStore.deleteItemAsync(photoStorageKey(session.user.id));
+    setPhotoUrl(null);
+    setPhotoError(null);
+    setIsPhotoSheetOpen(false);
+  }
   const activeBadge =
     badges?.find((badge) => badge.id === activeBadgeId) ?? null;
 
@@ -199,7 +254,7 @@ export default function ProfileScreen() {
       icon: "🧠",
       title: "Quiz Collector",
       subtitle: "Complete Learn quizzes to earn XP",
-      progress: 0,
+      progress: completedQuizzes,
       target: 5,
       reward: 25,
       href: "/(tabs)/learn" as const,
@@ -254,7 +309,9 @@ export default function ProfileScreen() {
                 marginBottom: 12,
               }}
             >
-              <View
+              <Pressable
+                onPress={() => setIsPhotoSheetOpen(true)}
+                accessibilityLabel="Open profile photo options"
                 style={{
                   width: 72,
                   height: 72,
@@ -264,12 +321,21 @@ export default function ProfileScreen() {
                   backgroundColor: "#F8E8EE",
                   borderWidth: 3,
                   borderColor: cardBg,
+                  overflow: "hidden",
                 }}
               >
-                <Text style={{ fontSize: 30 }}>
-                  {tasteProfile?.badgeEmoji ?? "🎵"}
-                </Text>
-              </View>
+                {photoUrl ? (
+                  <Image
+                    source={{ uri: photoUrl }}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text style={{ fontSize: 30 }}>
+                    {tasteProfile?.badgeEmoji ?? "🎵"}
+                  </Text>
+                )}
+              </Pressable>
               <View style={{ flexDirection: "row", gap: 8, marginTop: 44 }}>
                 <View
                   style={{
@@ -335,6 +401,11 @@ export default function ProfileScreen() {
             <Text style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>
               {learningLevel.name}
             </Text>
+            {photoError ? (
+              <Text style={{ fontSize: 10, color: "#F43F5E", marginTop: 2 }}>
+                {photoError}
+              </Text>
+            ) : null}
 
             {/* Sign out */}
             {isSignedIn && (
@@ -816,6 +887,128 @@ export default function ProfileScreen() {
             </View>
           ) : null}
         </View>
+      </Modal>
+
+      <Modal
+        visible={isPhotoSheetOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsPhotoSheetOpen(false)}
+      >
+        <Pressable
+          onPress={() => setIsPhotoSheetOpen(false)}
+          style={{
+            flex: 1,
+            justifyContent: "flex-end",
+            backgroundColor: "rgba(0,0,0,0.4)",
+          }}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <View
+              style={{
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                backgroundColor: cardBg,
+                padding: 16,
+                paddingBottom: 28,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: textPrimary,
+                  }}
+                >
+                  Profile photo
+                </Text>
+                <Pressable onPress={() => setIsPhotoSheetOpen(false)}>
+                  <Text style={{ fontSize: 13, color: textMuted }}>Close</Text>
+                </Pressable>
+              </View>
+
+              <View style={{ marginTop: 14, alignItems: "center" }}>
+                <View
+                  style={{
+                    width: 112,
+                    height: 112,
+                    borderRadius: 56,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "#F8E8EE",
+                    overflow: "hidden",
+                  }}
+                >
+                  {photoUrl ? (
+                    <Image
+                      source={{ uri: photoUrl }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Text style={{ fontSize: 40 }}>
+                      {tasteProfile?.badgeEmoji ?? "🎵"}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={{ marginTop: 16, flexDirection: "row", gap: 8 }}>
+                <Pressable
+                  onPress={() => void handlePickPhoto()}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: border,
+                    paddingVertical: 10,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: textPrimary,
+                    }}
+                  >
+                    {photoUrl ? "Change photo" : "Upload photo"}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => void handleRemovePhoto()}
+                  disabled={!photoUrl}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: border,
+                    paddingVertical: 10,
+                    opacity: photoUrl ? 1 : 0.5,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: textPrimary,
+                    }}
+                  >
+                    Remove photo
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );

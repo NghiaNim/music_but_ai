@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "~/utils/api";
@@ -562,12 +562,16 @@ export default function EventsScreen() {
   const bg = isDark ? "#111111" : "#FFFAEF";
   const textPrimary = isDark ? "#F9FAFB" : "#111827";
 
+  const { difficulty: initialDifficulty } = useLocalSearchParams<{
+    difficulty?: string;
+  }>();
+
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [genreFilter, setGenreFilter] = useState<string | undefined>();
-  const [difficultyFilter, setDifficultyFilter] = useState<
-    string | undefined
-  >();
+  const [difficultyFilter, setDifficultyFilter] = useState<string | undefined>(
+    initialDifficulty,
+  );
   const [ticketedFilter, setTicketedFilter] = useState<
     "ticketed" | "non_ticketed" | undefined
   >();
