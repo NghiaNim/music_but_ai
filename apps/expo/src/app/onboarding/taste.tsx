@@ -1,18 +1,80 @@
-import { useEffect } from "react";
-import { Pressable, Text, useColorScheme, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation } from "@tanstack/react-query";
+import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import type { VisualAnswers } from "@acme/validators";
+
+import { usePalette } from "~/theme";
 import { trpc } from "~/utils/api";
 import { authClient } from "~/utils/auth";
 import { toSignInHref } from "~/utils/auth-redirect";
+import { ClipsPhase } from "./_components/clips-phase";
+import { MinimalReveal } from "./_components/minimal-reveal";
+import { ProgressPips } from "./_components/progress-pips";
+import { QuestionCard } from "./_components/question-card";
+import { QUESTIONS } from "./_components/questions";
+import { VoicePhase } from "./_components/voice-phase";
 
-export default function TasteOnboardingBridgeScreen() {
-  const isDark = useColorScheme() === "dark";
+type Phase = "idle" | "voice" | "questions" | "clips" | "deriving" | "reveal";
+
+interface DerivedProfile {
+  archetype: string | null;
+  badgeEmoji: string | null;
+  tags: string[] | null;
+  profileSummary: string | null;
+  profileCards: { label: string; value: string }[] | null;
+}
+
+function hasAnswerFor(answers: VisualAnswers, key: keyof VisualAnswers) {
+  const v = answers[key];
+  if (Array.isArray(v)) return v.length > 0;
+  return v != null;
+}
+
+function isFinishedSessionError(err: unknown) {
+  if (!(err instanceof Error)) return false;
+  return err.message.toLowerCase().includes("finished onboarding session");
+}
+
+function extractProfile(profile: unknown): DerivedProfile {
+  const p =
+    profile && typeof profile === "object"
+      ? (profile as Record<string, unknown>)
+      : {};
+  let cards: { label: string; value: string }[] | null = null;
+  if (Array.isArray(p.profileCards)) {
+    const filtered = p.profileCards.filter(
+      (c): c is { label: string; value: string } =>
+        !!c &&
+        typeof c === "object" &&
+        typeof (c as { label?: unknown }).label === "string" &&
+        typeof (c as { value?: unknown }).value === "string",
+    );
+    cards = filtered.length > 0 ? filtered.slice(0, 4) : null;
+  }
+
+  return {
+    archetype: typeof p.archetype === "string" ? p.archetype : null,
+    badgeEmoji: typeof p.badgeEmoji === "string" ? p.badgeEmoji : null,
+    tags:
+      Array.isArray(p.tags) && p.tags.every((t) => typeof t === "string")
+        ? p.tags.filter((t): t is string => typeof t === "string")
+        : null,
+    profileSummary:
+      typeof p.profileSummary === "string" ? p.profileSummary : null,
+    profileCards: cards,
+  };
+}
+
+export default function TasteOnboardingScreen() {
   const router = useRouter();
+  const { palette } = usePalette();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ restart?: string }>();
-  const shouldRestart = params.restart === "1";
+  const isRestart = params.restart === "1";
   const { data: session } = authClient.useSession();
 
   useEffect(() => {
@@ -21,103 +83,358 @@ export default function TasteOnboardingBridgeScreen() {
     }
   }, [router, session?.user]);
 
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<VisualAnswers>({});
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [profile, setProfile] = useState<DerivedProfile | null>(null);
+  const [bootstrapError, setBootstrapError] = useState(false);
+  const [reloadNonce, setReloadNonce] = useState(0);
+
+  const getOrCreateSession = useMutation(
+    trpc.onboarding.getOrCreateSession.mutationOptions(),
+  );
   const restartSession = useMutation(
     trpc.onboarding.restartSession.mutationOptions(),
   );
+  const saveAnswers = useMutation(
+    trpc.onboarding.saveVisualAnswers.mutationOptions(),
+  );
+  const derive = useMutation(trpc.tasteProfile.derive.mutationOptions());
+
+  const runDerive = async (id: string, isCancelled?: () => boolean) => {
+    setPhase("deriving");
+    try {
+      const res = await derive.mutateAsync({ sessionId: id });
+      if (isCancelled?.()) return;
+      const derived = extractProfile(res.profile);
+      setProfile(derived);
+      await queryClient.invalidateQueries(trpc.tasteProfile.pathFilter());
+      await queryClient.invalidateQueries(trpc.userProfile.pathFilter());
+    } catch {
+      if (!isCancelled?.()) {
+        Alert.alert(
+          "We hit a snag",
+          "We hit a snag building your profile, but your answers are saved.",
+        );
+      }
+    }
+    if (!isCancelled?.()) setPhase("reveal");
+  };
+
+  const bootstrappedRef = useRef(false);
+  useEffect(() => {
+    if (!session?.user) return;
+    if (phase !== "idle") return;
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
+
+    let cancelled = false;
+    const bootstrap = isRestart
+      ? restartSession.mutateAsync()
+      : getOrCreateSession.mutateAsync();
+
+    bootstrap.then(
+      (bootstrapped) => {
+        if (cancelled) return;
+        setBootstrapError(false);
+        setSessionId(bootstrapped.id);
+        const existing = (bootstrapped.visualAnswers ?? {}) as VisualAnswers;
+        setAnswers(existing);
+
+        if (bootstrapped.status === "complete") {
+          void runDerive(bootstrapped.id, () => cancelled);
+          return;
+        }
+        if (bootstrapped.phase === "voice") {
+          setPhase("voice");
+          return;
+        }
+        if (bootstrapped.phase === "clips") {
+          setPhase("clips");
+          return;
+        }
+        if (bootstrapped.phase === "complete") {
+          void runDerive(bootstrapped.id, () => cancelled);
+          return;
+        }
+
+        const firstUnanswered = QUESTIONS.findIndex(
+          (q) => !hasAnswerFor(existing, q.key),
+        );
+        setQuestionIndex(
+          firstUnanswered === -1 ? QUESTIONS.length - 1 : firstUnanswered,
+        );
+        setPhase("questions");
+      },
+      () => {
+        bootstrappedRef.current = false;
+        setBootstrapError(true);
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user, reloadNonce]);
+
+  const total = QUESTIONS.length;
+  const currentQuestion = QUESTIONS[questionIndex];
+
+  const handleAnswer = async (value: string | string[] | null) => {
+    if (!sessionId || !currentQuestion) return;
+    const isLast = questionIndex === total - 1;
+
+    const patch: Partial<VisualAnswers> = {};
+    if (value !== null) {
+      if (currentQuestion.kind === "multi") {
+        patch[currentQuestion.key] = value as string[] as never;
+      } else {
+        patch[currentQuestion.key] = value as never;
+      }
+    }
+    const nextAnswers = { ...answers, ...patch };
+    setAnswers(nextAnswers);
+
+    try {
+      await saveAnswers.mutateAsync({
+        sessionId,
+        answers: patch,
+        markVisualComplete: isLast,
+      });
+    } catch (err) {
+      if (isFinishedSessionError(err)) {
+        try {
+          const fresh = await restartSession.mutateAsync();
+          setSessionId(fresh.id);
+          await saveAnswers.mutateAsync({
+            sessionId: fresh.id,
+            answers: patch,
+            markVisualComplete: isLast,
+          });
+        } catch (retryErr) {
+          Alert.alert(
+            "Couldn't restart",
+            retryErr instanceof Error
+              ? retryErr.message
+              : "Could not restart your quiz — please try again.",
+          );
+          return;
+        }
+      } else {
+        Alert.alert(
+          "Couldn't save",
+          err instanceof Error
+            ? err.message
+            : "Could not save your answer — please try again.",
+        );
+        return;
+      }
+    }
+
+    if (!isLast) {
+      setQuestionIndex((i) => Math.min(i + 1, total - 1));
+      return;
+    }
+    setPhase("clips");
+  };
+
+  const handleClipsDone = () => {
+    if (!sessionId) return;
+    void runDerive(sessionId);
+  };
+
+  const handleVoiceDone = () => {
+    setQuestionIndex(0);
+    setPhase("questions");
+  };
+
+  const handleBack = () => {
+    if (questionIndex === 0 || saveAnswers.isPending) return;
+    setQuestionIndex((i) => Math.max(0, i - 1));
+  };
+
+  const initialValue = useMemo(() => {
+    if (!currentQuestion) return undefined;
+    return answers[currentQuestion.key];
+  }, [currentQuestion, answers]);
+
+  const cream = "#FEFCED";
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#111111" : "#FFFAEF" }}
-    >
-      <View
-        style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}
-      >
-        <View
+    <SafeAreaView style={{ flex: 1, backgroundColor: cream }}>
+      <View style={{ flex: 1 }}>
+        <Pressable
+          onPress={() => router.replace("/(tabs)")}
+          accessibilityLabel="Save and exit — your progress is kept"
           style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            zIndex: 20,
+            width: 36,
+            height: 36,
             borderRadius: 18,
             borderWidth: 1,
-            borderColor: isDark ? "#2D2D2D" : "#E5E7EB",
-            backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
-            padding: 20,
+            borderColor: palette.border,
+            backgroundColor: `${cream}E6`,
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <Text style={{ fontSize: 34, textAlign: "center" }}>✨</Text>
-          <Text
-            style={{
-              marginTop: 10,
-              fontSize: 20,
-              fontWeight: "700",
-              textAlign: "center",
-              color: isDark ? "#F9FAFB" : "#111827",
-            }}
-          >
-            Taste onboarding on mobile
-          </Text>
-          <Text
-            style={{
-              marginTop: 8,
-              textAlign: "center",
-              color: "#6B7280",
-              fontSize: 13,
-              lineHeight: 20,
-            }}
-          >
-            We are shipping full Expo onboarding parity next. For now, you can
-            view your current taste profile or continue exploring events.
-          </Text>
+          <Ionicons name="close" size={18} color={palette.mutedForeground} />
+        </Pressable>
 
-          <View style={{ marginTop: 16, gap: 10 }}>
-            <Pressable
-              onPress={() => router.replace("/profile/taste")}
+        {bootstrapError && phase === "idle" ? (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 20,
+              paddingHorizontal: 24,
+            }}
+          >
+            <Text
               style={{
-                borderRadius: 10,
-                backgroundColor: "#9C1738",
-                alignItems: "center",
-                paddingVertical: 11,
+                fontSize: 13,
+                color: palette.mutedForeground,
+                textAlign: "center",
               }}
             >
-              <Text
-                style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}
-              >
-                View my taste profile
-              </Text>
-            </Pressable>
+              We couldn't start your quiz. Check your connection, then try
+              again.
+            </Text>
             <Pressable
-              onPress={() => router.replace("/(tabs)/events")}
+              onPress={() => {
+                bootstrappedRef.current = false;
+                setBootstrapError(false);
+                setReloadNonce((n) => n + 1);
+              }}
               style={{
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: isDark ? "#3F3F46" : "#D4D4D8",
-                alignItems: "center",
-                paddingVertical: 11,
+                borderRadius: 12,
+                backgroundColor: palette.primary,
+                paddingHorizontal: 20,
+                paddingVertical: 12,
               }}
             >
               <Text
                 style={{
-                  color: isDark ? "#F9FAFB" : "#111827",
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: "600",
+                  color: palette.primaryForeground,
                 }}
               >
-                Explore events
+                Try again
               </Text>
             </Pressable>
           </View>
-
-          {shouldRestart ? (
-            <Pressable
-              disabled={restartSession.isPending}
-              onPress={() => restartSession.mutate()}
-              style={{ marginTop: 14, alignSelf: "center" }}
+        ) : phase === "idle" || (phase === "questions" && !currentQuestion) ? (
+          <View
+            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+          >
+            <Text style={{ fontSize: 13, color: palette.mutedForeground }}>
+              Loading…
+            </Text>
+          </View>
+        ) : phase === "voice" && sessionId ? (
+          <VoicePhase
+            sessionId={sessionId}
+            onComplete={handleVoiceDone}
+            onSkip={handleVoiceDone}
+            palette={palette}
+          />
+        ) : phase === "clips" && sessionId ? (
+          <ClipsPhase
+            sessionId={sessionId}
+            onComplete={handleClipsDone}
+            onSkipPhase={handleClipsDone}
+            palette={palette}
+          />
+        ) : phase === "deriving" || phase === "reveal" ? (
+          <View
+            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+          >
+            <MinimalReveal
+              profile={profile}
+              isLoading={phase === "deriving"}
+              palette={palette}
+            />
+          </View>
+        ) : (
+          <View style={{ flex: 1 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: 12,
+                paddingLeft: 12,
+                paddingRight: 56,
+              }}
             >
-              <Text style={{ color: "#6B7280", fontSize: 12 }}>
-                {restartSession.isPending
-                  ? "Restarting..."
-                  : "Reset my onboarding session"}
+              <View style={{ minWidth: 64 }}>
+                {questionIndex > 0 ? (
+                  <Pressable
+                    onPress={handleBack}
+                    disabled={saveAnswers.isPending}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name="chevron-back"
+                      size={16}
+                      color={palette.primary}
+                    />
+                    <Text style={{ fontSize: 13, color: palette.primary }}>
+                      Back
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              <ProgressPips
+                total={total}
+                currentIndex={questionIndex}
+                palette={palette}
+              />
+              <Text
+                style={{
+                  minWidth: 64,
+                  textAlign: "right",
+                  fontSize: 11,
+                  color: palette.mutedForeground,
+                }}
+              >
+                {questionIndex + 1} / {total}
               </Text>
-            </Pressable>
-          ) : null}
-        </View>
+            </View>
+
+            <View
+              key={questionIndex}
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 20,
+                paddingVertical: 24,
+              }}
+            >
+              {currentQuestion && (
+                <QuestionCard
+                  question={currentQuestion}
+                  initialValue={initialValue as string | string[] | undefined}
+                  onAnswer={(v) => void handleAnswer(v)}
+                  disabled={saveAnswers.isPending}
+                  palette={palette}
+                />
+              )}
+            </View>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );

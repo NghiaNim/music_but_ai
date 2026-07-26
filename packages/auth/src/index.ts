@@ -45,7 +45,14 @@ export function initAuth<
         clientSecret: options.googleClientSecret ?? "",
       },
     },
-    trustedOrigins: ["expo://", "expo://**", "exp://", "exp://**"],
+    trustedOrigins: [
+      "classica://",
+      "classica://**",
+      "expo://",
+      "expo://**",
+      "exp://",
+      "exp://**",
+    ],
     onAPIError: {
       onError(error: unknown, ctx: unknown) {
         console.error("BETTER AUTH API ERROR", error, ctx);

@@ -15,6 +15,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { trpc } from "~/utils/api";
 import { authClient } from "~/utils/auth";
+import { openStripeCheckout } from "~/utils/stripe-checkout";
 
 const GENRE_LABELS: Record<string, string> = {
   orchestral: "Orchestral",
@@ -44,12 +45,16 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 };
 
 export default function EventDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, preview } = useLocalSearchParams<{
+    id: string;
+    preview?: string;
+  }>();
   const router = useRouter();
   const isDark = useColorScheme() === "dark";
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
   const isSignedIn = !!session?.user;
+  const previewAsAttendee = preview === "1";
 
   const bg = isDark ? "#09090B" : "#FAFAF9";
   const card = isDark ? "#1A1A1A" : "#FFFFFF";
@@ -101,6 +106,29 @@ export default function EventDetailScreen() {
     }),
   );
 
+  const checkout = useMutation(
+    trpc.ticket.createCheckoutSession.mutationOptions({
+      onSuccess: async (data) => {
+        if (data.checkoutUrl) {
+          const outcome = await openStripeCheckout(
+            data.checkoutUrl,
+            data.orderId,
+          );
+          if (outcome.returnedViaDeepLink) {
+            router.push(`/tickets/success?orderId=${outcome.orderId}`);
+          }
+        }
+      },
+      onError: (err) => {
+        if (err.data?.code === "UNAUTHORIZED") {
+          Alert.alert("Sign in required", "Please sign in to buy tickets.");
+          return;
+        }
+        Alert.alert("Checkout failed", err.message || "Please try again.");
+      },
+    }),
+  );
+
   if (isPending) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
@@ -136,6 +164,9 @@ export default function EventDetailScreen() {
   }
 
   const isCancelled = event.publicationStatus === "cancelled";
+  const isHost = !!session?.user && event.createdBy === session.user.id;
+  const showHostView = isHost && !previewAsAttendee;
+  const isHostPreviewing = isHost && previewAsAttendee;
   const date = new Date(event.date);
   const when = date.toLocaleDateString("en-US", {
     weekday: "long",
@@ -173,6 +204,53 @@ export default function EventDetailScreen() {
           <Ionicons name="chevron-back" size={16} color={primary} />
           <Text style={{ fontSize: 13, color: primary }}>Events</Text>
         </Pressable>
+
+        {isHostPreviewing && (
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+              marginHorizontal: 16,
+              marginBottom: 12,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: isDark ? "rgba(146,64,14,0.4)" : "#FCD34D",
+              backgroundColor: isDark ? "#1C1206" : "#FFFBEB",
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "600",
+                color: isDark ? "#FCD34D" : "#92400E",
+                flexShrink: 1,
+              }}
+            >
+              Preview mode · you're viewing this as an attendee
+            </Text>
+            <Pressable
+              onPress={() =>
+                router.replace({ pathname: "/event/[id]", params: { id } })
+              }
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "700",
+                  textDecorationLine: "underline",
+                  color: isDark ? "#FCD34D" : "#92400E",
+                }}
+              >
+                Exit preview
+              </Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* Hero image */}
         <View
@@ -243,6 +321,26 @@ export default function EventDetailScreen() {
               marginBottom: 10,
             }}
           >
+            {showHostView && (
+              <View
+                style={{
+                  borderRadius: 999,
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  backgroundColor: isDark ? "rgba(146,64,14,0.4)" : "#FDE68A",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: "700",
+                    color: isDark ? "#FCD34D" : "#78350F",
+                  }}
+                >
+                  You're the host
+                </Text>
+              </View>
+            )}
             <View
               style={{
                 borderRadius: 999,
@@ -376,7 +474,88 @@ export default function EventDetailScreen() {
           </View>
 
           {/* Ticket / price card */}
-          {event.isFree ? (
+          {showHostView ? (
+            <View
+              style={{
+                marginBottom: 16,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: cardBorder,
+                backgroundColor: isDark ? "#1C1206" : "#FFFBEB",
+                padding: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: isDark ? "#FCD34D" : "#92400E",
+                  marginBottom: 4,
+                }}
+              >
+                You're hosting this event
+              </Text>
+              <Text
+                style={{ fontSize: 11, color: textMuted, marginBottom: 12 }}
+              >
+                Update details or cancel the listing.
+              </Text>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Pressable
+                  onPress={() => router.push(`/post-event/${event.id}/edit`)}
+                  style={{ flex: 1 }}
+                >
+                  <View
+                    style={{
+                      alignItems: "center",
+                      borderRadius: 12,
+                      backgroundColor: primary,
+                      paddingVertical: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      Edit event
+                    </Text>
+                  </View>
+                </Pressable>
+                <Pressable
+                  onPress={() =>
+                    router.push({
+                      pathname: "/event/[id]",
+                      params: { id: event.id, preview: "1" },
+                    })
+                  }
+                  style={{ flex: 1 }}
+                >
+                  <View
+                    style={{
+                      alignItems: "center",
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: cardBorder,
+                      paddingVertical: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: textPrimary,
+                      }}
+                    >
+                      Preview as attendee
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+          ) : event.isFree ? (
             <View
               style={{
                 marginBottom: 16,
@@ -402,6 +581,7 @@ export default function EventDetailScreen() {
               </Text>
               {ticketUrl ? (
                 <Pressable
+                  disabled={isHostPreviewing}
                   onPress={() => void Linking.openURL(ticketUrl)}
                   style={{ marginTop: 12 }}
                 >
@@ -412,6 +592,7 @@ export default function EventDetailScreen() {
                       borderWidth: 1,
                       borderColor: cardBorder,
                       paddingVertical: 12,
+                      opacity: isHostPreviewing ? 0.6 : 1,
                     }}
                   >
                     <Text
@@ -456,33 +637,63 @@ export default function EventDetailScreen() {
               >
                 {event.ticketsAvailable} tickets remaining
               </Text>
-              {ticketUrl ? (
-                <Pressable onPress={() => void Linking.openURL(ticketUrl)}>
-                  <View
+              <Pressable
+                disabled={isCancelled || isHostPreviewing || checkout.isPending}
+                onPress={() => {
+                  if (!isSignedIn) {
+                    Alert.alert(
+                      "Sign in required",
+                      "Please sign in to buy tickets.",
+                    );
+                    return;
+                  }
+                  checkout.mutate({
+                    eventId: event.id,
+                    quantity: 1,
+                    client: "mobile",
+                  });
+                }}
+              >
+                <View
+                  style={{
+                    alignItems: "center",
+                    borderRadius: 12,
+                    backgroundColor: "#059669",
+                    paddingVertical: 12,
+                    opacity:
+                      isCancelled || isHostPreviewing || checkout.isPending
+                        ? 0.6
+                        : 1,
+                  }}
+                >
+                  <Text
                     style={{
-                      alignItems: "center",
-                      borderRadius: 12,
-                      backgroundColor: "#059669",
-                      paddingVertical: 12,
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: "#FFFFFF",
                     }}
                   >
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "600",
-                        color: "#FFFFFF",
-                      }}
-                    >
-                      Get Tickets
-                    </Text>
-                  </View>
-                </Pressable>
+                    {checkout.isPending ? "Opening checkout…" : "Buy Tickets"}
+                  </Text>
+                </View>
+              </Pressable>
+              {isHostPreviewing ? (
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: textMuted,
+                    textAlign: "center",
+                    marginTop: 8,
+                  }}
+                >
+                  Buy Tickets is disabled in preview mode.
+                </Text>
               ) : null}
             </View>
           )}
 
           {/* Save / I Went */}
-          {!isCancelled && (
+          {!isCancelled && !showHostView && (
             <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
               <Pressable
                 onPress={() => {
@@ -492,8 +703,8 @@ export default function EventDetailScreen() {
                   }
                   if (id) toggleSave.mutate({ eventId: id, status: "saved" });
                 }}
-                disabled={toggleSave.isPending}
-                style={{ flex: 1 }}
+                disabled={isHostPreviewing || toggleSave.isPending}
+                style={{ flex: 1, opacity: isHostPreviewing ? 0.6 : 1 }}
               >
                 <View
                   style={{
@@ -536,8 +747,8 @@ export default function EventDetailScreen() {
                       status: "attended",
                     });
                 }}
-                disabled={toggleAttended.isPending}
-                style={{ flex: 1 }}
+                disabled={isHostPreviewing || toggleAttended.isPending}
+                style={{ flex: 1, opacity: isHostPreviewing ? 0.6 : 1 }}
               >
                 <View
                   style={{

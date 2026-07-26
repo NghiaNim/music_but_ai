@@ -34,6 +34,7 @@ export const ticketRouter = {
       z.object({
         eventId: z.string().uuid(),
         quantity: z.number().int().min(1).max(10).default(1),
+        client: z.enum(["web", "mobile"]).default("web"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -121,8 +122,16 @@ export const ticketRouter = {
           orderId: order.id,
           eventId: input.eventId,
         },
-        success_url: `${origin}/tickets/success?orderId=${order.id}`,
-        cancel_url: `${origin}/event/${input.eventId}`,
+        // Stripe requires http(s) URLs; for the mobile app the web success
+        // page bounces to the classica:// deep link (see tickets/success).
+        success_url:
+          input.client === "mobile"
+            ? `${origin}/tickets/success?orderId=${order.id}&client=mobile`
+            : `${origin}/tickets/success?orderId=${order.id}`,
+        cancel_url:
+          input.client === "mobile"
+            ? `${origin}/event/${input.eventId}?client=mobile&checkout=cancelled`
+            : `${origin}/event/${input.eventId}`,
       });
 
       await ctx.db

@@ -390,7 +390,7 @@ function QuizScreen({
               className={cn(
                 "flex items-center justify-between rounded-xl border bg-white px-4 py-3 text-left text-sm transition-all dark:bg-zinc-900",
                 !hasAnswered &&
-                  "hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-zinc-800",
+                  "hover:border-violet-300 hover:bg-violet-50 dark:hover:border-violet-700 dark:hover:bg-zinc-800",
                 hasAnswered &&
                   isTheCorrect &&
                   "border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30",
@@ -470,8 +470,8 @@ function ResultScreen({
         className={cn(
           "mt-2 flex size-32 items-center justify-center rounded-full bg-linear-to-br text-6xl",
           perfect
-            ? "from-amber-200 to-yellow-100"
-            : "from-violet-200 to-fuchsia-100",
+            ? "from-amber-200 to-yellow-100 dark:from-amber-900/50 dark:to-yellow-950/30"
+            : "from-violet-200 to-fuchsia-100 dark:from-violet-900/50 dark:to-fuchsia-950/30",
         )}
       >
         {perfect ? "🏆" : "🎉"}

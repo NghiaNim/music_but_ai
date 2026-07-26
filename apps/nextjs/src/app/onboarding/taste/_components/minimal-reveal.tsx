@@ -135,7 +135,7 @@ export function MinimalReveal({ profile, isLoading }: RevealProps) {
         style={{ animationDelay: "1200ms" }}
       >
         <Button asChild className="flex-1">
-          <Link href="/">See my recommendations</Link>
+          <Link href="/demo">See my recommendations</Link>
         </Button>
         <Button variant="outline" asChild className="flex-1">
           <Link href="/profile/taste">View my taste profile</Link>
