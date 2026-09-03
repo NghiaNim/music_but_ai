@@ -7,16 +7,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { VisualAnswers } from "@acme/validators";
 
+import { ClipsPhase } from "~/components/onboarding/clips-phase";
+import { MinimalReveal } from "~/components/onboarding/minimal-reveal";
+import { ProgressPips } from "~/components/onboarding/progress-pips";
+import { QuestionCard } from "~/components/onboarding/question-card";
+import { QUESTIONS } from "~/components/onboarding/questions";
+import { VoicePhase } from "~/components/onboarding/voice-phase";
 import { usePalette } from "~/theme";
 import { trpc } from "~/utils/api";
 import { authClient } from "~/utils/auth";
 import { toSignInHref } from "~/utils/auth-redirect";
-import { ClipsPhase } from "./_components/clips-phase";
-import { MinimalReveal } from "./_components/minimal-reveal";
-import { ProgressPips } from "./_components/progress-pips";
-import { QuestionCard } from "./_components/question-card";
-import { QUESTIONS } from "./_components/questions";
-import { VoicePhase } from "./_components/voice-phase";
 
 type Phase = "idle" | "voice" | "questions" | "clips" | "deriving" | "reveal";
 

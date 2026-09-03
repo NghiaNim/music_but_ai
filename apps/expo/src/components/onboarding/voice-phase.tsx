@@ -11,7 +11,7 @@ import type { Palette } from "~/theme";
 import { radius } from "~/theme";
 import { trpc } from "~/utils/api";
 import { playTtsAudio } from "~/utils/tts-playback";
-import tonTonAvatar from "../../../../assets/ton-ton-cat-cutout.png";
+import tonTonAvatar from "../../../assets/ton-ton-cat-cutout.png";
 
 /**
  * Phase 1 of taste onboarding: a short voice chat with Ton Ton. Mirrors
